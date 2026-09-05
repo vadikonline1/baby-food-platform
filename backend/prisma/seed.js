@@ -101,7 +101,53 @@ async function main() {
     await prisma.appSetting.upsert({ where: { key }, update: {}, create: { key, value } });
   }
 
-  // reteta demo
+  // continut editabil (doar la prima initializare — dupa aceea se gestioneaza din Admin)
+  try {
+    const ro = require('../../frontend/src/locales/ro.json');
+    const ru = require('../../frontend/src/locales/ru.json');
+    const en = require('../../frontend/src/locales/en.json');
+    const icons = ['⏳', '🥕', '🥄', '🤗', '📅', '👀', '🍎', '🔢', '🥣', '⚖️', '🍼', '🕒', '⚠️', '🚫', '🛡️', '😟', '🚫', '🧂', '💧', '🆘'];
+    if ((await prisma.guideItem.count()) === 0 && Array.isArray(ro.home?.items)) {
+      let pos = 0;
+      for (const [i, g] of ro.home.items.entries()) {
+        await prisma.guideItem.create({
+          data: {
+            icon: icons[i % icons.length],
+            titleRo: g.q, titleRu: ru.home?.items?.[i]?.q || g.q, titleEn: en.home?.items?.[i]?.q || g.q,
+            bodyRo: g.a, bodyRu: ru.home?.items?.[i]?.a || g.a, bodyEn: en.home?.items?.[i]?.a || g.a,
+            position: pos++
+          }
+        });
+      }
+    }
+    if ((await prisma.cookieSection.count()) === 0 && Array.isArray(ro.cookies?.sections)) {
+      let pos = 0;
+      for (const [i, s] of ro.cookies.sections.entries()) {
+        await prisma.cookieSection.create({
+          data: {
+            titleRo: s.h, titleRu: ru.cookies?.sections?.[i]?.h || s.h, titleEn: en.cookies?.sections?.[i]?.h || s.h,
+            bodyRo: s.p, bodyRu: ru.cookies?.sections?.[i]?.p || s.p, bodyEn: en.cookies?.sections?.[i]?.p || s.p,
+            position: pos++
+          }
+        });
+      }
+    }
+  } catch (e) { console.log('[seed] content migrate skipped:', e.message); }
+  if ((await prisma.faqItem.count()) === 0) {
+    const faqs = [
+      { q: ['Cum îmi fac cont?', 'Как создать аккаунт?', 'How do I create an account?'], a: ['Apasă Autentificare → Înregistrare, completează numele, emailul și parola, apoi confirmă linkul primit pe email.', 'Нажмите «Вход» → «Регистрация», заполните имя, email и пароль, затем подтвердите ссылку из письма.', 'Click Login → Register, fill in name, email and password, then confirm the link from your email.'] },
+      { q: ['Cum votez o rețetă?', 'Как оценить рецепт?', 'How do I rate a recipe?'], a: ['Ai nevoie de cont. Deschide rețeta și alege nota cu stelele din zona de vot.', 'Нужен аккаунт. Откройте рецепт и выберите оценку звёздами.', 'You need an account. Open the recipe and pick stars in the voting area.'] },
+      { q: ['Cum devin Autor?', 'Как стать Автором?', 'How do I become an Author?'], a: ['Din Profil → Devino Autor, răspunde la întrebări. Adminul analizează cererea și îți oferă dreptul de publicare.', 'В Профиле → «Стать Автором» ответьте на вопросы. Админ рассмотрит заявку.', 'From Profile → Become an Author, answer the questions. The admin reviews and grants publishing rights.'] },
+      { q: ['Cum salvez rețetele preferate?', 'Как сохранять избранное?', 'How do I save favorites?'], a: ['Cu contul logat, apasă inimioara din pagina rețetei. Le găsești în Profil → Favorite.', 'Войдите и нажмите сердечко на странице рецепта. Найдёте их в Профиле → Избранное.', 'Log in and tap the heart on the recipe page. Find them in Profile → Favorites.'] },
+      { q: ['Cum îmi șterg contul?', 'Как удалить аккаунт?', 'How do I delete my account?'], a: ['Scrie-ne din pagina de Contact și ștergem contul împreună cu datele asociate.', 'Напишите со страницы контактов — удалим аккаунт и связанные данные.', 'Write to us from the Contact page and we will delete your account and data.'] }
+    ];
+    let pos = 0;
+    for (const f of faqs) {
+      await prisma.faqItem.create({
+        data: { questionRo: f.q[0], questionRu: f.q[1], questionEn: f.q[2], answerRo: f.a[0], answerRu: f.a[1], answerEn: f.a[2], position: pos++ }
+      });
+    }
+  }
   const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
   if (!existing) {
     const age = await prisma.ageGroup.findFirst();

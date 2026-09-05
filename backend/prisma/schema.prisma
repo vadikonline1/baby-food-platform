@@ -172,6 +172,50 @@ model ContactMessage {
   createdAt DateTime @default(now())
 }
 
+// Continut editabil din Admin (Ghid diversificare / FAQ / Politica cookies)
+model GuideItem {
+  id        Int      @id @default(autoincrement())
+  icon      String   @default("")
+  titleRo   String
+  titleRu   String
+  titleEn   String
+  bodyRo    String
+  bodyRu    String
+  bodyEn    String
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FaqItem {
+  id         Int      @id @default(autoincrement())
+  questionRo String
+  questionRu String
+  questionEn String
+  answerRo   String
+  answerRu   String
+  answerEn   String
+  position   Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CookieSection {
+  id        Int      @id @default(autoincrement())
+  titleRo   String
+  titleRu   String
+  titleEn   String
+  bodyRo    String
+  bodyRu    String
+  bodyEn    String
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii
 model Unit {
   id      Int      @id @default(autoincrement())
