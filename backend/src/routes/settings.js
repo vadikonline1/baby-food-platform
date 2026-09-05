@@ -12,7 +12,8 @@ const PUBLIC_KEYS = [
   'support_enabled', 'support_title_ro', 'support_title_ru', 'support_title_en',
   'support_text_ro', 'support_text_ru', 'support_text_en',
   'firebase_web_apikey', 'firebase_web_authdomain', 'firebase_web_projectid',
-  'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid'
+  'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid',
+  'store_android_url', 'store_ios_url'
 ];
 
 // GET /api/settings — ADMIN (toate)
@@ -65,6 +66,10 @@ router.get('/config', async (req, res) => {
       messagingSenderId: m.firebase_web_senderid || '',
       appId: m.firebase_web_appid || '',
       measurementId: m.firebase_web_measurementid || ''
+    },
+    stores: {
+      android: m.store_android_url || '',
+      ios: m.store_ios_url || ''
     }
   });
 });

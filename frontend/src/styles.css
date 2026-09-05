@@ -295,6 +295,9 @@ pre { font-family: inherit; }
 .footer nav { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
 .footer nav a { color: var(--primary-dark); font-size: 13.5px; font-weight: 500; text-decoration: none; }
 .footer nav a:hover { text-decoration: underline; }
+.store-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+.store-badges a { display: inline-block; transition: transform 0.12s ease; }
+.store-badges a:hover { transform: translateY(-2px); }
 .footer p { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; }
 
 .search-bar { display: flex; gap: 8; align-items: center; margin-bottom: 16px; }

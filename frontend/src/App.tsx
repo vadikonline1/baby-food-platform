@@ -17,6 +17,7 @@ import CookieBanner from './components/CookieBanner';
 import Verify from './pages/Verify';
 import Contact from './pages/Contact';
 import NotifBell from './components/NotifBell';
+import StoreBadges from './components/StoreBadges';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -70,6 +71,7 @@ export default function App() {
         </Routes>
       </div>
       <footer className="footer">
+        <StoreBadges />
         <nav>
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/retete">{t('nav.recipes')}</Link>

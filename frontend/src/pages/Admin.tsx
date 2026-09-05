@@ -266,6 +266,14 @@ function AppSettings() {
         </div>
       </section>
       <section className="panel">
+        <h3>Magazine aplicații (badge-uri în footer)</h3>
+        <p className="meta">Pe Android se afișează doar Google Play, pe iOS doar App Store, pe web ambele. Gol = badge ascuns.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {field('store_android_url', 'Link Google Play', 'https://play.google.com/store/apps/details?id=md.vadikonline1.gustbebe')}
+          {field('store_ios_url', 'Link App Store', 'https://apps.apple.com/app/id...')}
+        </div>
+      </section>
+      <section className="panel">
         <h3>Susține proiectul (buton în aplicații)</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <label style={{ fontSize: '13.5px' }}>

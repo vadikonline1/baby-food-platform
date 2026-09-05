@@ -95,7 +95,8 @@ async function main() {
     support_text_en: 'Watch an ad and help us add new recipes every week.',
     firebase_web_apikey: '', firebase_web_authdomain: '', firebase_web_projectid: '',
     firebase_web_storagebucket: '', firebase_web_senderid: '', firebase_web_appid: '', firebase_web_measurementid: '',
-    seo_head_end: '', seo_body_start: '', seo_body_end: ''
+    seo_head_end: '', seo_body_start: '', seo_body_end: '',
+    store_android_url: '', store_ios_url: ''
   };
   for (const [key, value] of Object.entries(defaults)) {
     await prisma.appSetting.upsert({ where: { key }, update: {}, create: { key, value } });
