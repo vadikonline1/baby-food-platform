@@ -8,6 +8,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-gustbebe-dev-secret-change-me-min-32-chars}"
       PORT: "4000"
       APP_URL: "${APP_URL:-http://localhost:4000}"
+      DNS_SOURCE_URL: "${DNS_SOURCE_URL:-https://raw.githubusercontent.com/vadikonline1/pi.hole/refs/heads/main/hosts_app_dns}"
       UPLOAD_DIR: "/data/uploads"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@gustbebe.md}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-Admin123!}"

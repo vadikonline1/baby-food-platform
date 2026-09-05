@@ -47,6 +47,17 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: 
 .nav a.link:hover { background: var(--primary-soft); }
 .nav a.link.active { background: var(--primary-soft); color: var(--primary-dark); }
 .nav .spacer { flex: 1; }
+.menu-toggle { display: none; border: 1px solid var(--line-strong); background: #fff; border-radius: 9px; font-size: 19px; padding: 4px 12px; cursor: pointer; color: var(--ink); margin-left: auto; }
+.nav-links { display: contents; }
+@media (max-width: 860px) {
+  .menu-toggle { display: block; }
+  .nav-links { display: none; }
+  .nav.open .nav-links { display: flex; flex-direction: column; align-items: stretch; width: 100%; gap: 2px; padding: 8px 0 4px; }
+  .nav.open .nav-links a.link { padding: 10px 12px; }
+  .nav.open .spacer { display: none; }
+  .nav.open .langselect { width: 100%; margin: 4px 0; }
+  .nav.open .btn { width: 100%; }
+}
 .langselect { width: auto; padding: 7px 10px; border-radius: 9px; border: 1px solid var(--line); background: #fff; font-size: 13.5px; cursor: pointer; color: var(--ink); }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 24px 22px 60px; }

@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "GustBebe",
+    "slug": "gustbebe",
+    "version": "1.0.0",
+    "android": {
+      "package": "md.vadikonline1.gustbebe"
+    },
+    "ios": {
+      "bundleIdentifier": "md.vadikonline1.gustbebe"
+    },
+    "extra": {
+      "apiBasePath": "/api",
+      "dnsSource": "https://raw.githubusercontent.com/vadikonline1/pi.hole/refs/heads/main/hosts_app_dns",
+      "dnsKey": "md.vadikonline1.gustbebe"
+    }
+  }
+}

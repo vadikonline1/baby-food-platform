@@ -19,7 +19,7 @@ router.get('/ages', async (req, res) => res.json(await prisma.ageGroup.findMany(
 router.get('/feeding-types', async (req, res) => res.json(await prisma.feedingType.findMany({ orderBy: { nameRo: 'asc' } })));
 router.get('/units', async (req, res) => res.json(await prisma.unit.findMany({ orderBy: { nameRo: 'asc' } })));
 
-// CRUD — MODERATOR can create/edit, ADMIN full (delete only admin)
+// CRUD taxonomii — DOAR ADMIN (moderatorii gestioneaza doar retetele proprii)
 const resources = {
   categories: () => prisma.menuCategory,
   restrictions: () => prisma.dietaryRestriction,
@@ -37,7 +37,7 @@ router.post('/:resource', authRequired, roleRequired('MODERATOR', 'ADMIN'), asyn
   } catch (e) { res.status(400).json({ error: 'create_failed', message: e.message }); }
 });
 
-router.put('/:resource/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
+router.put('/:resource/:id', authRequired, roleRequired('ADMIN'), async (req, res) => {
   const m = resources[req.params.resource]?.();
   if (!m) return res.status(404).json({ error: 'unknown_resource' });
   try {

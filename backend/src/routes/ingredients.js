@@ -26,7 +26,7 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
   } catch (e) { res.status(400).json({ error: 'create_failed', message: e.message }); }
 });
 
-router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
+router.put('/:id', authRequired, roleRequired('ADMIN'), async (req, res) => {
   try {
     res.json(await prisma.ingredient.update({ where: { id: Number(req.params.id) }, data: req.body }));
   } catch (e) { res.status(400).json({ error: 'update_failed', message: e.message }); }

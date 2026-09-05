@@ -48,12 +48,13 @@ function numList(v) {
 // GET /api/recipes?q=&category=&age=&feeding=&restriction=&status=&sort=&page=&limit=
 // category/restriction accepta slug sau lista slug-uri separate prin virgula; age/feeding id-uri
 router.get('/', async (req, res) => {
-  const { q, category, age, feeding, restriction, status, sort, page = '1', limit = '12' } = req.query;
+  const { q, category, age, feeding, restriction, status, sort, mine, page = '1', limit = '12' } = req.query;
   const take = Math.min(parseInt(limit) || 12, 50);
   const skip = (Math.max(parseInt(page) || 1, 1) - 1) * take;
 
   const where = {};
-  const role = optionalRole(req);
+  const me = optionalAuth(req);
+  const role = me?.role || null;
   const privileged = role === 'MODERATOR' || role === 'ADMIN';
   if (privileged && status === 'all') {
     // fara filtru de status
@@ -61,6 +62,10 @@ router.get('/', async (req, res) => {
     where.status = status;
   } else {
     where.status = 'PUBLISHED'; // public + default
+  }
+  // moderator: in listele de administrare (mine=1 sau status all/DRAFT) vede DOAR propriile retete
+  if (role === 'MODERATOR' && me && (mine === '1' || status === 'all' || status === 'DRAFT')) {
+    where.authorId = me.id;
   }
   if (q) {
     where.OR = [
@@ -91,10 +96,11 @@ router.get('/', async (req, res) => {
   res.json({ total, page: Number(page) || 1, limit: take, items });
 });
 
-// GET by id pentru editare — MOD+ (inainte de /:slug ca sa nu fie capturat)
+// GET by id pentru editare — MOD doar propriile retete (inainte de /:slug)
 router.get('/by-id/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
   const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
   if (!recipe) return res.status(404).json({ error: 'not_found' });
+  if (req.user.role === 'MODERATOR' && recipe.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
   res.json(recipe);
 });
 
@@ -215,10 +221,15 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
   }
 });
 
-// update — MODERATOR + ADMIN
+// update — ADMIN tot, MODERATOR doar propriile retete
 router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
   const id = Number(req.params.id);
   const b = req.body || {};
+  if (req.user.role === 'MODERATOR') {
+    const own = await prisma.recipe.findUnique({ where: { id }, select: { authorId: true } });
+    if (!own) return res.status(404).json({ error: 'not_found' });
+    if (own.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
+  }
   try {
     // reset relatii daca vin ids (deduplicare in JS — SQLite nu suporta skipDuplicates)
     if (b.categoryIds) {
@@ -276,6 +287,7 @@ router.post('/:id/telegram', authRequired, roleRequired('MODERATOR', 'ADMIN'), a
   const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
   if (!recipe) return res.status(404).json({ error: 'not_found' });
   if (recipe.status !== 'PUBLISHED') return res.status(400).json({ error: 'not_published' });
+  if (req.user.role === 'MODERATOR' && recipe.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
   try {
     await postRecipe(recipe);
     res.json({ ok: true });

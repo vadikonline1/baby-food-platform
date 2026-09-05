@@ -26,24 +26,29 @@ router.delete('/:id', authRequired, roleRequired('ADMIN'), async (req, res) => {
   res.json({ ok: true });
 });
 
-// DASHBOARD: statistici extinse
+// DASHBOARD: statistici extinse (ADMIN tot; MODERATOR doar propriile retete)
 router.get('/stats/overview', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
+  const isMod = req.user.role === 'MODERATOR';
+  const scope = isMod ? { authorId: req.user.id } : {};
   const [users, recipes, published, drafts, ratings, byRole, topRecipes, recent, pendingList] = await Promise.all([
-    prisma.user.count(), prisma.recipe.count(),
-    prisma.recipe.count({ where: { status: 'PUBLISHED' } }),
-    prisma.recipe.count({ where: { status: 'DRAFT' } }),
-    prisma.rating.count(),
-    prisma.user.groupBy({ by: ['role'], _count: { role: true } }),
+    isMod ? 0 : prisma.user.count(),
+    prisma.recipe.count({ where: scope }),
+    prisma.recipe.count({ where: { ...scope, status: 'PUBLISHED' } }),
+    prisma.recipe.count({ where: { ...scope, status: 'DRAFT' } }),
+    isMod
+      ? prisma.rating.count({ where: { recipe: { authorId: req.user.id } } })
+      : prisma.rating.count(),
+    isMod ? [] : prisma.user.groupBy({ by: ['role'], _count: { role: true } }),
     prisma.recipe.findMany({
-      where: { status: 'PUBLISHED' }, orderBy: [{ ratingsCount: 'desc' }, { avgRating: 'desc' }], take: 5,
+      where: { ...scope, status: 'PUBLISHED' }, orderBy: [{ ratingsCount: 'desc' }, { avgRating: 'desc' }], take: 5,
       select: { id: true, slug: true, titleRo: true, avgRating: true, ratingsCount: true }
     }),
     prisma.recipe.findMany({
-      orderBy: { createdAt: 'desc' }, take: 5,
+      where: scope, orderBy: { createdAt: 'desc' }, take: 5,
       select: { id: true, slug: true, titleRo: true, status: true, createdAt: true, author: { select: { name: true } } }
     }),
     prisma.recipe.findMany({
-      where: { status: 'DRAFT' }, orderBy: { createdAt: 'asc' }, take: 5,
+      where: { ...scope, status: 'DRAFT' }, orderBy: { createdAt: 'asc' }, take: 5,
       select: { id: true, slug: true, titleRo: true, createdAt: true, author: { select: { name: true } } }
     })
   ]);

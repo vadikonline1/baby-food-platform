@@ -36,7 +36,7 @@ export default function Admin() {
   }, [user]);
 
   const loadRecipes = (page = rPage, status = rStatus) => {
-    api.get('/recipes', { params: { status, page, limit: PAGE_LIMIT } })
+    api.get('/recipes', { params: { status, page, limit: PAGE_LIMIT, ...(user?.role === 'MODERATOR' ? { mine: '1' } : {}) } })
       .then(r => { setRecipes(r.data.items); setRTotal(r.data.total); setRPage(r.data.page); }).catch(() => {});
   };
   useEffect(() => { if (user && tab === 'recipes') loadRecipes(); /* eslint-disable-next-line */ }, [tab, user]);
@@ -94,8 +94,8 @@ export default function Admin() {
       </div>
       <div className="tabs">
         <button className={tab === 'dash' ? 'on' : ''} onClick={() => setTab('dash')}>{t('admin.dashboard')}</button>
-        <button className={tab === 'recipes' ? 'on' : ''} onClick={() => setTab('recipes')}>{t('admin.recipes')}{stats?.drafts ? ` (${stats.drafts} de validat)` : ''}</button>
-        <button className={tab === 'tax' ? 'on' : ''} onClick={() => setTab('tax')}>Taxonomii</button>
+        <button className={tab === 'recipes' ? 'on' : ''} onClick={() => setTab('recipes')}>{t('admin.recipes')}{user.role === 'ADMIN' && stats?.drafts ? ` (${stats.drafts} de validat)` : ''}</button>
+        {user.role === 'ADMIN' && <button className={tab === 'tax' ? 'on' : ''} onClick={() => setTab('tax')}>Taxonomii</button>}
         {user.role === 'ADMIN' && <button className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>Setări aplicație</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
@@ -103,7 +103,7 @@ export default function Admin() {
       {tab === 'dash' && stats && (
         <>
           <div className="stat-grid">
-            <div className="stat"><span className="stat-n">{stats.users}</span><span className="stat-l">Utilizatori</span></div>
+            {user.role === 'ADMIN' && <div className="stat"><span className="stat-n">{stats.users}</span><span className="stat-l">Utilizatori</span></div>}
             <div className="stat"><span className="stat-n">{stats.published}</span><span className="stat-l">Rețete publicate</span></div>
             <div className="stat alert"><span className="stat-n">{stats.drafts}</span><span className="stat-l">În așteptare</span></div>
             <div className="stat"><span className="stat-n">{stats.ratings}</span><span className="stat-l">Voturi</span></div>

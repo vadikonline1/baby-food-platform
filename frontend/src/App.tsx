@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './lib/auth-context';
@@ -19,25 +20,32 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
   const canAdmin = user && (user.role === 'ADMIN' || user.role === 'MODERATOR');
+  const close = () => setMenuOpen(false);
 
   return (
     <>
-      <nav className="nav">
-        <Link to="/" className="brand">GustBebe</Link>
-        <NavLink className="link" to="/">{t('nav.home')}</NavLink>
-        <NavLink className="link" to="/retete">{t('nav.recipes')}</NavLink>
-        <NavLink className="link" to="/categorii">{t('nav.categories')}</NavLink>
-        <NavLink className="link" to="/cautare">{t('nav.search')}</NavLink>
-        <span className="spacer" />
-        <select className="langselect" value={i18n.language} onChange={e => i18n.changeLanguage(e.target.value)} aria-label="Language">
-          <option value="ro">Ro</option>
-          <option value="ru">Ru</option>
-          <option value="en">En</option>
-        </select>
-        {canAdmin && <NavLink className="link" to="/admin">🛠 {t('nav.admin')}</NavLink>}
-        {user ? (<><NavLink className="link" to="/profil">{t('nav.profile')} ({user.name})</NavLink><button className="btn secondary small" onClick={() => { logout(); nav('/'); }}>{t('nav.logout')}</button></>) :
-          (<NavLink className="link" to="/login">👤 {t('nav.login')}</NavLink>)}
+      <nav className={`nav ${menuOpen ? 'open' : ''}`}>
+        <Link to="/" className="brand" onClick={close}>GustBebe</Link>
+        <button className="menu-toggle" aria-label="Meniu" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? '✕' : '☰'}
+        </button>
+        <div className="nav-links">
+          <NavLink className="link" to="/" onClick={close}>{t('nav.home')}</NavLink>
+          <NavLink className="link" to="/retete" onClick={close}>{t('nav.recipes')}</NavLink>
+          <NavLink className="link" to="/categorii" onClick={close}>{t('nav.categories')}</NavLink>
+          <NavLink className="link" to="/cautare" onClick={close}>{t('nav.search')}</NavLink>
+          <span className="spacer" />
+          <select className="langselect" value={i18n.language} onChange={e => i18n.changeLanguage(e.target.value)} aria-label="Language">
+            <option value="ro">Ro</option>
+            <option value="ru">Ru</option>
+            <option value="en">En</option>
+          </select>
+          {canAdmin && <NavLink className="link" to="/admin" onClick={close}>🛠 {t('nav.admin')}</NavLink>}
+          {user ? (<><NavLink className="link" to="/profil" onClick={close}>{t('nav.profile')} ({user.name})</NavLink><button className="btn secondary small" onClick={() => { logout(); close(); nav('/'); }}>{t('nav.logout')}</button></>) :
+            (<NavLink className="link" to="/login" onClick={close}>👤 {t('nav.login')}</NavLink>)}
+        </div>
       </nav>
       <div className="container">
         <Routes>
