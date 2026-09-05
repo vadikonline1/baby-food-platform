@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-4000}:4000"
+    environment:
+      DATABASE_URL: "file:/data/gustbebe.db"
+      JWT_SECRET: "${JWT_SECRET:-gustbebe-dev-secret-change-me-min-32-chars}"
+      PORT: "4000"
+      APP_URL: "${APP_URL:-http://localhost:4000}"
+      UPLOAD_DIR: "/data/uploads"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@gustbebe.md}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-Admin123!}"
+      MODERATOR_EMAIL: "${MODERATOR_EMAIL:-moderator@gustbebe.md}"
+      MODERATOR_PASSWORD: "${MODERATOR_PASSWORD:-Mod12345!}"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_SECURE: "${SMTP_SECURE:-false}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      SMTP_FROM: "${SMTP_FROM:-GustBebe <no-reply@gustbebe.md>}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
+    volumes:
+      - sqlite_data:/data
+
+volumes:
+  sqlite_data:

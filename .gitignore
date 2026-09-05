@@ -1,0 +1,17 @@
+# dependinte
+**/node_modules/
+# build
+**/dist/
+# date locale
+**/*.db
+**/*.db-journal
+uploads/
+backend/uploads/
+# secrete locale (vezi .env.example)
+.env
+backend/.env
+frontend/.env
+# logs / os
+*.log
+.DS_Store
+Thumbs.db

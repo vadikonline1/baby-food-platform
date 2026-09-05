@@ -1,0 +1,11 @@
+# IMPORTANT: cu **/ acoperim si subdirectoarele (frontend/node_modules, backend/node_modules).
+# Fara **/, COPY frontend ./ aduce node_modules-ul local (Windows, fara +x)
+# peste cel instalat in container => "vite: Permission denied".
+**/node_modules
+**/dist
+**/uploads
+**/*.db
+**/*.log
+.git
+frontend/.env
+backend/.env

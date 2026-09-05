@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// SQLite nu suporta enum-uri in Prisma -> folosim String cu valori controlate din cod:
+// Role: USER | MODERATOR | ADMIN | Recipe.status: DRAFT | PUBLISHED
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER")
+  lang         String   @default("ro")
+  avatarUrl    String?
+  emailVerified Boolean  @default(false)
+  verifyToken   String?  @unique
+  verifyExpires DateTime?
+  createdAt    DateTime @default(now())
+  recipes      Recipe[] @relation("AuthoredRecipes")
+  ratings      Rating[]
+  favorites    Favorite[]
+}
+
+model AgeGroup {
+  id        Int      @id @default(autoincrement())
+  minMonths Int
+  maxMonths Int
+  labelRo   String
+  labelRu   String
+  labelEn   String
+  recipeLinks RecipeAge[]
+}
+
+model FeedingType {
+  id      Int      @id @default(autoincrement())
+  slug    String   @unique
+  nameRo  String
+  nameRu  String
+  nameEn  String
+  recipes Recipe[]
+}
+
+model MenuCategory {
+  id      Int      @id @default(autoincrement())
+  slug    String   @unique
+  nameRo  String
+  nameRu  String
+  nameEn  String
+  icon    String?
+  recipes RecipeCategory[]
+}
+
+model DietaryRestriction {
+  id      Int      @id @default(autoincrement())
+  slug    String   @unique
+  nameRo  String
+  nameRu  String
+  nameEn  String
+  recipes RecipeRestriction[]
+}
+
+model Characteristic {
+  id      Int      @id @default(autoincrement())
+  slug    String   @unique
+  nameRo  String
+  nameRu  String
+  nameEn  String
+  recipes RecipeCharacteristic[]
+}
+
+model Recipe {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  titleRo     String
+  titleRu     String
+  titleEn     String
+  summaryRo   String?
+  summaryRu   String?
+  summaryEn   String?
+  ingredientsRo String
+  ingredientsRu String
+  ingredientsEn String
+  stepsRo     String
+  stepsRu     String
+  stepsEn     String
+  prepMinutes Int          @default(15)
+  cookMinutes Int          @default(15)
+  servings    Int          @default(2)
+  difficulty  String       @default("usor")
+  imageUrl    String?
+  status      String   @default("PUBLISHED")
+  avgRating   Float        @default(0)
+  ratingsCount Int         @default(0)
+
+  authorId Int?
+  author   User? @relation("AuthoredRecipes", fields: [authorId], references: [id], onDelete: SetNull)
+
+  feedingTypeId Int?
+  feedingType   FeedingType? @relation(fields: [feedingTypeId], references: [id], onDelete: SetNull)
+
+  categories      RecipeCategory[]
+  restrictions    RecipeRestriction[]
+  characteristics RecipeCharacteristic[]
+  ingredientsDetailed RecipeIngredient[]
+  ageGroups       RecipeAge[]
+  ratings         Rating[]
+  favoritedBy     Favorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RecipeCategory {
+  recipeId   Int
+  categoryId Int
+  recipe     Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  @@id([recipeId, categoryId])
+}
+
+model RecipeAge {
+  recipeId   Int
+  ageGroupId Int
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id], onDelete: Cascade)
+  @@id([recipeId, ageGroupId])
+}
+
+// Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii
+model Unit {
+  id      Int      @id @default(autoincrement())
+  slug    String   @unique
+  nameRo  String
+  nameRu  String
+  nameEn  String
+}
+
+model RecipeRestriction {
+  recipeId      Int
+  restrictionId Int
+  recipe       Recipe              @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  restriction  DietaryRestriction  @relation(fields: [restrictionId], references: [id], onDelete: Cascade)
+  @@id([recipeId, restrictionId])
+}
+
+model RecipeCharacteristic {
+  recipeId         Int
+  characteristicId Int
+  recipe          Recipe         @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  characteristic  Characteristic @relation(fields: [characteristicId], references: [id], onDelete: Cascade)
+  @@id([recipeId, characteristicId])
+}
+
+model Rating {
+  id        Int      @id @default(autoincrement())
+  value     Int
+  userId    Int
+  recipeId  Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@unique([userId, recipeId])
+}
+
+model Favorite {
+  userId    Int
+  recipeId  Int
+  createdAt DateTime @default(now())
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@id([userId, recipeId])
+}
+
+// Catalog de produse (ingrediente) — selectabile cu checkbox in formular,
+// cu posibilitate de adaugare din mers. Cantitatea/unitatea/notita se tin pe legatura.
+model Ingredient {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  nameRo    String
+  nameRu    String
+  nameEn    String
+  createdAt DateTime @default(now())
+  usages    RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id           Int        @id @default(autoincrement())
+  recipeId     Int
+  ingredientId Int
+  quantity     Float?
+  unit         String?
+  noteRo       String?
+  noteRu       String?
+  noteEn       String?
+  position     Int        @default(0)
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+}
