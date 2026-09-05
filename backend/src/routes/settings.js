@@ -4,12 +4,15 @@ const { authRequired, roleRequired } = require('../middleware/auth');
 
 const router = express.Router();
 
-// chei publice citite de aplicatiile mobile (remote config — fara rebuild)
+// chei publice citite de aplicatiile mobile + web (remote config — fara rebuild)
+// ATENTIE: aici intra doar valori publice (cheile Firebase web sunt publice by design)
 const PUBLIC_KEYS = [
   'admob_android_banner', 'admob_android_rewarded_interstitial', 'admob_android_rewarded',
   'admob_ios_banner', 'admob_ios_rewarded_interstitial', 'admob_ios_rewarded',
   'support_enabled', 'support_title_ro', 'support_title_ru', 'support_title_en',
-  'support_text_ro', 'support_text_ru', 'support_text_en'
+  'support_text_ro', 'support_text_ru', 'support_text_en',
+  'firebase_web_apikey', 'firebase_web_authdomain', 'firebase_web_projectid',
+  'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid'
 ];
 
 // GET /api/settings — ADMIN (toate)
@@ -53,6 +56,15 @@ router.get('/config', async (req, res) => {
       enabled: (m.support_enabled || 'true') === 'true',
       title: { ro: m.support_title_ro || '', ru: m.support_title_ru || '', en: m.support_title_en || '' },
       text: { ro: m.support_text_ro || '', ru: m.support_text_ru || '', en: m.support_text_en || '' }
+    },
+    firebase: {
+      apiKey: m.firebase_web_apikey || '',
+      authDomain: m.firebase_web_authdomain || '',
+      projectId: m.firebase_web_projectid || '',
+      storageBucket: m.firebase_web_storagebucket || '',
+      messagingSenderId: m.firebase_web_senderid || '',
+      appId: m.firebase_web_appid || '',
+      measurementId: m.firebase_web_measurementid || ''
     }
   });
 });

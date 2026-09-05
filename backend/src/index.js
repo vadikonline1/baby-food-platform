@@ -49,10 +49,30 @@ app.use('/api/settings', settingsRoutes);
 
 // Frontend SPA servit din acelasi container/DNS (./public copiat la build).
 // Rutele /api si /uploads sunt exceptate.
+// Scripturile SEO din Admin (seo_head_end / seo_body_start / seo_body_end)
+// se injecteaza in index.html la fiecare request (cache 30s).
 const publicDir = path.join(__dirname, '..', 'public');
+const SEO_KEYS = ['seo_head_end', 'seo_body_start', 'seo_body_end'];
+let seoCache = { at: 0, html: '' };
+async function indexedHtml() {
+  if (Date.now() - seoCache.at < 30000 && seoCache.html) return seoCache.html;
+  let html = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8');
+  try {
+    const { prisma: db } = require('./lib/db');
+    const rows = await db.appSetting.findMany({ where: { key: { in: SEO_KEYS } } });
+    const m = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    if (m.seo_head_end) html = html.replace('</head>', `${m.seo_head_end}\n</head>`);
+    if (m.seo_body_start) html = html.replace(/<body([^>]*)>/, `<body$1>\n${m.seo_body_start}`);
+    if (m.seo_body_end) html = html.replace('</body>', `${m.seo_body_end}\n</body>`);
+  } catch (e) { console.error('[seo] inject failed:', e.message); }
+  seoCache = { at: Date.now(), html };
+  return html;
+}
 if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
-  app.get(/^\/(?!api|uploads).*/, (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+  app.use(express.static(publicDir, { index: false }));
+  app.get(/^\/(?!api|uploads).*/, async (req, res) => {
+    res.type('html').send(await indexedHtml());
+  });
 }
 
 app.listen(PORT, () => console.log(`[gustbebe] backend on :${PORT}`));

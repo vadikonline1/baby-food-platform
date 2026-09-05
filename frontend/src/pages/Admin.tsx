@@ -20,7 +20,7 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
 export default function Admin() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings'>('dash');
+  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo'>('dash');
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -97,6 +97,7 @@ export default function Admin() {
         <button className={tab === 'recipes' ? 'on' : ''} onClick={() => setTab('recipes')}>{t('admin.recipes')}{user.role === 'ADMIN' && stats?.drafts ? ` (${stats.drafts} de validat)` : ''}</button>
         {user.role === 'ADMIN' && <button className={tab === 'tax' ? 'on' : ''} onClick={() => setTab('tax')}>Taxonomii</button>}
         {user.role === 'ADMIN' && <button className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>Setări aplicație</button>}
+        {user.role === 'ADMIN' && <button className={tab === 'seo' ? 'on' : ''} onClick={() => setTab('seo')}>SEO</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
 
@@ -192,6 +193,8 @@ export default function Admin() {
       {tab === 'tax' && <TaxManager isAdmin={user.role === 'ADMIN'} />}
 
       {tab === 'settings' && user.role === 'ADMIN' && <AppSettings />}
+
+      {tab === 'seo' && user.role === 'ADMIN' && <SeoManager />}
     </>
   );
 }
@@ -237,6 +240,19 @@ function AppSettings() {
         </div>
       </section>
       <section className="panel">
+        <h3>Firebase web (Analytics)</h3>
+        <p className="meta">Configurația publică din consola Firebase (Project settings → Your apps → Web). Fără measurementId, Analytics nu pornește.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {field('firebase_web_apikey', 'API key')}
+          {field('firebase_web_authdomain', 'Auth domain', 'gustbebe-6513e.firebaseapp.com')}
+          {field('firebase_web_projectid', 'Project ID', 'gustbebe-6513e')}
+          {field('firebase_web_storagebucket', 'Storage bucket')}
+          {field('firebase_web_senderid', 'Sender ID (numeric)')}
+          {field('firebase_web_appid', 'App ID (1:...:web:...)')}
+          {field('firebase_web_measurementid', 'Measurement ID (G-...)')}
+        </div>
+      </section>
+      <section className="panel">
         <h3>Susține proiectul (buton în aplicații)</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <label style={{ fontSize: '13.5px' }}>
@@ -253,6 +269,41 @@ function AppSettings() {
       </section>
       {msg && <p className="notice">{msg}</p>}
       <div><button className="btn" onClick={save}>Salvează setările</button></div>
+    </div>
+  );
+}
+
+function SeoManager() {
+  const [vals, setVals] = useState<Record<string, string>>({ seo_head_end: '', seo_body_start: '', seo_body_end: '' });
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    api.get('/settings').then(r => {
+      const o: Record<string, string> = {};
+      r.data.forEach((s: any) => { if (s.key.startsWith('seo_')) o[s.key] = s.value; });
+      setVals(v => ({ ...v, ...o }));
+    }).catch(() => {});
+  }, []);
+  const save = async () => {
+    setMsg('');
+    await api.put('/settings', vals);
+    setMsg('✓ Scripturile au fost salvate. Se aplică la următoarea încărcare a paginii (max 30s).');
+  };
+  const area = (k: string, label: string, hint: string) => (
+    <section className="panel" key={k}>
+      <h3>{label}</h3>
+      <p className="meta">{hint}</p>
+      <textarea rows={6} spellCheck={false} placeholder="<script>...</script>"
+        value={vals[k] || ''} onChange={e => setVals({ ...vals, [k]: e.target.value })}
+        style={{ fontFamily: 'monospace', fontSize: 13 }} />
+    </section>
+  );
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}>
+      {area('seo_head_end', 'Înainte de </head>', 'Meta taguri, verificare Search Console, stiluri sau scripturi care trebuie încărcate devreme.')}
+      {area('seo_body_start', 'După <body> (început)', 'Tag Manager (noscript), bannere sau scripturi care pornesc odată cu pagina.')}
+      {area('seo_body_end', 'Înainte de </body>', 'Scripturi de analiză, chat, pixeli — încărcate la final pentru viteză.')}
+      {msg && <p className="notice">{msg}</p>}
+      <div><button className="btn" onClick={save}>Salvează scripturile</button></div>
     </div>
   );
 }

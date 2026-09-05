@@ -86,14 +86,16 @@ async function main() {
   for (const u of units) await prisma.unit.upsert({ where: { slug: u.slug }, update: {}, create: u });
 
   // setari aplicatie (AdMob + buton sustinere) — goale = de completat din Admin
-  const defaults = {
-    admob_android_banner: '', admob_android_rewarded_interstitial: '', admob_android_rewarded: '',
+  const defaults = {    admob_android_banner: '', admob_android_rewarded_interstitial: '', admob_android_rewarded: '',
     admob_ios_banner: '', admob_ios_rewarded_interstitial: '', admob_ios_rewarded: '',
     support_enabled: 'true',
     support_title_ro: 'Susține proiectul GustBebe', support_title_ru: 'Поддержите проект GustBebe', support_title_en: 'Support the GustBebe project',
     support_text_ro: 'Urmărește o reclamă și ne ajuți să adăugăm rețete noi în fiecare săptămână.',
     support_text_ru: 'Посмотрите рекламу и помогите нам добавлять новые рецепты каждую неделю.',
-    support_text_en: 'Watch an ad and help us add new recipes every week.'
+    support_text_en: 'Watch an ad and help us add new recipes every week.',
+    firebase_web_apikey: '', firebase_web_authdomain: '', firebase_web_projectid: '',
+    firebase_web_storagebucket: '', firebase_web_senderid: '', firebase_web_appid: '', firebase_web_measurementid: '',
+    seo_head_end: '', seo_body_start: '', seo_body_end: ''
   };
   for (const [key, value] of Object.entries(defaults)) {
     await prisma.appSetting.upsert({ where: { key }, update: {}, create: { key, value } });
