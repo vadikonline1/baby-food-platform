@@ -1,15 +1,18 @@
 /* GustBebe — theme in limbajul sablonului: Inter, suprafete deschise, accente emerald */
+/* paleta de baza: albastru bebelus #1486b7 + verde brad #065f46 */
 :root {
   --bg: #fbf9f7;
   --card: #ffffff;
   --ink: #1e2f2b;
   --muted: #5f7a70;
   --line: #f0f4f1;
-  --line-strong: #d6e2dc;
-  --primary: #2a5a4b;
-  --primary-dark: #1d4a39;
-  --primary-soft: #eef4f1;
-  --accent: #3f7e6b;
+  --line-strong: #cfdfee;
+  --primary: #1486b7;
+  --primary-dark: #0d6488;
+  --primary-soft: #e8f3f9;
+  --accent: #1486b7;
+  --pine: #065f46;
+  --pine-soft: #e6f2ec;
   --amber: #b45309;
   --amber-soft: #fef3e2;
   --danger: #b91c1c;
@@ -42,7 +45,7 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: 
   position: sticky; top: 0; z-index: 20; flex-wrap: wrap;
 }
 .nav .brand { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; margin-right: 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; }
-.nav .brand::before { content: ""; width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, var(--primary), #2ea36b); display: inline-block; }
+.nav .brand::before { content: ""; width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, #1486b7, #065f46); display: inline-block; }
 .nav a.link { padding: 8px 13px; border-radius: 9px; text-decoration: none; font-size: 14.5px; font-weight: 500; color: #2d463d; }
 .nav a.link:hover { background: var(--primary-soft); }
 .nav a.link.active { background: var(--primary-soft); color: var(--primary-dark); }
@@ -137,7 +140,7 @@ table.admin tbody tr:hover { background: #fbf9f4; }
 /* ---- homepage ---- */
 /* hero full-bleed pe toata latimea paginii (iese din container) */
 .hero-emerald {
-  background: linear-gradient(135deg, #059669 0%, #047857 55%, #065f46 100%);
+  background: linear-gradient(120deg, #1486b7 0%, #0e6e8f 48%, #065f46 100%);
   margin: -24px -22px 10px;
   border-radius: 0;
   padding: clamp(48px, 7vw, 80px) clamp(20px, 5vw, 48px);
@@ -151,6 +154,8 @@ table.admin tbody tr:hover { background: #fbf9f4; }
 .hero-side { display: flex; flex-direction: column; gap: 16px; align-items: center; }
 #ghid { scroll-margin-top: 70px; }
 .hero-card { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 22px; padding: 26px 28px; display: flex; flex-direction: column; gap: 16px; backdrop-filter: blur(4px); }
+.hero-card.inline { flex-direction: row; flex-wrap: wrap; gap: 10px 28px; padding: 16px 24px; margin-top: 24px; border-radius: 18px; }
+.hero-card.inline strong { font-size: 22px; min-width: 0; }
 .hero-card div { display: flex; align-items: baseline; gap: 10px; }
 .hero-card strong { color: #fff; font-size: 30px; font-weight: 700; min-width: 70px; }
 .hero-card span { color: #d1fae5; font-size: 14px; }
@@ -158,11 +163,12 @@ table.admin tbody tr:hover { background: #fbf9f4; }
   .hero-inner { grid-template-columns: 1fr; text-align: center; }
   .hero-copy .cta-row { justify-content: center; }
   .hero-card { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 22px; }
+  .hero-card.inline { gap: 10px 24px; }
   .hero-card div { flex-direction: column; align-items: center; gap: 2px; }
   .hero-card strong { min-width: 0; }
 }
 .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
-.btn-white { background: #fff; color: #047857; border: 1px solid #fff; padding: 11px 24px; border-radius: 10px; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-block; }
+.btn-white { background: #fff; color: #0d6488; border: 1px solid #fff; padding: 11px 24px; border-radius: 10px; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-block; }
 .btn-white:hover { background: #ecfdf5; }
 .btn-outline-light { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.45); padding: 11px 24px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; display: inline-block; }
 .btn-outline-light:hover { background: rgba(255, 255, 255, 0.12); }
@@ -250,7 +256,7 @@ pre { font-family: inherit; }
 .pre { white-space: pre-wrap; background: #faf8f2; padding: 12px; border-radius: 10px; font-size: 14.5px; margin: 0; }
 
 /* ---- cards/misc ---- */
-.card-ph { height: 120px; background: linear-gradient(135deg, #e9f4ec, #d8ecdf); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.card-ph { height: 120px; background: linear-gradient(135deg, #e8f3f9, #d7e9f2); display: flex; align-items: center; justify-content: center; font-size: 40px; }
 .cat-card .body { align-items: center; text-align: center; padding: 22px 16px; }
 .cat-icon { font-size: 40px; }
 .hero-stats { display: flex; gap: 26px; justify-content: center; margin-top: 26px; flex-wrap: wrap; color: #d1fae5; font-size: 14px; }
@@ -280,9 +286,9 @@ pre { font-family: inherit; }
 .guide-card .card-icon { font-size: 2.1rem; line-height: 1; margin-bottom: 12px; display: block; }
 .guide-card h3 { margin: 0 0 10px; font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; color: #1a302a; }
 .guide-card p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
-.disclaimer-box { background: #f2f7f4; border: 1px solid #ddebe3; border-radius: 20px; padding: 20px 26px; margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.disclaimer-box { background: #eef4fa; border: 1px solid #cfdfee; border-radius: 20px; padding: 20px 26px; margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .disclaimer-box p { margin: 0; font-size: 0.95rem; color: #1f4034; flex: 1; min-width: 220px; }
-.disclaimer-box .tag { background: #fff; border: 1px solid #bdd6cb; border-radius: 60px; padding: 4px 16px; font-size: 0.8rem; font-weight: 500; color: var(--primary-dark); white-space: nowrap; }
+.disclaimer-box .tag { background: #fff; border: 1px solid #a9cbe0; border-radius: 60px; padding: 4px 16px; font-size: 0.8rem; font-weight: 500; color: var(--primary-dark); white-space: nowrap; }
 
 /* ---- footer imbogatit ---- */
 .footer { border-top: 1px solid #e4ede8; margin-top: 48px; padding: 26px 22px; text-align: center; background: #fff; }

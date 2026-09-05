@@ -66,16 +66,16 @@ export default function Home() {
                 <Link to="/profil" className="btn-outline-light">{t('home.viewProfile')}</Link>
               )}
             </div>
-          </div>
-          <div className="hero-side">
-            <HeroArt />
             {siteStats && (
-              <div className="hero-card">
+              <div className="hero-card inline">
                 <div><strong>{siteStats.recipes}</strong><span>{t('home.statsRecipes')}</span></div>
                 <div><strong>{siteStats.categories}</strong><span>{t('home.statsCategories')}</span></div>
                 <div><strong>{siteStats.ratings}</strong><span>{t('home.statsVotes')}</span></div>
               </div>
             )}
+          </div>
+          <div className="hero-side">
+            <HeroArt />
           </div>
         </div>
       </section>
