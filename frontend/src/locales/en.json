@@ -48,7 +48,12 @@
   "auth": { "login": "Login", "register": "Register", "name": "Name", "email": "Email", "password": "Password", "submit": "Continue", "noAccount": "No account?" },
   "admin": { "title": "Admin panel", "dashboard": "Dashboard", "users": "Users", "recipes": "Recipes", "tax": "Taxonomies", "role": "Role" },
   "common": { "loading": "Loading...", "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "add": "Add" },
-  "contact": { "title": "Contact", "sub": "Send us a question or suggestion — we'll reply soon.", "name": "Your name", "email": "Email", "message": "Your message (min 10 chars)", "captcha": "Anti-spam check, how much is:", "send": "Send message", "sent": "Sent!", "sentSub": "Thanks, we got your message.", "wrongCaptcha": "Wrong answer, try again.", "checkFields": "Check the fields and try again." },
+  "contact": { "title": "Contact", "sub": "Send us a question or suggestion — we'll reply soon.", "name": "Your name", "email": "Email", "message": "Your message (min 10 chars)", "captcha": "Anti-spam check, how much is:", "send": "Send message", "sent": "Sent!", "sentSub": "Thanks, we got your message.", "wrongCaptcha": "Wrong answer, try again.", "checkFields": "Check the fields and try again.",
+    "benefitsTitle": "How we help",
+    "benefits": ["A personal reply from the GustBebe team", "Recipe picks matched to your child's age", "Account and recipe-publishing support"],
+    "loggedNote": "You're logged in — we'll reply to your account email.",
+    "guestNote": "Have an account? Log in and we'll prefill your details.",
+    "faqTitle": "Frequently asked questions" },
   "cookies": {
     "banner": "We use browser local storage (needed for login and your chosen language). No tracking or advertising cookies.",
     "accept": "Accept",

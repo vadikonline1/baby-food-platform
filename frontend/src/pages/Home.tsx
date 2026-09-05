@@ -39,10 +39,16 @@ export default function Home() {
   const [pool, setPool] = useState<any[]>([]);
   const [randomPick, setRandomPick] = useState<any[]>([]);
   const [siteStats, setSiteStats] = useState<any>(null);
-  const guide = (t('home.items', { returnObjects: true }) as any[]) || [];
+  const localeGuide = (t('home.items', { returnObjects: true }) as any[]) || [];
+  const [guideApi, setGuideApi] = useState<any[] | null>(null);
+  const guide = guideApi && guideApi.length ? guideApi : localeGuide;
+  const guideIcon = (g: any, i: number) => g.icon || GUIDE_ICONS[i % GUIDE_ICONS.length];
+  const guideTitle = (g: any) => g.titleRo !== undefined ? localized(g, 'title', lang) : g.q;
+  const guideBody = (g: any) => g.bodyRo !== undefined ? localized(g, 'body', lang) : g.a;
 
   useEffect(() => {
     api.get('/stats').then(r => setSiteStats(r.data)).catch(() => {});
+    api.get('/content/guide').then(r => setGuideApi(r.data)).catch(() => {});
     api.get('/recipes', { params: { sort: 'popular', limit: 6 } }).then(r => setPopular(r.data.items)).catch(() => {});
     api.get('/recipes', { params: { limit: 24 } }).then(r => {
       setPool(r.data.items);
@@ -108,10 +114,10 @@ export default function Home() {
         <p className="meta">{t('home.guideSub')}</p>
         <div className="guide-grid">
           {Array.isArray(guide) && guide.map((g: any, i: number) => (
-            <div className="guide-card" key={i}>
-              <span className="card-icon">{GUIDE_ICONS[i % GUIDE_ICONS.length]}</span>
-              <h3>{g.q}</h3>
-              <p>{g.a}</p>
+            <div className="guide-card" key={g.id || i}>
+              <span className="card-icon">{guideIcon(g, i)}</span>
+              <h3>{guideTitle(g)}</h3>
+              <p>{guideBody(g)}</p>
             </div>
           ))}
         </div>

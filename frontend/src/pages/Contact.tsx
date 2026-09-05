@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api } from '../lib/api';
+import { api, localized } from '../lib/api';
+import { useAuth } from '../lib/auth-context';
 
 export default function Contact() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const lang = i18n.language;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -11,9 +15,18 @@ export default function Contact() {
   const [answer, setAnswer] = useState('');
   const [state, setState] = useState<'form' | 'ok' | 'err'>('form');
   const [err, setErr] = useState('');
+  const [faq, setFaq] = useState<any[]>([]);
+  const benefits = (t('contact.benefits', { returnObjects: true }) as string[]) || [];
 
   const loadCaptcha = () => api.get('/contact/captcha').then(r => setCaptcha(r.data)).catch(() => {});
-  useEffect(() => { loadCaptcha(); }, []);
+  useEffect(() => {
+    loadCaptcha();
+    api.get('/content/faq').then(r => setFaq(r.data)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (user) { setName(user.name); setEmail(user.email); }
+  }, [user]);
 
   const send = async (e: any) => {
     e.preventDefault(); setErr('');
@@ -38,6 +51,15 @@ export default function Contact() {
     <>
       <h1>{t('contact.title')}</h1>
       <p className="meta">{t('contact.sub')}</p>
+
+      <section className="panel" style={{ margin: '16px 0' }}>
+        <h3>{t('contact.benefitsTitle')}</h3>
+        <ul className="ing-list">
+          {Array.isArray(benefits) && benefits.map((b: string, i: number) => <li key={i}>{b}</li>)}
+        </ul>
+        <p className="meta">{user ? `${t('contact.loggedNote')} (${user.name})` : <>{t('contact.guestNote')} <Link to="/login">Login →</Link></>}</p>
+      </section>
+
       <form className="auth" style={{ margin: '20px 0' }} onSubmit={send}>
         <input placeholder={t('contact.name')} value={name} onChange={e => setName(e.target.value)} />
         <input placeholder={t('contact.email')} value={email} onChange={e => setEmail(e.target.value)} />
@@ -47,6 +69,18 @@ export default function Contact() {
         {err && state === 'err' && <span style={{ color: 'red' }}>{err}</span>}
         <button className="btn">{t('contact.send')}</button>
       </form>
+
+      {!!faq.length && (
+        <section>
+          <h2>{t('contact.faqTitle')}</h2>
+          {faq.map((f: any) => (
+            <details key={f.id} className="faq-item">
+              <summary>{localized(f, 'question', lang)}</summary>
+              <p>{localized(f, 'answer', lang)}</p>
+            </details>
+          ))}
+        </section>
+      )}
     </>
   );
 }

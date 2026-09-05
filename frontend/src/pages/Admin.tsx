@@ -22,9 +22,9 @@ export default function Admin() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [qparams] = useSearchParams();
-  const initialTab = (['dash', 'recipes', 'tax', 'users', 'settings', 'seo', 'authors', 'messages'] as any[]).includes(qparams.get('tab'))
+  const initialTab = (['dash', 'recipes', 'tax', 'users', 'settings', 'seo', 'authors', 'messages', 'content'] as any[]).includes(qparams.get('tab'))
     ? qparams.get('tab') as any : 'dash';
-  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo' | 'authors' | 'messages'>(initialTab);
+  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo' | 'authors' | 'messages' | 'content'>(initialTab);
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -104,6 +104,7 @@ export default function Admin() {
         {user.role === 'ADMIN' && <button className={tab === 'seo' ? 'on' : ''} onClick={() => setTab('seo')}>SEO</button>}
         {user.role === 'ADMIN' && <button className={tab === 'authors' ? 'on' : ''} onClick={() => setTab('authors')}>Autori</button>}
         {user.role === 'ADMIN' && <button className={tab === 'messages' ? 'on' : ''} onClick={() => setTab('messages')}>Mesaje</button>}
+        {user.role === 'ADMIN' && <button className={tab === 'content' ? 'on' : ''} onClick={() => setTab('content')}>Conținut</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
 
@@ -205,6 +206,8 @@ export default function Admin() {
       {tab === 'authors' && user.role === 'ADMIN' && <AuthorsManager />}
 
       {tab === 'messages' && user.role === 'ADMIN' && <MessagesManager />}
+
+      {tab === 'content' && user.role === 'ADMIN' && <ContentManager />}
     </>
   );
 }
@@ -369,6 +372,101 @@ function MessagesManager() {
           {!m.read && <button className="btn secondary small" onClick={() => markRead(m.id)}>Marchează citit</button>}
         </div>
       ))}
+    </div>
+  );
+}
+
+const CONTENT_TYPES = [
+  { key: 'guide', label: 'Ghid diversificare' },
+  { key: 'faq', label: 'FAQ' },
+  { key: 'cookies', label: 'Politica cookies' }
+];
+
+function ContentManager() {
+  const [type, setType] = useState('guide');
+  const [items, setItems] = useState<any[]>([]);
+  const [modal, setModal] = useState<any>(null);
+
+  const load = () => api.get(`/content/${type}/all`).then(r => setItems(r.data)).catch(() => {});
+  useEffect(() => { load(); setModal(null); /* eslint-disable-next-line */ }, [type]);
+
+  const blank = () => type === 'guide'
+    ? { icon: '🥣', titleRo: '', titleRu: '', titleEn: '', bodyRo: '', bodyRu: '', bodyEn: '', position: items.length, active: true }
+    : type === 'faq'
+      ? { questionRo: '', questionRu: '', questionEn: '', answerRo: '', answerRu: '', answerEn: '', position: items.length, active: true }
+      : { titleRo: '', titleRu: '', titleEn: '', bodyRo: '', bodyRu: '', bodyEn: '', position: items.length, active: true };
+
+  const save = async () => {
+    const d = { ...modal.data, position: Number(modal.data.position) || 0 };
+    if (modal.mode === 'add') await api.post(`/content/${type}`, d);
+    else await api.put(`/content/${type}/${d.id}`, d);
+    setModal(null); load();
+  };
+  const del = async (id: number) => {
+    if (!confirm('Ștergi elementul?')) return;
+    await api.delete(`/content/${type}/${id}`);
+    load();
+  };
+  const titleOf = (it: any) => type === 'faq' ? it.questionRo : it.titleRo;
+  const subOf = (it: any) => type === 'faq' ? it.answerRu || it.answerEn : it.bodyRu || it.bodyEn;
+
+  return (
+    <div>
+      <div className="sub-tabs">
+        {CONTENT_TYPES.map(t => <button key={t.key} className={type === t.key ? 'on' : ''} onClick={() => setType(t.key)}>{t.label}</button>)}
+      </div>
+      <button className="btn small" onClick={() => setModal({ mode: 'add', data: blank() })}>+ Adaugă</button>
+      <table className="admin" style={{ marginTop: 12 }}>
+        <thead><tr><th>#</th><th>Titlu</th><th>RU / EN</th><th>Activ</th><th style={{ width: 190 }}></th></tr></thead>
+        <tbody>{items.map(it => (
+          <tr key={it.id} style={{ opacity: it.active ? 1 : 0.55 }}>
+            <td>{it.position}</td>
+            <td>{type === 'guide' && it.icon} {titleOf(it)}</td>
+            <td className="meta">{subOf(it)}</td>
+            <td>{it.active ? '✓' : '—'}</td>
+            <td><div className="row-btns">
+              <button className="btn secondary small" onClick={() => setModal({ mode: 'edit', data: { ...it } })}>Editează</button>
+              <button className="btn danger small" onClick={() => del(it.id)}>Șterge</button>
+            </div></td>
+          </tr>
+        ))}</tbody>
+      </table>
+
+      {modal && (
+        <div className="modal-overlay" onClick={() => setModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>{modal.mode === 'add' ? 'Adaugă' : 'Editează'}</h3>
+            {type === 'guide' && <input placeholder="Icon (emoji)" value={modal.data.icon || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, icon: e.target.value } })} />}
+            {type === 'faq' ? (
+              <>
+                <input placeholder="Întrebare RO *" value={modal.data.questionRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, questionRo: e.target.value } })} />
+                <input placeholder="Întrebare RU" value={modal.data.questionRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, questionRu: e.target.value } })} />
+                <input placeholder="Întrebare EN" value={modal.data.questionEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, questionEn: e.target.value } })} />
+                <textarea rows={3} placeholder="Răspuns RO *" value={modal.data.answerRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, answerRo: e.target.value } })} />
+                <textarea rows={2} placeholder="Răspuns RU" value={modal.data.answerRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, answerRu: e.target.value } })} />
+                <textarea rows={2} placeholder="Răspuns EN" value={modal.data.answerEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, answerEn: e.target.value } })} />
+              </>
+            ) : (
+              <>
+                <input placeholder="Titlu RO *" value={modal.data.titleRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, titleRo: e.target.value } })} />
+                <input placeholder="Titlu RU" value={modal.data.titleRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, titleRu: e.target.value } })} />
+                <input placeholder="Titlu EN" value={modal.data.titleEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, titleEn: e.target.value } })} />
+                <textarea rows={3} placeholder="Text RO *" value={modal.data.bodyRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, bodyRo: e.target.value } })} />
+                <textarea rows={2} placeholder="Text RU" value={modal.data.bodyRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, bodyRu: e.target.value } })} />
+                <textarea rows={2} placeholder="Text EN" value={modal.data.bodyEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, bodyEn: e.target.value } })} />
+              </>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input placeholder="Poziție (ordine)" value={modal.data.position ?? 0} onChange={e => setModal({ ...modal, data: { ...modal.data, position: e.target.value } })} />
+              <label className="fcheck"><input type="checkbox" checked={modal.data.active !== false} onChange={e => setModal({ ...modal, data: { ...modal.data, active: e.target.checked } })} /><span>Activ</span></label>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button className="btn" onClick={save}>Salvează</button>
+              <button className="btn secondary" onClick={() => setModal(null)}>Anulează</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

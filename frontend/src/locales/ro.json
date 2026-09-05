@@ -48,7 +48,12 @@
   "auth": { "login": "Login", "register": "Înregistrare", "name": "Nume", "email": "Email", "password": "Parolă", "submit": "Continuă", "noAccount": "Nu ai cont?" },
   "admin": { "title": "Panou administrare", "dashboard": "Dashboard", "users": "Utilizatori", "recipes": "Rețete", "tax": "Taxonomii (vârste, tipuri, categorii, restricții, caracteristici)", "role": "Rol" },
   "common": { "loading": "Se încarcă...", "save": "Salvează", "cancel": "Anulează", "delete": "Șterge", "edit": "Editează", "add": "Adaugă" },
-  "contact": { "title": "Contact", "sub": "Scrie-ne o întrebare sau o sugestie — îți răspundem cât de curând.", "name": "Numele tău", "email": "Email", "message": "Mesajul tău (min 10 caractere)", "captcha": "Verificare anti-spam, cât face:", "send": "Trimite mesajul", "sent": "Mesaj trimis!", "sentSub": "Mulțumim, am primit mesajul tău.", "wrongCaptcha": "Răspuns greșit la verificare, încearcă din nou.", "checkFields": "Verifică câmpurile și încearcă din nou." },
+  "contact": { "title": "Contact", "sub": "Scrie-ne o întrebare sau o sugestie — îți răspundem cât de curând.", "name": "Numele tău", "email": "Email", "message": "Mesajul tău (min 10 caractere)", "captcha": "Verificare anti-spam, cât face:", "send": "Trimite mesajul", "sent": "Mesaj trimis!", "sentSub": "Mulțumim, am primit mesajul tău.", "wrongCaptcha": "Răspuns greșit la verificare, încearcă din nou.", "checkFields": "Verifică câmpurile și încearcă din nou.",
+    "benefitsTitle": "Cu ce te ajutăm",
+    "benefits": ["Răspuns personalizat de la echipa GustBebe", "Sugestii de rețete potrivite vârstei copilului", "Suport pentru cont și publicarea rețetelor"],
+    "loggedNote": "Ești logat — îți răspundem pe emailul contului.",
+    "guestNote": "Ai deja cont? Loghează-te și completăm automat datele.",
+    "faqTitle": "Întrebări frecvente" },
   "cookies": {
     "banner": "Folosim stocarea locală a browserului (necesară pentru autentificare și limba aleasă). Nu folosim cookie-uri de urmărire sau publicitate.",
     "accept": "Accept",
