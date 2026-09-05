@@ -102,51 +102,43 @@ async function main() {
   }
 
   // continut editabil (doar la prima initializare — dupa aceea se gestioneaza din Admin)
-  try {
-    const ro = require('../../frontend/src/locales/ro.json');
-    const ru = require('../../frontend/src/locales/ru.json');
-    const en = require('../../frontend/src/locales/en.json');
-    const icons = ['⏳', '🥕', '🥄', '🤗', '📅', '👀', '🍎', '🔢', '🥣', '⚖️', '🍼', '🕒', '⚠️', '🚫', '🛡️', '😟', '🚫', '🧂', '💧', '🆘'];
-    if ((await prisma.guideItem.count()) === 0 && Array.isArray(ro.home?.items)) {
-      let pos = 0;
-      for (const [i, g] of ro.home.items.entries()) {
-        await prisma.guideItem.create({
-          data: {
-            icon: icons[i % icons.length],
-            titleRo: g.q, titleRu: ru.home?.items?.[i]?.q || g.q, titleEn: en.home?.items?.[i]?.q || g.q,
-            bodyRo: g.a, bodyRu: ru.home?.items?.[i]?.a || g.a, bodyEn: en.home?.items?.[i]?.a || g.a,
-            position: pos++
-          }
-        });
-      }
-    }
-    if ((await prisma.cookieSection.count()) === 0 && Array.isArray(ro.cookies?.sections)) {
-      let pos = 0;
-      for (const [i, s] of ro.cookies.sections.entries()) {
-        await prisma.cookieSection.create({
-          data: {
-            titleRo: s.h, titleRu: ru.cookies?.sections?.[i]?.h || s.h, titleEn: en.cookies?.sections?.[i]?.h || s.h,
-            bodyRo: s.p, bodyRu: ru.cookies?.sections?.[i]?.p || s.p, bodyEn: en.cookies?.sections?.[i]?.p || s.p,
-            position: pos++
-          }
-        });
-      }
-    }
-  } catch (e) { console.log('[seed] content migrate skipped:', e.message); }
-  if ((await prisma.faqItem.count()) === 0) {
-    const faqs = [
-      { q: ['Cum îmi fac cont?', 'Как создать аккаунт?', 'How do I create an account?'], a: ['Apasă Autentificare → Înregistrare, completează numele, emailul și parola, apoi confirmă linkul primit pe email.', 'Нажмите «Вход» → «Регистрация», заполните имя, email и пароль, затем подтвердите ссылку из письма.', 'Click Login → Register, fill in name, email and password, then confirm the link from your email.'] },
-      { q: ['Cum votez o rețetă?', 'Как оценить рецепт?', 'How do I rate a recipe?'], a: ['Ai nevoie de cont. Deschide rețeta și alege nota cu stelele din zona de vot.', 'Нужен аккаунт. Откройте рецепт и выберите оценку звёздами.', 'You need an account. Open the recipe and pick stars in the voting area.'] },
-      { q: ['Cum devin Autor?', 'Как стать Автором?', 'How do I become an Author?'], a: ['Din Profil → Devino Autor, răspunde la întrebări. Adminul analizează cererea și îți oferă dreptul de publicare.', 'В Профиле → «Стать Автором» ответьте на вопросы. Админ рассмотрит заявку.', 'From Profile → Become an Author, answer the questions. The admin reviews and grants publishing rights.'] },
-      { q: ['Cum salvez rețetele preferate?', 'Как сохранять избранное?', 'How do I save favorites?'], a: ['Cu contul logat, apasă inimioara din pagina rețetei. Le găsești în Profil → Favorite.', 'Войдите и нажмите сердечко на странице рецепта. Найдёте их в Профиле → Избранное.', 'Log in and tap the heart on the recipe page. Find them in Profile → Favorites.'] },
-      { q: ['Cum îmi șterg contul?', 'Как удалить аккаунт?', 'How do I delete my account?'], a: ['Scrie-ne din pagina de Contact și ștergem contul împreună cu datele asociate.', 'Напишите со страницы контактов — удалим аккаунт и связанные данные.', 'Write to us from the Contact page and we will delete your account and data.'] }
-    ];
+  // datele stau in backend (content-data.js), NU in frontend — in Docker frontend/src nu exista
+  const { GUIDE_ICONS, GUIDE, COOKIES, FAQ } = require('./content-data');
+  if ((await prisma.guideItem.count()) === 0) {
     let pos = 0;
-    for (const f of faqs) {
+    for (const [i, g] of GUIDE.entries()) {
+      await prisma.guideItem.create({
+        data: {
+          icon: GUIDE_ICONS[i % GUIDE_ICONS.length],
+          titleRo: g.q[0], titleRu: g.q[1], titleEn: g.q[2],
+          bodyRo: g.a[0], bodyRu: g.a[1], bodyEn: g.a[2],
+          position: pos++
+        }
+      });
+    }
+    console.log(`[seed] guide items: ${GUIDE.length}`);
+  }
+  if ((await prisma.cookieSection.count()) === 0) {
+    let pos = 0;
+    for (const s of COOKIES) {
+      await prisma.cookieSection.create({
+        data: {
+          titleRo: s.h[0], titleRu: s.h[1], titleEn: s.h[2],
+          bodyRo: s.p[0], bodyRu: s.p[1], bodyEn: s.p[2],
+          position: pos++
+        }
+      });
+    }
+    console.log(`[seed] cookie sections: ${COOKIES.length}`);
+  }
+  if ((await prisma.faqItem.count()) === 0) {
+    let pos = 0;
+    for (const f of FAQ) {
       await prisma.faqItem.create({
         data: { questionRo: f.q[0], questionRu: f.q[1], questionEn: f.q[2], answerRo: f.a[0], answerRu: f.a[1], answerEn: f.a[2], position: pos++ }
       });
     }
+    console.log(`[seed] faq items: ${FAQ.length}`);
   }
   const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
   if (!existing) {
