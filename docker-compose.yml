@@ -1,5 +1,8 @@
 services:
   app:
+    # imagine pre-construita de CI (.github/workflows/docker-image.yml):
+    # pe server: docker compose pull && docker compose up -d (fara build local)
+    image: ghcr.io/vadikonline1/baby-food-platform:latest
     build: .
     ports:
       - "${APP_PORT:-4000}:4000"

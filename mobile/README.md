@@ -14,3 +14,7 @@
   `https://<dns>/api`. Fallback: ultimul DNS cunoscut salvat local.
 - Tot conținutul + setările (inclusiv AdMob) vin din API — vezi secțiunea
   „Aplicații mobile" din `README.md` (remote config, fără rebuild).
+- **CI**: `.github/workflows/mobile-app.yml` — build EAS pe Android/iOS la push
+  în `mobile/**` sau manual (workflow_dispatch: platformă + profil). Necesită
+  secretul `EXPO_TOKEN` în repo Settings → Secrets. Până există `package.json`
+  + `eas.json` în `mobile/`, workflow-ul trece pe verde fără să facă nimic.

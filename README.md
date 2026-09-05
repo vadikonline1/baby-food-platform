@@ -12,6 +12,14 @@ cp .env.example .env   # APP_PORT, JWT_SECRET, ADMIN_EMAIL/PASSWORD, MODERATOR_E
 docker compose up --build
 ```
 
+## Deploy rapid pe server (fara build local)
+La fiecare push pe `main`, CI construieste imaginea si o publica in GHCR.
+Pe server ajunge doar pull:
+```bash
+docker compose pull && docker compose up -d
+docker logs -f gustbebe-app-1
+```
+
 Un singur serviciu `app` + volum `sqlite_data:/data` (baza + poze persistente).
 
 ## Stack (versiuni actuale)
