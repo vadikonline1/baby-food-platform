@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "704008575253",
+    "project_id": "gustbebe-6513e",
+    "storage_bucket": "gustbebe-6513e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704008575253:android:789d26f0e110a2402f711c",
+        "android_client_info": {
+          "package_name": "md.vadikonline1.gustbebe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-HiNMiUi8tXA0s1zNLkEo1KDtXcocbUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
