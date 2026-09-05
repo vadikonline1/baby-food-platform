@@ -11,6 +11,9 @@ const userRoutes = require('./routes/users');
 const ingredientRoutes = require('./routes/ingredients');
 const statsRoutes = require('./routes/stats');
 const settingsRoutes = require('./routes/settings');
+const notificationsRoutes = require('./routes/notifications');
+const authorRequestRoutes = require('./routes/author-requests');
+const contactRoutes = require('./routes/contact');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -46,6 +49,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/ingredients', ingredientRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/author-requests', authorRequestRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Frontend SPA servit din acelasi container/DNS (./public copiat la build).
 // Rutele /api si /uploads sunt exceptate.

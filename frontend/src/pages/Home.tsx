@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
+import HeroArt from '../components/HeroArt';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -58,6 +59,7 @@ export default function Home() {
             <p className="lead">{t('home.subtitle')}</p>
             <div className="cta-row">
               <Link to="/retete" className="btn-white">{t('home.explore')}</Link>
+              <a href="#ghid" className="btn-outline-light">{t('home.guideBtn')}</a>
               {!user ? (
                 <Link to="/register" className="btn-outline-light">{t('home.registerFree')}</Link>
               ) : (
@@ -65,13 +67,16 @@ export default function Home() {
               )}
             </div>
           </div>
-          {siteStats && (
-            <div className="hero-card">
-              <div><strong>{siteStats.recipes}</strong><span>{t('home.statsRecipes')}</span></div>
-              <div><strong>{siteStats.categories}</strong><span>{t('home.statsCategories')}</span></div>
-              <div><strong>{siteStats.ratings}</strong><span>{t('home.statsVotes')}</span></div>
-            </div>
-          )}
+          <div className="hero-side">
+            <HeroArt />
+            {siteStats && (
+              <div className="hero-card">
+                <div><strong>{siteStats.recipes}</strong><span>{t('home.statsRecipes')}</span></div>
+                <div><strong>{siteStats.categories}</strong><span>{t('home.statsCategories')}</span></div>
+                <div><strong>{siteStats.ratings}</strong><span>{t('home.statsVotes')}</span></div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -98,7 +103,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="home-section">
+      <section className="home-section" id="ghid">
         <h2>{t('home.guideTitle')}</h2>
         <p className="meta">{t('home.guideSub')}</p>
         <div className="guide-grid">

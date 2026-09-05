@@ -24,6 +24,7 @@ model User {
   recipes      Recipe[] @relation("AuthoredRecipes")
   ratings      Rating[]
   favorites    Favorite[]
+  authorRequests AuthorRequest[]
 }
 
 model AgeGroup {
@@ -137,6 +138,38 @@ model AppSetting {
   key       String   @id
   value     String   @default("")
   updatedAt DateTime @updatedAt
+}
+
+// Cerere de a deveni Autor (rol MODERATOR): userul raspunde la intrebari, adminul decide
+model AuthorRequest {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motivation String
+  experience String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+}
+
+// Notificari pentru administratori (reteta noua de validat, cerere autor, mesaj contact)
+model AdminNotification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Mesaje din pagina de contact
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii

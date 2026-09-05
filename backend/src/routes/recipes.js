@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { postRecipe, postRecipeAsync, configured: tgConfigured } = require('../lib/telegram');
+const { notify } = require('./notifications');
 
 const router = express.Router();
 
@@ -215,6 +216,10 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
       include: recipeInclude
     });
     if (recipe.status === 'PUBLISHED') postRecipeAsync(recipe);
+    else {
+      const author = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
+      await notify('recipe_pending', `Rețetă de validat: ${recipe.titleRo}`, `Autor: ${author?.name || ''}`, `/admin/retete/${recipe.id}/editeaza`);
+    }
     res.status(201).json(recipe);
   } catch (e) {
     res.status(400).json({ error: 'create_failed', message: e.message });

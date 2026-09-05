@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
+import { roleLabel } from '../lib/roles';
 import { useTranslation } from 'react-i18next';
 
 export default function Profile() {
@@ -13,13 +14,29 @@ export default function Profile() {
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
   const [pwMsg, setPwMsg] = useState('');
+  const [areq, setAreq] = useState<any>(null);
+  const [motivation, setMotivation] = useState('');
+  const [experience, setExperience] = useState('');
+  const [arMsg, setArMsg] = useState('');
 
   useEffect(() => {
     api.get('/users/me/favorites').then(r => setFavs(r.data)).catch(() => {});
+    api.get('/author-requests/mine').then(r => setAreq(r.data)).catch(() => {});
   }, []);
   useEffect(() => { if (user) setName(user.name); }, [user]);
 
   if (!user) return <p>Necesită <Link to="/login">login</Link>.</p>;
+
+  const sendAuthorRequest = async (e: any) => {
+    e.preventDefault(); setArMsg('');
+    try {
+      const { data } = await api.post('/author-requests', { motivation, experience });
+      setAreq(data); setArMsg('✓ Cererea a fost trimisă. Adminul o va analiza.');
+    } catch (err: any) {
+      const code = err.response?.data?.error;
+      setArMsg(code === 'already_pending' ? 'Ai deja o cerere în așteptare.' : 'Verifică răspunsurile (minim 20 / 10 caractere).');
+    }
+  };
 
   const saveName = async (e: any) => {
     e.preventDefault(); setMsg('');
@@ -46,7 +63,25 @@ export default function Profile() {
   return (
     <>
       <h1>Profil — {user.name}</h1>
-      <p className="meta">{user.email} · rol: <b>{user.role}</b></p>
+      <p className="meta">{user.email} · rol: <b>{roleLabel(user.role)}</b></p>
+      {user.role === 'USER' && (
+        <section className="panel" style={{ marginBottom: 18 }}>
+          <h3>✍️ Devino Autor</h3>
+          {areq?.status === 'PENDING' && <p className="notice">Cererea ta este în analiză la administrator.</p>}
+          {areq?.status === 'APPROVED' && <p className="notice">Felicitări! Ești Autor — poți adăuga rețete din panoul de administrare.</p>}
+          {(!areq || areq.status === 'REJECTED') && (
+            <form onSubmit={sendAuthorRequest} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {areq?.status === 'REJECTED' && <p className="meta">Cererea anterioară a fost respinsă — poți încerca din nou cu răspunsuri mai complete.</p>}
+              <label>De ce vrei să publici rețete? (min 20 caractere)
+                <textarea rows={3} value={motivation} onChange={e => setMotivation(e.target.value)} placeholder="Ex: gătesc zilnic pentru cei doi copii ai mei..." /></label>
+              <label>Ce experiență ai cu alimentația copiilor? (min 10 caractere)
+                <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
+              <div><button className="btn small">Trimite cererea</button></div>
+              {arMsg && <p className="meta">{arMsg}</p>}
+            </form>
+          )}
+        </section>
+      )}
       <div className="dash-cols">
         <section className="panel">
           <h3>Datele mele</h3>

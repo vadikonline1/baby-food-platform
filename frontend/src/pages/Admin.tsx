@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
+import { roleLabel } from '../lib/roles';
 import { useTranslation } from 'react-i18next';
 
 const PAGE_LIMIT = 10;
@@ -20,7 +21,10 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
 export default function Admin() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo'>('dash');
+  const [qparams] = useSearchParams();
+  const initialTab = (['dash', 'recipes', 'tax', 'users', 'settings', 'seo', 'authors', 'messages'] as any[]).includes(qparams.get('tab'))
+    ? qparams.get('tab') as any : 'dash';
+  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo' | 'authors' | 'messages'>(initialTab);
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -98,6 +102,8 @@ export default function Admin() {
         {user.role === 'ADMIN' && <button className={tab === 'tax' ? 'on' : ''} onClick={() => setTab('tax')}>Taxonomii</button>}
         {user.role === 'ADMIN' && <button className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>Setări aplicație</button>}
         {user.role === 'ADMIN' && <button className={tab === 'seo' ? 'on' : ''} onClick={() => setTab('seo')}>SEO</button>}
+        {user.role === 'ADMIN' && <button className={tab === 'authors' ? 'on' : ''} onClick={() => setTab('authors')}>Autori</button>}
+        {user.role === 'ADMIN' && <button className={tab === 'messages' ? 'on' : ''} onClick={() => setTab('messages')}>Mesaje</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
 
@@ -109,7 +115,7 @@ export default function Admin() {
             <div className="stat alert"><span className="stat-n">{stats.drafts}</span><span className="stat-l">În așteptare</span></div>
             <div className="stat"><span className="stat-n">{stats.ratings}</span><span className="stat-l">Voturi</span></div>
             {(stats.byRole || []).map((g: any) => (
-              <div className="stat" key={g.role}><span className="stat-n">{g._count.role}</span><span className="stat-l">{g.role}</span></div>
+              <div className="stat" key={g.role}><span className="stat-n">{g._count.role}</span><span className="stat-l">{roleLabel(g.role)}</span></div>
             ))}
           </div>
           <div className="dash-cols">
@@ -182,7 +188,7 @@ export default function Admin() {
               <td>{u.name}</td><td>{u.email}</td>
               <td>{u.emailVerified ? <span className="pill ok">ACTIV</span> : <span className="pill warn">NECONFIRMAT</span>}</td>
               <td><select value={u.role} onChange={e => setRole(u.id, e.target.value)} style={{ width: 'auto' }}>
-                <option>USER</option><option>MODERATOR</option><option>ADMIN</option></select></td>
+                <option value="USER">Utilizator</option><option value="MODERATOR">Autor</option><option value="ADMIN">Administrator</option></select></td>
               <td><div className="row-btns">
                 {!u.emailVerified && <button className="btn secondary small" onClick={() => resendLink(u.email)}>✉️ Retrimite link</button>}
                 {u.id !== user.id && <button className="btn danger small" onClick={() => delUser(u.id, u.name)}>Șterge</button>}
@@ -195,6 +201,10 @@ export default function Admin() {
       {tab === 'settings' && user.role === 'ADMIN' && <AppSettings />}
 
       {tab === 'seo' && user.role === 'ADMIN' && <SeoManager />}
+
+      {tab === 'authors' && user.role === 'ADMIN' && <AuthorsManager />}
+
+      {tab === 'messages' && user.role === 'ADMIN' && <MessagesManager />}
     </>
   );
 }
@@ -304,6 +314,61 @@ function SeoManager() {
       {area('seo_body_end', 'Înainte de </body>', 'Scripturi de analiză, chat, pixeli — încărcate la final pentru viteză.')}
       {msg && <p className="notice">{msg}</p>}
       <div><button className="btn" onClick={save}>Salvează scripturile</button></div>
+    </div>
+  );
+}
+
+function AuthorsManager() {
+  const [items, setItems] = useState<any[]>([]);
+  const load = () => api.get('/author-requests').then(r => setItems(r.data)).catch(() => {});
+  useEffect(() => { load(); }, []);
+  const decide = async (id: number, status: string) => {
+    await api.patch(`/author-requests/${id}`, { status });
+    load();
+  };
+  const pending = items.filter(i => i.status === 'PENDING');
+  return (
+    <div>
+      <h3>Cereri de autor {pending.length ? `(${pending.length} în așteptare)` : ''}</h3>
+      {!items.length && <p className="meta">Nicio cerere.</p>}
+      {items.map(i => (
+        <div className="panel" key={i.id} style={{ marginBottom: 12 }}>
+          <p><strong>{i.user?.name}</strong> <span className="meta">· {i.user?.email} · {new Date(i.createdAt).toLocaleString()}</span>{' '}
+            <span className={`pill ${i.status === 'PENDING' ? 'warn' : i.status === 'APPROVED' ? 'ok' : ''}`}>{i.status}</span></p>
+          <p><b>Motivație:</b> {i.motivation}</p>
+          <p><b>Experiență:</b> {i.experience}</p>
+          {i.status === 'PENDING' && (
+            <div className="row-btns">
+              <button className="btn small" onClick={() => decide(i.id, 'APPROVED')}>Aprobă → devine Autor</button>
+              <button className="btn danger small" onClick={() => decide(i.id, 'REJECTED')}>Respinge</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MessagesManager() {
+  const [items, setItems] = useState<any[]>([]);
+  const load = () => api.get('/contact/messages').then(r => setItems(r.data)).catch(() => {});
+  useEffect(() => { load(); }, []);
+  const markRead = async (id: number) => {
+    await api.patch(`/contact/messages/${id}/read`);
+    setItems(items.map(m => (m.id === id ? { ...m, read: true } : m)));
+  };
+  return (
+    <div>
+      <h3>Mesaje din contact ({items.filter(m => !m.read).length} necitite)</h3>
+      {!items.length && <p className="meta">Niciun mesaj.</p>}
+      {items.map(m => (
+        <div className="panel" key={m.id} style={{ marginBottom: 12, opacity: m.read ? 0.75 : 1 }}>
+          <p><strong>{m.name}</strong> <span className="meta">· {m.email} · {new Date(m.createdAt).toLocaleString()}</span>{' '}
+            {!m.read && <span className="pill warn">NOU</span>}</p>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{m.message}</p>
+          {!m.read && <button className="btn secondary small" onClick={() => markRead(m.id)}>Marchează citit</button>}
+        </div>
+      ))}
     </div>
   );
 }
