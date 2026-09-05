@@ -10,6 +10,7 @@ const taxonomyRoutes = require('./routes/taxonomies');
 const userRoutes = require('./routes/users');
 const ingredientRoutes = require('./routes/ingredients');
 const statsRoutes = require('./routes/stats');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,6 +45,7 @@ app.use('/api/taxonomies', taxonomyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ingredients', ingredientRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Frontend SPA servit din acelasi container/DNS (./public copiat la build).
 // Rutele /api si /uploads sunt exceptate.

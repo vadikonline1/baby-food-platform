@@ -39,7 +39,17 @@ cd backend; cp .env.example .env; npm i; npx prisma db push; node prisma/seed.js
 cd ../frontend; echo 'VITE_API_URL="http://localhost:4000/api"' > .env; npm i; npm run dev  # :5173
 ```
 
+## Aplicații mobile (etapa 2) — arhitectură fără rebuild la fiecare modificare
+- **Tot conținutul + afișarea vin din API**: listă/filtre (`GET /recipes`), detaliu (`GET /recipes/:slug` sau `id-slug`, include titluri/descrieri/ingrediente/pași în RO/RU/EN, poze, vârste, voturi, `myRating`/`isFavorite` când ești logat), taxonomii, căutare, ghidul de pe homepage (poate fi mutat în API la nevoie).
+- **Remote config — `GET /api/settings/config` (public, fără auth)**: ID-urile AdMob (Android/iOS) și textele butonului „Susține proiectul” se editează din web (Admin → Setări aplicație) și se aplică în apps **instant, fără build nou**.
+- **AdMob (doar în apps, nu pe web)**:
+  - `Banner` — **doar la finalul rețetei**, ID din `admob.{android|ios}.banner`;
+  - butonul **„Susține proiectul”** (titlu+text din `support.*`, vizibil dacă `support.enabled`) → arată reclamă **Intercalată cu recompensă** (`rewardedInterstitial`), cu fallback **Cu recompensă** (`rewarded`).
+- Reguli: banner nicăieri altundeva; textele butonului se iau pe limba aplicației (`title.ro/ru/en`); la `support.enabled=false` butonul se ascunde.
+- Stack sugerat: Expo (React Native) + `react-native-google-mobile-ads`, baza API = `APP_URL + /api`, token JWT în header `Authorization: Bearer`.
+
 ## API pentru mobil (stabil)
+- `GET /api/settings/config` (public: AdMob + buton susținere)
 - `POST /api/auth/register` (creează cont neconfirmat + trimite email), `POST /api/auth/verify {token}`, `POST /api/auth/resend {email}`, `POST /api/auth/login` (blochează 403 `email_not_verified`), `GET/PATCH /api/auth/me` (emailul nu se schimbă), `PATCH /api/auth/me/password`
 - `GET /api/recipes?q=&category=&age=&feeding=&restriction=&status=&sort=(latest|popular)&page=&limit=` (filtrele acceptă și liste `1,2`), `GET /api/recipes/:slug` (acceptă și format `id-slug`, ex: `/retete/12-piure-de-morcov`), `GET /api/recipes/by-id/:id` (MOD+)
 - `POST /api/recipes` (MOD+, `ageGroupIds[]`; auto-post Telegram la publicare), `PUT /api/recipes/:id` (MOD+), `PATCH /api/recipes/:id/status` (ADMIN, auto-post la PUBLISHED), `POST /api/recipes/:id/telegram` (MOD+, retrimitere manuală), `DELETE` (ADMIN)

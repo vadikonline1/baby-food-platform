@@ -11,14 +11,18 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '').slice(0, 80) || ('reteta-' + Date.now());
 }
 
-// rol optional din header (pentru listarea DRAFT de catre MOD/ADMIN)
-function optionalRole(req) {
+// auth optional din header (pentru DRAFT / votul si favoritul meu)
+function optionalAuth(req) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return null;
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'gustbebe-dev-secret-change-me').role || null;
+    const p = jwt.verify(token, process.env.JWT_SECRET || 'gustbebe-dev-secret-change-me');
+    return { id: p.id, role: p.role };
   } catch { return null; }
+}
+function optionalRole(req) {
+  return optionalAuth(req)?.role || null;
 }
 
 const recipeInclude = {
@@ -104,6 +108,19 @@ router.get('/:slug', async (req, res) => {
   if (recipe.status !== 'PUBLISHED') {
     const role = optionalRole(req);
     if (role !== 'MODERATOR' && role !== 'ADMIN') return res.status(404).json({ error: 'not_found' });
+  }
+  // context personal (votul si favoritul meu) cand sunt logat
+  const me = optionalAuth(req);
+  if (me) {
+    const [mine, fav] = await Promise.all([
+      prisma.rating.findUnique({ where: { userId_recipeId: { userId: me.id, recipeId: recipe.id } } }),
+      prisma.favorite.findUnique({ where: { userId_recipeId: { userId: me.id, recipeId: recipe.id } } })
+    ]);
+    recipe.myRating = mine?.value || 0;
+    recipe.isFavorite = Boolean(fav);
+  } else {
+    recipe.myRating = 0;
+    recipe.isFavorite = false;
   }
   res.json(recipe);
 });

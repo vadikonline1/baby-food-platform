@@ -131,6 +131,14 @@ model RecipeAge {
   @@id([recipeId, ageGroupId])
 }
 
+// Setari aplicatie (cheie-valoare) — editate din panoul Admin, citite de apps mobile
+// via /api/config (doar cheile publice). Fara rebuild la modificari.
+model AppSetting {
+  key       String   @id
+  value     String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii
 model Unit {
   id      Int      @id @default(autoincrement())

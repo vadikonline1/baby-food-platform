@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api, localized, imgUrl } from '../lib/api';
+import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
 function Stars({ value, onPick, size = 30 }: { value: number; onPick?: (v: number) => void; size?: number }) {
@@ -29,39 +29,89 @@ export default function RecipeDetail() {
   const { user } = useAuth();
   const [r, setR] = useState<any>(null);
   const [myVote, setMyVote] = useState(0);
-  const [voted, setVoted] = useState(false);
+  const [fav, setFav] = useState(false);
+  const [related, setRelated] = useState<any[]>([]);
   const lang = i18n.language;
-  useEffect(() => { api.get(`/recipes/${slug}`).then(res => setR(res.data)); }, [slug]);
+
+  useEffect(() => {
+    api.get(`/recipes/${slug}`).then(res => {
+      const data = res.data;
+      setR(data);
+      setMyVote(data.myRating || 0);
+      setFav(Boolean(data.isFavorite));
+      // recomandate: aceeasi prima categorie, altfel populare
+      const cat = data.categories?.[0]?.category?.slug;
+      const params = cat ? { category: cat, limit: 8 } : { sort: 'popular', limit: 8 };
+      api.get('/recipes', { params }).then(rr => {
+        setRelated(rr.data.items.filter((x: any) => x.id !== data.id).slice(0, 4));
+      }).catch(() => {});
+    });
+  }, [slug]);
   if (!r) return <p>{t('common.loading')}</p>;
 
   const sendVote = async (v: number) => {
     setMyVote(v);
     const { data } = await api.post(`/recipes/${r.id}/rate`, { value: v });
     setR({ ...r, avgRating: data.avgRating, ratingsCount: data.ratingsCount });
-    setVoted(true);
   };
-  const fav = async () => { await api.post(`/recipes/${r.id}/favorite`); alert('❤'); };
+  const toggleFav = async () => {
+    if (fav) {
+      await api.delete(`/recipes/${r.id}/favorite`);
+      setFav(false);
+    } else {
+      await api.post(`/recipes/${r.id}/favorite`);
+      setFav(true);
+    }
+  };
+  const summary = localized(r, 'summary', lang);
   const stepsList = String(localized(r, 'steps', lang) || '').split('\n').map(s => s.trim()).filter(Boolean);
   const detailed = r.ingredientsDetailed || [];
 
   return (
     <article className="detail">
       <h1>{localized(r, 'title', lang)}</h1>
+
       <div className="detail-meta">
-        <span className="stars static"><Stars value={Math.round(Number(r.avgRating))} size={18} /></span>
-        <span><strong>{Number(r.avgRating).toFixed(1)}</strong> ({r.ratingsCount})</span>
+        <span className="meta-group">
+          <Stars value={Math.round(Number(r.avgRating))} size={17} />
+          <strong>{Number(r.avgRating).toFixed(1)}</strong>
+          <span className="meta">({r.ratingsCount})</span>
+        </span>
+        <span className="meta-sep" />
         <span>⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min</span>
         <span>🍽 {r.servings}</span>
+        {user && (
+          <>
+            <span className="meta-sep" />
+            <span className="meta-group vote-inline">
+              <span className="meta">Votează:</span>
+              <Stars value={myVote} onPick={sendVote} size={22} />
+            </span>
+            <button className={`heart ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label="favorite" title={t('recipes.favorite')}>
+              {fav ? '♥' : '♡'}
+            </button>
+          </>
+        )}
       </div>
+
       <div className="detail-tags">
         {(r.ageGroups || []).map((a: any) => <span key={a.ageGroupId} className="badge">{localized(a.ageGroup, 'label', lang)}</span>)}
         {r.feedingType && <span className="badge orange">{localized(r.feedingType, 'name', lang)}</span>}
         {(r.categories || []).map((c: any) => <span key={c.categoryId ?? c.category?.id} className="badge gray">{localized(c.category, 'name', lang)}</span>)}
       </div>
-      {r.imageUrl && <img src={imgUrl(r.imageUrl)} alt="" className="detail-cover" />}
-      {localized(r, 'summary', lang) && <p className="lead">{localized(r, 'summary', lang)}</p>}
 
       <div className="detail-grid">
+        {r.imageUrl && (
+          <section className="panel photo-panel">
+            <img src={imgUrl(r.imageUrl)} alt="" className="detail-cover" />
+          </section>
+        )}
+        {summary && (
+          <section className="panel">
+            <h3>Despre</h3>
+            <p className="lead">{summary}</p>
+          </section>
+        )}
         <section className="panel">
           <h3>Ingrediente</h3>
           {detailed.length ? (
@@ -90,15 +140,25 @@ export default function RecipeDetail() {
         </section>
       </div>
 
-      {user && (
-        <div className="panel vote-box">
-          <p style={{ margin: '0 0 6px' }}>{t('recipes.vote')}{myVote ? <>: <strong>{myVote} / 5</strong></> : ''}</p>
-          <Stars value={myVote} onPick={sendVote} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button className="btn secondary small" onClick={fav}>{t('recipes.favorite')}</button>
+      {!!related.length && (
+        <section className="home-section">
+          <div className="section-head">
+            <h2>{t('home.recommended')}</h2>
+            <Link to="/retete" className="link-more">{t('home.viewAll')} →</Link>
           </div>
-          {voted && <p className="ok">Mulțumim pentru vot! ✓</p>}
-        </div>
+          <div className="grid">
+            {related.map(x => (
+              <div className="card" key={x.id}>
+                {x.imageUrl ? <img src={imgUrl(x.imageUrl)} alt="" loading="lazy" /> : <div className="card-ph">🥣</div>}
+                <div className="body">
+                  <strong>{localized(x, 'title', lang)}</strong>
+                  <span className="meta">⭐ {Number(x.avgRating || 0).toFixed(1)} · {x.ratingsCount || 0}</span>
+                  <div className="row"><Link className="btn secondary small" to={recipeUrl(x)}>{t('recipes.details')}</Link></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </article>
   );

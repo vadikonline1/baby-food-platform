@@ -20,7 +20,7 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
 export default function Admin() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users'>('dash');
+  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings'>('dash');
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -96,6 +96,7 @@ export default function Admin() {
         <button className={tab === 'dash' ? 'on' : ''} onClick={() => setTab('dash')}>{t('admin.dashboard')}</button>
         <button className={tab === 'recipes' ? 'on' : ''} onClick={() => setTab('recipes')}>{t('admin.recipes')}{stats?.drafts ? ` (${stats.drafts} de validat)` : ''}</button>
         <button className={tab === 'tax' ? 'on' : ''} onClick={() => setTab('tax')}>Taxonomii</button>
+        {user.role === 'ADMIN' && <button className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>Setări aplicație</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
 
@@ -189,7 +190,70 @@ export default function Admin() {
       )}
 
       {tab === 'tax' && <TaxManager isAdmin={user.role === 'ADMIN'} />}
+
+      {tab === 'settings' && user.role === 'ADMIN' && <AppSettings />}
     </>
+  );
+}
+
+function AppSettings() {
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    api.get('/settings').then(r => {
+      const o: Record<string, string> = {};
+      r.data.forEach((s: any) => { o[s.key] = s.value; });
+      setVals(o);
+    }).catch(() => {});
+  }, []);
+  const set = (k: string, v: string) => setVals({ ...vals, [k]: v });
+  const save = async () => {
+    setMsg('');
+    await api.put('/settings', vals);
+    setMsg('✓ Setările au fost salvate. Aplicațiile mobile le preiau automat (remote config).');
+  };
+  const field = (k: string, label: string, ph = '') => (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13.5px' }}>
+      {label}
+      <input value={vals[k] || ''} placeholder={ph} onChange={e => set(k, e.target.value)} />
+    </label>
+  );
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720 }}>
+      <section className="panel">
+        <h3>AdMob — Android</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {field('admob_android_banner', 'Banner ID (final rețetă)', 'ca-app-pub-...')}
+          {field('admob_android_rewarded_interstitial', 'Intercalat cu recompensă (buton Susține)', 'ca-app-pub-...')}
+          {field('admob_android_rewarded', 'Cu recompensă (buton Susține)', 'ca-app-pub-...')}
+        </div>
+      </section>
+      <section className="panel">
+        <h3>AdMob — iOS</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {field('admob_ios_banner', 'Banner ID (final rețetă)', 'ca-app-pub-...')}
+          {field('admob_ios_rewarded_interstitial', 'Intercalat cu recompensă (buton Susține)', 'ca-app-pub-...')}
+          {field('admob_ios_rewarded', 'Cu recompensă (buton Susține)', 'ca-app-pub-...')}
+        </div>
+      </section>
+      <section className="panel">
+        <h3>Susține proiectul (buton în aplicații)</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label style={{ fontSize: '13.5px' }}>
+            <input type="checkbox" style={{ width: 17 }} checked={(vals.support_enabled || 'true') === 'true'}
+              onChange={e => set('support_enabled', e.target.checked ? 'true' : 'false')} /> Buton activ
+          </label>
+          {field('support_title_ro', 'Titlu RO', 'Susține proiectul GustBebe')}
+          {field('support_title_ru', 'Titlu RU')}
+          {field('support_title_en', 'Titlu EN')}
+          {field('support_text_ro', 'Text RO')}
+          {field('support_text_ru', 'Text RU')}
+          {field('support_text_en', 'Text EN')}
+        </div>
+      </section>
+      {msg && <p className="notice">{msg}</p>}
+      <div><button className="btn" onClick={save}>Salvează setările</button></div>
+    </div>
   );
 }
 
