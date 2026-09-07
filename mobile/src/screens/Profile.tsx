@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RewardedInterstitialAd, RewardedAd, TestIds } from 'react-native-google-mobile-ads';
 import { api } from '../api';
-import { getConfig } from '../config';
 import { useAuth } from '../store';
 import { isPushEnabled, enablePush, disablePush } from '../push';
 import { checkForUpdate } from '../update';
+import { SupportBlock } from '../support';
+import { LangSelector } from '../ui';
 import { Platform } from 'react-native';
 
-// Profil: push on/off, login/register (optional), editare nume+parola, favorite, sustinere
+// Profil: push on/off, limba, login/register (optional), editare nume+parola, favorite, sustinere
 export default function ProfileScreen() {
   const nav = useNavigation<any>();
   const { user, login, register, logout, refresh } = useAuth();
@@ -22,13 +21,10 @@ export default function ProfileScreen() {
   const [err, setErr] = useState('');
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
-  const [support, setSupport] = useState<any>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {
     isPushEnabled().then(setPush);
-    const cfg = getConfig();
-    if (cfg?.support?.enabled) setSupport(cfg.support);
     if (Platform.OS === 'android') checkForUpdate(true).then(setHasUpdate).catch(() => {});
   }, []);
 
@@ -61,29 +57,16 @@ export default function ProfileScreen() {
     catch { Alert.alert('Eroare', 'Parola curentă e greșită.'); }
   };
 
-  const supportUs = () => {
-    const cfg = getConfig();
-    const units = Platform.OS === 'ios' ? cfg?.admob?.ios : cfg?.admob?.android;
-    const showRewarded = () => {
-      if (!units?.rewarded) { Alert.alert('Info', 'Reclamă indisponibilă momentan.'); return; }
-      const ad = RewardedAd.createForAdRequest(units.rewarded);
-      ad.load();
-    };
-    if (units?.rewardedInterstitial) {
-      const ad = RewardedInterstitialAd.createForAdRequest(
-        __DEV__ ? TestIds.REWARDED_INTERSTITIAL : units.rewardedInterstitial
-      );
-      ad.load();
-      setTimeout(showRewarded, 4000);
-      // nota: in productie se foloseste onAdEvent LOADED -> show(); fallback rewarded dupa timeout
-    } else showRewarded();
-  };
-
   return (
     <ScrollView style={s.wrap}>
       <View style={s.row}>
         <Text style={s.t}>Notificări push</Text>
         <Switch value={push} onValueChange={togglePush} />
+      </View>
+
+      <View style={s.row}>
+        <Text style={s.t}>Limba</Text>
+        <LangSelector />
       </View>
 
       {!user ? (
@@ -122,15 +105,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       )}
 
-      {!!support && (
-        <View style={s.card}>
-          <Text style={s.t}>{support.title?.ro || 'Susține proiectul'}</Text>
-          <Text style={s.m}>{support.text?.ro}</Text>
-          <TouchableOpacity style={[s.btn, { backgroundColor: '#065f46' }]} onPress={supportUs}>
-            <Text style={s.btnT}>Susține proiectul 🎁</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <SupportBlock />
     </ScrollView>
   );
 }

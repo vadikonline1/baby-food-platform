@@ -2,12 +2,12 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api, localized } from '../api';
-import { useLang, LangRow } from '../ui';
+import { useLang } from '../lang';
 
 // Random Reteta: o reteta aleatorie + buton Alta
 export default function RandomScreen() {
   const nav = useNavigation<any>();
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [r, setR] = useState<any>(null);
   const load = useCallback(() => {
     api.get('/recipes/random').then((res) => setR(res.data)).catch(() => {});
@@ -15,7 +15,6 @@ export default function RandomScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   return (
     <View style={s.wrap}>
-      <View style={{ padding: 12 }}><LangRow lang={lang} setLang={setLang} /></View>
       {!r && <Text>Se încarcă...</Text>}
       {!!r && (
         <TouchableOpacity style={s.card} onPress={() => nav.navigate('Detail', { id: r.id, slug: r.slug })}>

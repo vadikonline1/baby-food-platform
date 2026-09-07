@@ -2,12 +2,14 @@ import React, { useCallback, useState } from 'react';
 import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { api } from '../api';
-import { RecipeCard, FilterModal, LangRow, useLang } from '../ui';
+import { RecipeCard, FilterModal } from '../ui';
+import { useLang } from '../lang';
+import { SupportBlock } from '../support';
 
 export default function RecipesScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [q, setQ] = useState('');
   const [items, setItems] = useState<any[]>([]);
   const [filters, setFilters] = useState<any>({});
@@ -31,12 +33,12 @@ export default function RecipesScreen() {
       <View style={s.bar}>
         <TextInput style={s.input} placeholder="Caută rețetă..." value={q} onChangeText={setQ} onSubmitEditing={load} />
         <TouchableOpacity style={s.fbtn} onPress={() => setShowF(true)}><Text>Filtre</Text></TouchableOpacity>
-        <LangRow lang={lang} setLang={setLang} />
       </View>
       <FlatList
         data={items}
         numColumns={2}
         keyExtractor={(i) => String(i.id)}
+        ListHeaderComponent={<SupportBlock />}
         renderItem={({ item }) => <RecipeCard item={item} lang={lang} onOpen={() => nav.navigate('Detail', { id: item.id, slug: item.slug })} />}
       />
       <FilterModal visible={showF} onClose={() => setShowF(false)} onApply={setFilters} />

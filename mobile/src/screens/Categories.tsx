@@ -2,18 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api, localized } from '../api';
-import { useLang, LangRow } from '../ui';
+import { useLang } from '../lang';
 
 export default function CategoriesScreen() {
   const nav = useNavigation<any>();
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [cats, setCats] = useState<any[]>([]);
   useEffect(() => {
     api.get('/taxonomies/categories?withCounts=1').then((r) => setCats(r.data)).catch(() => {});
   }, []);
   return (
     <View style={s.wrap}>
-      <View style={{ padding: 12 }}><LangRow lang={lang} setLang={setLang} /></View>
       <FlatList
         data={cats}
         keyExtractor={(i) => String(i.id)}

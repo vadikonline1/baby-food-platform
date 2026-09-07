@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, Modal, ScrollView } from 'react-native';
 import { api, localized } from './api';
-
-const LANGS = ['ro', 'ru', 'en'] as const;
+import { LANGS, useLang } from './lang';
 
 export function Stars({ value, onPick }: { value: number; onPick?: (v: number) => void }) {
   return (
@@ -32,12 +31,21 @@ export function RecipeCard({ item, lang, onOpen }: { item: any; lang: string; on
   );
 }
 
-export function useLang() {
-  const [lang, setLang] = useState<string>('ro');
-  return { lang, setLang };
+export function LangRow({ lang, setLang }: { lang: string; setLang: (l: string) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 6 }}>
+      {LANGS.map((l) => (
+        <TouchableOpacity key={l} onPress={() => setLang(l)} style={[s.chip, lang === l && s.chipOn]}>
+          <Text style={lang === l ? s.chipOnT : s.chipT}>{l.toUpperCase()}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 }
 
-export function LangRow({ lang, setLang }: { lang: string; setLang: (l: string) => void }) {
+// selector limbă folosit în Profil (context global — persistat + default limba telefonului)
+export function LangSelector() {
+  const { lang, setLang } = useLang();
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
       {LANGS.map((l) => (

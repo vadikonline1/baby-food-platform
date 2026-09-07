@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api, localized } from '../api';
-import { RecipeCard, useLang, LangRow } from '../ui';
+import { RecipeCard } from '../ui';
+import { useLang } from '../lang';
 
 // Plan diversificare: pasi din Ghid (gestionat din web) + retete cele mai votate
 export default function PlanScreen() {
   const nav = useNavigation<any>();
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [guide, setGuide] = useState<any[]>([]);
   const [top, setTop] = useState<any[]>([]);
   useEffect(() => {
@@ -16,7 +17,6 @@ export default function PlanScreen() {
   }, []);
   return (
     <ScrollView style={s.wrap}>
-      <View style={{ padding: 12 }}><LangRow lang={lang} setLang={setLang} /></View>
       <Text style={s.h}>Plan diversificare</Text>
       {guide.map((g, i) => (
         <View key={g.id || i} style={s.step}>

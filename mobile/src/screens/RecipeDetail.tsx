@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, localized, deviceId } from '../api';
 import { bannerUnitId } from '../ads';
 import { useAuth } from '../store';
-import { Stars, useLang } from '../ui';
+import { Stars } from '../ui';
+import { useLang } from '../lang';
 
 export default function RecipeDetail({ route }: any) {
   const { id } = route.params;

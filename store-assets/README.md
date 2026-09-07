@@ -1,7 +1,7 @@
 # Asseturi magazine (Google Play + App Store)
 
 Surse vectoriale (SVG) — gata de exportat ca PNG/JPEG pentru import în
-Play Console și App Store Connect. Magazinele **nu acceptă SVG**,
+Play Console și App Store Connect. **Magazinele nu acceptă SVG**,
 deci exportați fiecare fișier la dimensiunea exactă:
 
 | Fișier | Export la | Folosit la |
@@ -9,6 +9,13 @@ deci exportați fiecare fișier la dimensiunea exactă:
 | `icon-512.svg` | **512×512 PNG** (fără transparență rotunjită — magazinele decupează singure) | Icon aplicație (ambele magazine) + `mobile` icon |
 | `feature-graphic-1024x500.svg` | **1024×500 PNG/JPEG** | Google Play → Prezentare grafică (banner sus) |
 | `screenshot-promo-1080x1920.svg` | **1080×1920 PNG** | Capturi promo (înlocuiți cu screenshoturi reale din aplicație când există!) |
+
+## Export deja generat
+
+Directorul `export/` conține versiunile gata de upload:
+`icon-512.png` (512×512), `icon-1024.png` (1024×1024 — folosit și ca
+`mobile/assets/icon.png`), `feature-graphic-1024x500.png` **.jpg** și
+`screenshot-promo-1080x1920.png`.
 
 ## Cum exportați (una din variante)
 

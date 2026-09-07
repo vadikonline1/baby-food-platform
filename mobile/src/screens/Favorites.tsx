@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, localized } from '../api';
 import { useAuth } from '../store';
-import { useLang } from '../ui';
+import { useLang } from '../lang';
 
 // Favorite: cont (server) + guest (cache local) — fara logare obligatorie
 export default function FavoritesScreen() {
