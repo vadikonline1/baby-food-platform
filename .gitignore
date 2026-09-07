@@ -2,6 +2,9 @@
 **/node_modules/
 # build
 **/dist/
+# native dirs generate de expo prebuild (CI le recreaza la fiecare build)
+mobile/android/
+mobile/ios/
 # date locale
 **/*.db
 **/*.db-journal
