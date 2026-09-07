@@ -59,29 +59,79 @@ app.use('/api/push', pushRoutes);
 
 // Frontend SPA servit din acelasi container/DNS (./public copiat la build).
 // Rutele /api si /uploads sunt exceptate.
-// Scripturile SEO din Admin (seo_head_end / seo_body_start / seo_body_end)
-// se injecteaza in index.html la fiecare request (cache 30s).
+// SEO: scripturi custom din Admin + meta default (descriere/cuvinte cheie/OG)
+// + meta per-reteta (titlu/descriere/imagine) pentru /retete/:slug.
 const publicDir = path.join(__dirname, '..', 'public');
-const SEO_KEYS = ['seo_head_end', 'seo_body_start', 'seo_body_end'];
-let seoCache = { at: 0, html: '' };
-async function indexedHtml() {
-  if (Date.now() - seoCache.at < 30000 && seoCache.html) return seoCache.html;
-  let html = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8');
+const SEO_KEYS = ['seo_head_end', 'seo_body_start', 'seo_body_end', 'seo_meta_description', 'seo_meta_keywords'];
+let seoCache = { at: 0, settings: null, pages: new Map() };
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function seoSettings() {
+  if (Date.now() - seoCache.at < 30000 && seoCache.settings) return seoCache.settings;
   try {
     const { prisma: db } = require('./lib/db');
     const rows = await db.appSetting.findMany({ where: { key: { in: SEO_KEYS } } });
-    const m = Object.fromEntries(rows.map(r => [r.key, r.value]));
-    if (m.seo_head_end) html = html.replace('</head>', `${m.seo_head_end}\n</head>`);
-    if (m.seo_body_start) html = html.replace(/<body([^>]*)>/, `<body$1>\n${m.seo_body_start}`);
-    if (m.seo_body_end) html = html.replace('</body>', `${m.seo_body_end}\n</body>`);
-  } catch (e) { console.error('[seo] inject failed:', e.message); }
-  seoCache = { at: Date.now(), html };
+    seoCache.settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  } catch (e) { seoCache.settings = {}; }
+  seoCache.at = Date.now();
+  return seoCache.settings;
+}
+
+async function indexedHtml(reqPath) {
+  const cached = seoCache.pages.get(reqPath);
+  if (cached && Date.now() - cached.at < 60000) return cached.html;
+  let html = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8');
+  const m = await seoSettings();
+  const { getValue } = require('./lib/settings');
+  const appUrl = (await getValue('APP_URL', null, 'http://localhost:4000')).replace(/\/$/, '');
+
+  // meta default site
+  const siteDesc = m.seo_meta_description || 'GustBebe — rețete sănătoase pentru bebeluși și copii mici, ghid de diversificare.';
+  const siteKeys = m.seo_meta_keywords || 'retete bebelusi, diversificare, mancare copii, retete copii mici';
+  let head = `<meta name="description" content="${esc(siteDesc)}">\n`
+    + `<meta name="keywords" content="${esc(siteKeys)}">\n`
+    + `<meta property="og:type" content="website">\n`
+    + `<meta property="og:site_name" content="GustBebe">\n`
+    + `<link rel="canonical" href="${esc(appUrl + reqPath)}">\n`;
+
+  // meta per-reteta pentru /retete/id-sau-slug (titlu/descriere/poza pt. share)
+  const rm = /^\/retete\/([^/]+)/.exec(reqPath);
+  if (rm) {
+    try {
+      const { prisma: db } = require('./lib/db');
+      let recipe = null;
+      const im = /^(\d+)-/.exec(rm[1]);
+      if (im) recipe = await db.recipe.findUnique({ where: { id: Number(im[1]) } });
+      if (!recipe) recipe = await db.recipe.findUnique({ where: { slug: rm[1] } });
+      if (recipe && recipe.status === 'PUBLISHED') {
+        const desc = recipe.summaryRo || siteDesc;
+        const img = recipe.imageUrl
+          ? (recipe.imageUrl.startsWith('http') ? recipe.imageUrl : appUrl + recipe.imageUrl)
+          : null;
+        head = `<title>${esc(recipe.titleRo)} — GustBebe</title>\n`
+          + `<meta name="description" content="${esc(desc)}">\n`
+          + `<meta property="og:title" content="${esc(recipe.titleRo)}">\n`
+          + `<meta property="og:description" content="${esc(desc)}">\n`
+          + (img ? `<meta property="og:image" content="${esc(img)}">\n` : '')
+          + `<link rel="canonical" href="${esc(appUrl + reqPath)}">\n`;
+        html = html.replace(/<title>.*?<\/title>/, '');
+      }
+    } catch (e) { console.error('[seo] recipe meta failed:', e.message); }
+  }
+  html = html.replace('</head>', `${head}${m.seo_head_end || ''}\n</head>`);
+  if (m.seo_body_start) html = html.replace(/<body([^>]*)>/, `<body$1>\n${m.seo_body_start}`);
+  if (m.seo_body_end) html = html.replace('</body>', `${m.seo_body_end}\n</body>`);
+  if (seoCache.pages.size > 200) seoCache.pages.clear();
+  seoCache.pages.set(reqPath, { at: Date.now(), html });
   return html;
 }
 if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir, { index: false }));
   app.get(/^\/(?!api|uploads).*/, async (req, res) => {
-    res.type('html').send(await indexedHtml());
+    res.type('html').send(await indexedHtml(req.path));
   });
 }
 

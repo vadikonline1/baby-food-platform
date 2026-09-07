@@ -342,7 +342,7 @@ function AppSettings() {
 }
 
 function SeoManager() {
-  const [vals, setVals] = useState<Record<string, string>>({ seo_head_end: '', seo_body_start: '', seo_body_end: '' });
+  const [vals, setVals] = useState<Record<string, string>>({ seo_head_end: '', seo_body_start: '', seo_body_end: '', seo_meta_description: '', seo_meta_keywords: '' });
   const [msg, setMsg] = useState('');
   useEffect(() => {
     api.get('/settings').then(r => {
@@ -367,6 +367,12 @@ function SeoManager() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}>
+      <section className="panel">
+        <h3>Meta implicite site</h3>
+        <p className="meta">Folosite pe toate paginile; la rețete, titlul/descrierea/poza se iau automat din rețetă (Open Graph pentru share).</p>
+        <input placeholder="Meta description (implicit)" value={vals.seo_meta_description || ''} onChange={e => setVals({ ...vals, seo_meta_description: e.target.value })} />
+        <input placeholder="Meta keywords, separate prin virgulă" value={vals.seo_meta_keywords || ''} onChange={e => setVals({ ...vals, seo_meta_keywords: e.target.value })} />
+      </section>
       {area('seo_head_end', 'Înainte de </head>', 'Meta taguri, verificare Search Console, stiluri sau scripturi care trebuie încărcate devreme.')}
       {area('seo_body_start', 'După <body> (început)', 'Tag Manager (noscript), bannere sau scripturi care pornesc odată cu pagina.')}
       {area('seo_body_end', 'Înainte de </body>', 'Scripturi de analiză, chat, pixeli — încărcate la final pentru viteză.')}

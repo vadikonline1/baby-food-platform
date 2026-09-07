@@ -112,6 +112,7 @@ model Recipe {
   ageGroups       RecipeAge[]
   ratings         Rating[]
   guestVotes      GuestVote[]
+  views           RecipeView[]
   favoritedBy     Favorite[]
 
   createdAt DateTime @default(now())
