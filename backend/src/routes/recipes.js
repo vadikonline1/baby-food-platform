@@ -305,8 +305,8 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
   res.json(recipe);
 });
 
-// publicare manuala pe Telegram (MOD+) — doar retete PUBLISHED
-router.post('/:id/telegram', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
+// publicare manuala pe Telegram — DOAR ADMIN (nu si utilizatorii/moderatorii)
+router.post('/:id/telegram', authRequired, roleRequired('ADMIN'), async (req, res) => {
   if (!tgConfigured()) return res.status(400).json({ error: 'telegram_not_configured' });
   const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
   if (!recipe) return res.status(404).json({ error: 'not_found' });

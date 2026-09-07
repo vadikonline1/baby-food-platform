@@ -176,7 +176,7 @@ export default function Admin() {
                 <td><div className="row-btns">
                   <Link className="btn secondary small" to={`/admin/retete/${r.id}/editeaza`}>{t('common.edit')}</Link>
                   {user.role === 'ADMIN' && r.status === 'DRAFT' && <button className="btn small" onClick={() => approve(r.id)}>Aprobă</button>}
-                  {r.status === 'PUBLISHED' && <button className="btn secondary small" onClick={() => sendTelegram(r.id)}>✈ Telegram</button>}
+                  {user.role === 'ADMIN' && r.status === 'PUBLISHED' && <button className="btn secondary small" onClick={() => sendTelegram(r.id)}>✈ Telegram</button>}
                   {user.role === 'ADMIN' && <button className="btn danger small" onClick={() => delRecipe(r.id)}>{t('common.delete')}</button>}
                 </div></td></tr>
             ))}</tbody></table>
