@@ -13,7 +13,9 @@ const PUBLIC_KEYS = [
   'support_text_ro', 'support_text_ru', 'support_text_en',
   'firebase_web_apikey', 'firebase_web_authdomain', 'firebase_web_projectid',
   'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid',
-  'store_android_url', 'store_ios_url'
+  'store_android_url', 'store_ios_url',
+  'auth_google_enabled', 'auth_google_web_client_id', 'auth_google_ios_client_id', 'auth_google_android_client_id',
+  'auth_apple_enabled', 'auth_apple_service_id'
 ];
 
 // GET /api/settings — ADMIN (toate)
@@ -70,6 +72,18 @@ router.get('/config', async (req, res) => {
     stores: {
       android: m.store_android_url || '',
       ios: m.store_ios_url || ''
+    },
+    auth: {
+      google: {
+        enabled: (m.auth_google_enabled || 'false') === 'true',
+        webClientId: m.auth_google_web_client_id || '',
+        iosClientId: m.auth_google_ios_client_id || '',
+        androidClientId: m.auth_google_android_client_id || ''
+      },
+      apple: {
+        enabled: (m.auth_apple_enabled || 'false') === 'true',
+        serviceId: m.auth_apple_service_id || ''
+      }
     }
   });
 });

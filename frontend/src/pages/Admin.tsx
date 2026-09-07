@@ -22,9 +22,9 @@ export default function Admin() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [qparams] = useSearchParams();
-  const initialTab = (['dash', 'recipes', 'tax', 'users', 'settings', 'seo', 'authors', 'messages', 'content'] as any[]).includes(qparams.get('tab'))
+  const initialTab = (['dash', 'recipes', 'tax', 'users', 'settings', 'seo', 'authors', 'messages', 'content', 'push'] as any[]).includes(qparams.get('tab'))
     ? qparams.get('tab') as any : 'dash';
-  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo' | 'authors' | 'messages' | 'content'>(initialTab);
+  const [tab, setTab] = useState<'dash' | 'recipes' | 'tax' | 'users' | 'settings' | 'seo' | 'authors' | 'messages' | 'content' | 'push'>(initialTab);
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -105,6 +105,7 @@ export default function Admin() {
         {user.role === 'ADMIN' && <button className={tab === 'authors' ? 'on' : ''} onClick={() => setTab('authors')}>Autori</button>}
         {user.role === 'ADMIN' && <button className={tab === 'messages' ? 'on' : ''} onClick={() => setTab('messages')}>Mesaje</button>}
         {user.role === 'ADMIN' && <button className={tab === 'content' ? 'on' : ''} onClick={() => setTab('content')}>Conținut</button>}
+        {user.role === 'ADMIN' && <button className={tab === 'push' ? 'on' : ''} onClick={() => setTab('push')}>Notificări Push</button>}
         {user.role === 'ADMIN' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('admin.users')}</button>}
       </div>
 
@@ -208,6 +209,8 @@ export default function Admin() {
       {tab === 'messages' && user.role === 'ADMIN' && <MessagesManager />}
 
       {tab === 'content' && user.role === 'ADMIN' && <ContentManager />}
+
+      {tab === 'push' && user.role === 'ADMIN' && <PushComposer />}
     </>
   );
 }
@@ -271,6 +274,24 @@ function AppSettings() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {field('store_android_url', 'Link Google Play', 'https://play.google.com/store/apps/details?id=md.vadikonline1.gustbebe')}
           {field('store_ios_url', 'Link App Store', 'https://apps.apple.com/app/id...')}
+        </div>
+      </section>
+      <section className="panel">
+        <h3>Login social (aplicații mobile)</h3>
+        <p className="meta">Client ID-urile din consolele Google / Apple. Aplicațiile le citesc din remote config.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label style={{ fontSize: '13.5px' }}>
+            <input type="checkbox" style={{ width: 17 }} checked={(vals.auth_google_enabled || 'false') === 'true'}
+              onChange={e => set('auth_google_enabled', e.target.checked ? 'true' : 'false')} /> Login cu Google activ
+          </label>
+          {field('auth_google_web_client_id', 'Google Web client ID')}
+          {field('auth_google_ios_client_id', 'Google iOS client ID')}
+          {field('auth_google_android_client_id', 'Google Android client ID')}
+          <label style={{ fontSize: '13.5px' }}>
+            <input type="checkbox" style={{ width: 17 }} checked={(vals.auth_apple_enabled || 'false') === 'true'}
+              onChange={e => set('auth_apple_enabled', e.target.checked ? 'true' : 'false')} /> Login cu Apple activ
+          </label>
+          {field('auth_apple_service_id', 'Apple Service ID')}
         </div>
       </section>
       <section className="panel">
@@ -493,6 +514,71 @@ function ContentManager() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PushComposer() {
+  const [target, setTarget] = useState('all');
+  const [userEmail, setUserEmail] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [msg, setMsg] = useState('');
+  const [history, setHistory] = useState<any[]>([]);
+
+  const loadHist = () => api.get('/push/history').then(r => setHistory(r.data)).catch(() => {});
+  useEffect(() => { loadHist(); }, []);
+
+  const send = async () => {
+    setMsg('');
+    if (!title.trim() || !body.trim()) { setMsg('Completează titlul și textul.'); return; }
+    let userId;
+    if (target === 'user') {
+      if (!userEmail.trim()) { setMsg('Indică emailul utilizatorului.'); return; }
+      try {
+        const users = await api.get('/users');
+        const u = users.data.find((x: any) => x.email.toLowerCase() === userEmail.trim().toLowerCase());
+        if (!u) { setMsg('Utilizatorul nu a fost găsit.'); return; }
+        userId = u.id;
+      } catch { setMsg('Eroare la căutare.'); return; }
+    }
+    try {
+      const { data } = await api.post('/push/send', { title: title.trim(), body: body.trim(), target, userId });
+      setMsg(`✓ Trimise: ${data.sent}, eșuate: ${data.failed} (tokenuri: ${data.total}).`);
+      setTitle(''); setBody(''); loadHist();
+    } catch { setMsg('Eroare la trimitere.'); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
+      <section className="panel">
+        <h3>Notificare nouă (Expo Push)</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label>Către
+            <select value={target} onChange={e => setTarget(e.target.value)}>
+              <option value="all">Toți (toate dispozitivele)</option>
+              <option value="users">Utilizatori simpli</option>
+              <option value="authors">Autori (MODERATOR)</option>
+              <option value="admins">Administratori</option>
+              <option value="user">Utilizator individual (după email)</option>
+            </select>
+          </label>
+          {target === 'user' && <input placeholder="email@utilizator" value={userEmail} onChange={e => setUserEmail(e.target.value)} />}
+          <input placeholder="Titlu (max 120)" value={title} onChange={e => setTitle(e.target.value)} />
+          <textarea rows={3} placeholder="Text (max 180)" value={body} onChange={e => setBody(e.target.value)} />
+          <div><button className="btn" onClick={send}>Trimite notificarea</button></div>
+          {msg && <p className="notice">{msg}</p>}
+        </div>
+      </section>
+      <section className="panel">
+        <h3>Istoric trimiteri</h3>
+        {!history.length && <p className="meta">Nicio trimitere încă.</p>}
+        <ul className="dash-list">
+          {history.map((h: any) => (
+            <li key={h.id}><strong>{h.title}</strong> <span className="meta">· {h.target} · ✓{h.sent} ✕{h.failed} · {new Date(h.createdAt).toLocaleString()}</span></li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

@@ -25,6 +25,7 @@ model User {
   ratings      Rating[]
   favorites    Favorite[]
   authorRequests AuthorRequest[]
+  pushTokens   PushToken[]
 }
 
 model AgeGroup {
@@ -110,6 +111,7 @@ model Recipe {
   ingredientsDetailed RecipeIngredient[]
   ageGroups       RecipeAge[]
   ratings         Rating[]
+  guestVotes      GuestVote[]
   favoritedBy     Favorite[]
 
   createdAt DateTime @default(now())
@@ -225,6 +227,38 @@ model CookieSection {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Tokenuri Expo Push (notificari mobile) — un token poate apartine unui user sau unui guest
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String?
+  createdAt DateTime @default(now())
+}
+
+// Voturi guest (fara cont, din aplicatie) — identificate prin deviceId
+model GuestVote {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  deviceId  String
+  value     Int
+  createdAt DateTime @default(now())
+  @@unique([deviceId, recipeId])
+}
+
+// Istoric notificari push trimise din admin
+model PushLog {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  target    String
+  sent      Int      @default(0)
+  failed    Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii

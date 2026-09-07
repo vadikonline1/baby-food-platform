@@ -54,6 +54,8 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/author-requests', authorRequestRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/content', contentRoutes);
+const pushRoutes = require('./routes/push');
+app.use('/api/push', pushRoutes);
 
 // Frontend SPA servit din acelasi container/DNS (./public copiat la build).
 // Rutele /api si /uploads sunt exceptate.

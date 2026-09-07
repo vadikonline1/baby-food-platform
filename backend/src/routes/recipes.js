@@ -97,6 +97,25 @@ router.get('/', async (req, res) => {
   res.json({ total, page: Number(page) || 1, limit: take, items });
 });
 
+// GET reteta random (pentru ecranul Random din aplicatie) — respecta filtrele category/age
+router.get('/random', async (req, res) => {
+  const { category, age } = req.query;
+  const where = { status: 'PUBLISHED' };
+  if (age) {
+    const ids = numList(age);
+    if (ids.length) where.ageGroups = { some: { ageGroupId: ids.length === 1 ? ids[0] : { in: ids } } };
+  }
+  if (category) {
+    const slugs = String(category).split(',').map(s => s.trim()).filter(Boolean);
+    if (slugs.length) where.categories = { some: { category: { slug: slugs.length === 1 ? slugs[0] : { in: slugs } } } };
+  }
+  const ids = await prisma.recipe.findMany({ where, select: { id: true }, take: 500 });
+  if (!ids.length) return res.status(404).json({ error: 'not_found' });
+  const pick = ids[Math.floor(Math.random() * ids.length)];
+  const recipe = await prisma.recipe.findUnique({ where: { id: pick.id }, include: recipeInclude });
+  res.json(recipe);
+});
+
 // GET by id pentru editare — MOD doar propriile retete (inainte de /:slug)
 router.get('/by-id/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
   const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
@@ -307,6 +326,17 @@ router.delete('/:id', authRequired, roleRequired('ADMIN'), async (req, res) => {
   res.json({ ok: true });
 });
 
+// media combinata voturi cont + voturi guest (aplicatie)
+async function recomputeRating(recipeId) {
+  const [a, g] = await Promise.all([
+    prisma.rating.aggregate({ where: { recipeId }, _avg: { value: true }, _count: true }),
+    prisma.guestVote.aggregate({ where: { recipeId }, _avg: { value: true }, _count: true })
+  ]);
+  const c1 = a._count || 0, c2 = g._count || 0, total = c1 + c2;
+  const avg = total ? ((a._avg.value || 0) * c1 + (g._avg.value || 0) * c2) / total : 0;
+  return prisma.recipe.update({ where: { id: recipeId }, data: { avgRating: avg, ratingsCount: total } });
+}
+
 // vote 1-5 — orice utilizator logat
 router.post('/:id/rate', authRequired, async (req, res) => {
   const recipeId = Number(req.params.id);
@@ -317,11 +347,25 @@ router.post('/:id/rate', authRequired, async (req, res) => {
     create: { userId: req.user.id, recipeId, value },
     update: { value }
   });
-  const agg = await prisma.rating.aggregate({ where: { recipeId }, _avg: { value: true }, _count: true });
-  const recipe = await prisma.recipe.update({
-    where: { id: recipeId },
-    data: { avgRating: agg._avg.value || 0, ratingsCount: agg._count || 0 }
+  const recipe = await recomputeRating(recipeId);
+  res.json({ avgRating: recipe.avgRating, ratingsCount: recipe.ratingsCount });
+});
+
+// vote guest 1-5 — FARA cont (aplicatie), dupa deviceId
+router.post('/:id/guest-rate', async (req, res) => {
+  const recipeId = Number(req.params.id);
+  const value = Number(req.body?.value);
+  const deviceId = String(req.body?.deviceId || '');
+  if (!value || value < 1 || value > 5) return res.status(400).json({ error: 'value_1_5_required' });
+  if (deviceId.length < 8 || deviceId.length > 128) return res.status(400).json({ error: 'device_required' });
+  const exists = await prisma.recipe.findUnique({ where: { id: recipeId }, select: { id: true, status: true } });
+  if (!exists || exists.status !== 'PUBLISHED') return res.status(404).json({ error: 'not_found' });
+  await prisma.guestVote.upsert({
+    where: { deviceId_recipeId: { deviceId, recipeId } },
+    create: { deviceId, recipeId, value },
+    update: { value }
   });
+  const recipe = await recomputeRating(recipeId);
   res.json({ avgRating: recipe.avgRating, ratingsCount: recipe.ratingsCount });
 });
 
