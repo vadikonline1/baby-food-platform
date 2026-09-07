@@ -4,34 +4,45 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 // Sursa DNS este DOAR fișierul hosts_app_dns (configurabil oricând, fără rebuild):
-//   md.vadikonline1.gustbebe=<host[:port]|full url>  =>  base = http[s]://<valoare>/api
-// Valoarea poate fi "host:port" (se prefixează http:// — serverul e pe HTTP) sau
-// chiar un URL complet cu schemă (https://...). Rezultatul se cache-uiește local.
-// NU există fallback hardcodat în cod — schimbarea DNS-ului = editare în fișier.
+//   md.vadikonline1.gustbebe=<host[:port]|https://host|http://host>
+//   => base = https://<valoare>/api (întâi favoare https), cu fallback pe http://
+// Rezultatul se verifică și se cache-uiește local. NU există fallback hardcodat.
 const DNS_SOURCE =
   Constants.expoConfig?.extra?.dnsSource ||
   'https://raw.githubusercontent.com/vadikonline1/pi.hole/refs/heads/main/hosts_app_dns';
 const DNS_KEY =
   Constants.expoConfig?.extra?.apiDnsKey || 'md.vadikonline1.gustbebe';
 
-// ia valoarea din fișier (deja cu schemă → o lasă; altfel http://, serverul e pe HTTP)
-function resolveBase(dns: string): string {
+// creează candidatele de bază pentru o valoare din fișier (https întâi)
+function buildCandidates(dns: string): string[] {
   const v = dns.trim().replace(/\/+$/, '');
-  if (!v) return '';
-  const baseUrl = /^https?:\/\//i.test(v) ? v : `http://${v}`;
-  return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  if (!v) return [];
+  if (/^https?:\/\//i.test(v)) return [v.endsWith('/api') ? v : `${v}/api`];
+  return [`https://${v}/api`, `http://${v}/api`];
 }
 
-let baseURL: string | null = null;
+// verifică rapid că baza răspunde (cheap: GET /settings/config)
+async function probe(base: string): Promise<boolean> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(`${base}/settings/config`, { signal: ctrl.signal });
+    clearTimeout(t);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function initApiBase(): Promise<string | null> {
-  let resolved = '';
+  let baseURL: string | null = null;
+  let cached = '';
   try {
-    const cached = await AsyncStorage.getItem('gb_api_base');
-    if (cached) {
-      baseURL = cached;
-      resolved = cached;
-    }
+    cached = (await AsyncStorage.getItem('gb_api_base')) || '';
+  } catch {}
+
+  let fresh = '';
+  try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch(DNS_SOURCE, { signal: ctrl.signal });
@@ -40,21 +51,28 @@ export async function initApiBase(): Promise<string | null> {
       const text = await res.text();
       const line = text.split('\n').map((x) => x.trim()).find((x) => x.startsWith(DNS_KEY + '='));
       const dns = line ? line.split('=').slice(1).join('=').trim() : '';
-      const fresh = resolveBase(dns);
-      if (fresh) {
-        resolved = fresh;
-        baseURL = fresh;
-        await AsyncStorage.setItem('gb_api_base', fresh);
+      for (const cand of buildCandidates(dns)) {
+        if (await probe(cand)) {
+          fresh = cand;
+          break;
+        }
       }
     }
   } catch {
     // rămâne cache-ul (sau null → ecran reîncercare)
   }
-  api.defaults.baseURL = (resolved || baseURL) ?? undefined;
+
+  baseURL = fresh || cached || null;
+  if (baseURL) {
+    api.defaults.baseURL = baseURL;
+    if (fresh) AsyncStorage.setItem('gb_api_base', fresh).catch(() => {});
+  } else {
+    api.defaults.baseURL = undefined;
+  }
   return baseURL;
 }
 
-export const api = axios.create({ baseURL: baseURL ?? undefined, timeout: 15000 });
+export const api = axios.create({ timeout: 15000 });
 
 api.interceptors.request.use(async (cfg) => {
   const token = await SecureStore.getItemAsync('gb_token');
