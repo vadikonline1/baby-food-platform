@@ -17,7 +17,8 @@ const SERVER_KEYS = [
   { db: 'smtp_pass', env: 'SMTP_PASS' },
   { db: 'smtp_from', env: 'SMTP_FROM' },
   { db: 'telegram_bot_token', env: 'TELEGRAM_BOT_TOKEN' },
-  { db: 'telegram_channel_id', env: 'TELEGRAM_CHANNEL_ID' }
+  { db: 'telegram_channel_id', env: 'TELEGRAM_CHANNEL_ID' },
+  { db: 'telegram_channel_admin', env: 'TELEGRAM_CHANNEL_ADMIN' }
 ];
 
 // chei publice citite de aplicatiile mobile + web (remote config — fara rebuild)

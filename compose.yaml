@@ -27,5 +27,6 @@ services:
       SMTP_FROM: "${SMTP_FROM:-GustBebe <no-reply@gustbebe.md>}"
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
+      TELEGRAM_CHANNEL_ADMIN: "${TELEGRAM_CHANNEL_ADMIN:-}"
     volumes:
       - ./data:/data

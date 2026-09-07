@@ -106,7 +106,7 @@ export default function Recipes() {
                     {(r.ageGroups || []).map((a: any) => <span key={a.ageGroupId} className="badge">{localized(a.ageGroup, 'label', lang)}</span>)}
                     {r.feedingType && <span className="badge orange">{localized(r.feedingType, 'name', lang)}</span>}
                   </div>
-                  <span className="meta">⭐ {Number(r.avgRating).toFixed(1)} · {r.ratingsCount} {t('recipes.votes')}</span>
+                  <span className="meta">⭐ {Number(r.avgRating).toFixed(1)} · {r.ratingsCount} {t('recipes.votes')} · 👁 {r.viewsCount || 0}</span>
                   <div className="row"><Link className="btn secondary small" to={recipeUrl(r)}>{t('recipes.details')}</Link></div>
                 </div>
               </div>

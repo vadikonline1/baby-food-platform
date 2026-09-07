@@ -36,7 +36,7 @@ export default function Search() {
       {r.imageUrl ? <img src={imgUrl(r.imageUrl)} alt="" loading="lazy" /> : <div className="card-ph">🥣</div>}
       <div className="body">
         <strong>{localized(r, 'title', lang)}</strong>
-        <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0}</span>
+        <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0} · 👁 {r.viewsCount || 0}</span>
         <div className="row"><Link className="btn secondary small" to={recipeUrl(r)}>{t('recipes.details')}</Link></div>
       </div>
     </div>

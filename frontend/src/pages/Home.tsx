@@ -24,7 +24,7 @@ function RecipeCard({ r, lang, detailsLabel }: { r: any; lang: string; detailsLa
         : <div style={{ height: 120, background: 'linear-gradient(135deg,#e9f4ec,#d8ecdf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>🥣</div>}
       <div className="body">
         <strong>{localized(r, 'title', lang)}</strong>
-        <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0}</span>
+        <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0} · 👁 {r.viewsCount || 0}</span>
         <div className="row"><Link className="btn secondary small" to={recipeUrl(r)}>{detailsLabel}</Link></div>
       </div>
     </div>

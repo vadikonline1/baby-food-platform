@@ -87,4 +87,26 @@ function postRecipeAsync(r) {
   );
 }
 
-module.exports = { postRecipe, postRecipeAsync };
+// mesaj direct catre admin (TELEGRAM_CHANNEL_ADMIN: @canal sau id gen -100123...) — silentios daca lipseste
+async function notifyAdmin(text) {
+  try {
+    const [token, adminChat] = await Promise.all([
+      getValue('TELEGRAM_BOT_TOKEN'),
+      getValue('TELEGRAM_CHANNEL_ADMIN')
+    ]);
+    if (!token || !adminChat) return { skipped: true };
+    return tg(token, 'sendMessage', { chat_id: adminChat, text, parse_mode: 'HTML', disable_web_page_preview: true });
+  } catch (e) {
+    console.error('[telegram] admin notify failed:', e.message);
+    return { failed: true };
+  }
+}
+
+function notifyAdminAsync(text) {
+  notifyAdmin(text).then(
+    (r) => { if (r && !r.skipped) console.log('[telegram] admin notified'); },
+    () => {}
+  );
+}
+
+module.exports = { postRecipe, postRecipeAsync, notifyAdmin, notifyAdminAsync };

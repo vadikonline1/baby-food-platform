@@ -156,7 +156,7 @@ export default function RecipeDetail() {
                 {x.imageUrl ? <img src={imgUrl(x.imageUrl)} alt="" loading="lazy" /> : <div className="card-ph">🥣</div>}
                 <div className="body">
                   <strong>{localized(x, 'title', lang)}</strong>
-                  <span className="meta">⭐ {Number(x.avgRating || 0).toFixed(1)} · {x.ratingsCount || 0}</span>
+                  <span className="meta">⭐ {Number(x.avgRating || 0).toFixed(1)} · {x.ratingsCount || 0} · 👁 {x.viewsCount || 0}</span>
                   <div className="row"><Link className="btn secondary small" to={recipeUrl(x)}>{t('recipes.details')}</Link></div>
                 </div>
               </div>

@@ -152,6 +152,7 @@ export default function Profile() {
           {r.imageUrl ? <img src={imgUrl(r.imageUrl)} alt="" loading="lazy" /> : <div className="card-ph">🥣</div>}
           <div className="body">
             <strong>{localized(r, 'title', i18n.language)}</strong>
+            <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · 👁 {r.viewsCount || 0}</span>
             <div className="row">
               <Link className="btn secondary small" to={recipeUrl(r)}>Vezi</Link>
               <button className="btn danger small" onClick={() => removeFav(r.id)}>✕ Favorit</button>

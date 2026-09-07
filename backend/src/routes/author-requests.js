@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { notify } = require('./notifications');
+const { notifyAdminAsync } = require('../lib/telegram');
 const { pickQuiz } = require('../lib/quiz');
 
 const router = express.Router();
@@ -91,6 +92,7 @@ router.post('/', authRequired, async (req, res) => {
     await prisma.user.update({ where: { id: req.user.id }, data: { role: 'MODERATOR' } });
   } else {
     await notify('author_request', `Cerere autor: ${r.user.name}`, `${r.user.email} dorește să publice rețete.`, '/admin?tab=authors');
+    notifyAdminAsync(`✍️ <b>Cerere autor nouă</b>\n${r.user.name} (${r.user.email})\nQuiz: ${quizCorrect}/${quizTotal}`);
   }
   res.status(201).json({ ...r, autoApproved });
 });

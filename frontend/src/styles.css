@@ -322,8 +322,10 @@ pre { font-family: inherit; }
 .quiz-block h4 { margin: 0 0 6px; }
 .quiz-q { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
 .quiz-q p { margin: 0 0 8px; }
-.quiz-opts { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
-.quiz-opt { display: inline-flex; gap: 9px; align-items: center; font-size: 14px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: #fff; }
+.quiz-opts { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; align-items: stretch; justify-content: space-around; }
+.quiz-opt { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: #fff; flex: 1 1 200px; }
+.quiz-opt input[type="radio"] { flex-shrink: 0; width: 18px; margin: 0; }
+.quiz-opt span { flex: 1; }
 .quiz-opt:hover { border-color: var(--primary); }
 .quiz-opt.sel { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 1px var(--primary); font-weight: 600; }
 

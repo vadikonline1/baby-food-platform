@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { notify } = require('./notifications');
+const { notifyAdminAsync } = require('../lib/telegram');
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.post('/', async (req, res) => {
     data: { name: String(name).slice(0, 80), email: String(email).slice(0, 120), message: String(message).slice(0, 3000) }
   });
   await notify('contact', `Mesaj contact: ${m.name}`, `${m.email} — ${m.message.slice(0, 120)}`, '/admin?tab=messages');
+  notifyAdminAsync(`💬 <b>Mesaj contact nou</b>\n${m.name} (${m.email}):\n${m.message.slice(0, 300)}`);
   res.status(201).json({ ok: true });
 });
 

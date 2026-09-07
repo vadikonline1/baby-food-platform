@@ -262,7 +262,8 @@ function AppSettings() {
           <label>SMTP_PASS {src('smtp_pass')}<input type="password" value={vals.smtp_pass || ''} onChange={e => set('smtp_pass', e.target.value)} /></label>
           <label>SMTP_FROM {src('smtp_from')}<input value={vals.smtp_from || ''} onChange={e => set('smtp_from', e.target.value)} /></label>
           <label>TELEGRAM_BOT_TOKEN {src('telegram_bot_token')}<input type="password" value={vals.telegram_bot_token || ''} onChange={e => set('telegram_bot_token', e.target.value)} /></label>
-          <label>TELEGRAM_CHANNEL_ID {src('telegram_channel_id')}<input value={vals.telegram_channel_id || ''} placeholder="@gustbebe" onChange={e => set('telegram_channel_id', e.target.value)} /></label>
+          <label>TELEGRAM_CHANNEL_ID (canal publicare, @nume sau -100...) {src('telegram_channel_id')}<input value={vals.telegram_channel_id || ''} placeholder="@gustbebe" onChange={e => set('telegram_channel_id', e.target.value)} /></label>
+          <label>TELEGRAM_CHANNEL_ADMIN (mesaje directe admin: cereri autor, rețete noi, contact) {src('telegram_channel_admin')}<input value={vals.telegram_channel_admin || ''} placeholder="@admin sau -100123456" onChange={e => set('telegram_channel_admin', e.target.value)} /></label>
         </div>
       </section>
       <section className="panel">
