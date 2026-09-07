@@ -73,9 +73,10 @@ jobs:
 
       - name: Build release APK
         run: |
+          node --version
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --stacktrace
           cd ..
 
       - name: Upload APK (workflow artifact)
