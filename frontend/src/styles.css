@@ -322,8 +322,8 @@ pre { font-family: inherit; }
 .quiz-block h4 { margin: 0 0 6px; }
 .quiz-q { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
 .quiz-q p { margin: 0 0 8px; }
-.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
-.quiz-opt { display: flex; gap: 9px; align-items: center; font-size: 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: #fff; }
+.quiz-opts { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+.quiz-opt { display: inline-flex; gap: 9px; align-items: center; font-size: 14px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: #fff; }
 .quiz-opt:hover { border-color: var(--primary); }
 .quiz-opt.sel { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 1px var(--primary); font-weight: 600; }
 

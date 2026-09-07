@@ -158,6 +158,20 @@ async function main() {
       console.log(`[seed] faq extra: ${f.q[0]}`);
     }
   }
+  // banca quiz (15 intrebari) — doar la prima initializare, apoi din Admin → Continut
+  const { QUIZ: SEED_QUIZ, EXTRA_QUIZ: SEED_EXTRA } = require('../src/lib/quiz');
+  if ((await prisma.quizQuestion.count()) === 0) {
+    let pos = 0;
+    for (const q of [...SEED_QUIZ, ...SEED_EXTRA]) {
+      await prisma.quizQuestion.create({
+        data: {
+          qRo: q.q[0], qRu: q.q[1], qEn: q.q[2],
+          options: JSON.stringify(q.o), correct: q.c, position: pos++
+        }
+      });
+    }
+    console.log('[seed] quiz questions: 15');
+  }
   const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
   if (!existing) {
     const age = await prisma.ageGroup.findFirst();

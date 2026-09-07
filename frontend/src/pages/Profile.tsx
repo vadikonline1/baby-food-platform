@@ -29,8 +29,9 @@ export default function Profile() {
   }, []);
   useEffect(() => {
     if (user) setName(user.name);
-    if (user?.role === 'USER' && !areq) {
-      api.get(`/author-requests/quiz?lang=${i18n.language}`).then(r => setQuiz(r.data)).catch(() => {});
+    // test nou (5 intrebari random) la fiecare incercare noua sau re-examinare
+    if (user?.role === 'USER' && (!areq || areq.status === 'REJECTED')) {
+      api.get(`/author-requests/quiz?lang=${i18n.language}`).then(r => { setQuiz(r.data); setQans({}); }).catch(() => {});
     }
     // cerere aprobata dar rolul din context e vechi (token emis inainte de promovare) -> reincarca o data
     if (user?.role === 'USER' && areq?.status === 'APPROVED' && !roleRefreshed.current) {
@@ -103,7 +104,7 @@ export default function Profile() {
                 <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
               {!!quiz?.questions?.length && (
                 <div className="quiz-block">
-                  <h4>Mini-test: răspunde corect la toate și devii Autor pe loc (altfel decide adminul)</h4>
+                  <h4>Mini-test (5 întrebări): răspunde corect la toate și devii Autor pe loc (altfel decide adminul)</h4>
                   {quiz.questions.map((qq: any, i: number) => (
                     <div key={qq.qid} className="quiz-q">
                       <p><strong>{i + 1}. {qq.q}</strong></p>

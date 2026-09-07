@@ -8,7 +8,8 @@ const router = express.Router();
 const MODELS = {
   guide: () => prisma.guideItem,
   faq: () => prisma.faqItem,
-  cookies: () => prisma.cookieSection
+  cookies: () => prisma.cookieSection,
+  quiz: () => prisma.quizQuestion
 };
 function modelOf(type, res) {
   const m = MODELS[type]?.();

@@ -277,6 +277,20 @@ model RecipeView {
   @@unique([recipeId, day, identHash])
 }
 
+// Banca de intrebari pentru testul de Autor (gestionata din Admin → Continut)
+model QuizQuestion {
+  id        Int      @id @default(autoincrement())
+  qRo       String
+  qRu       String
+  qEn       String
+  options   String   @default("[]")
+  correct   Int      @default(0)
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii
 model Unit {
   id      Int      @id @default(autoincrement())

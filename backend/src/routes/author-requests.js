@@ -14,12 +14,27 @@ setInterval(() => {
   for (const [k, v] of challenges) if (v.exp < now) challenges.delete(k);
 }, 60000).unref?.();
 
-// GET /api/author-requests/quiz?lang=ro — 3 intrebari random (fara raspunsuri corecte)
-router.get('/quiz', authRequired, (req, res) => {
+// GET /api/author-requests/quiz?lang=ro — 5 intrebari random din banca (fara raspunsuri corecte)
+router.get('/quiz', authRequired, async (req, res) => {
   const lang = ['ro', 'ru', 'en'].includes(req.query.lang) ? req.query.lang : 'ro';
+  const L = lang === 'ru' ? 1 : lang === 'en' ? 2 : 0;
   const id = crypto.randomBytes(16).toString('hex');
-  const { questions, correct } = pickQuiz(lang);
-  const answerMap = Object.fromEntries(questions.map((q, i) => [q.qid, correct[i]]));
+  const dbRows = await prisma.quizQuestion.findMany({ where: { active: true }, orderBy: { position: 'asc' } });
+  let questions, answerMap;
+  if (dbRows.length >= 5) {
+    const picked = [...dbRows].sort(() => Math.random() - 0.5).slice(0, 5);
+    questions = picked.map((r) => {
+      let opts = [];
+      try { opts = JSON.parse(r.options || '[]'); } catch {}
+      return { qid: r.id, q: [r.qRo, r.qRu, r.qEn][L], options: (opts.length ? opts : [['—'], ['—'], ['—']]).map((o) => o[L] || o[0]) };
+    });
+    answerMap = Object.fromEntries(picked.map((r) => [r.id, r.correct]));
+  } else {
+    // fallback: banca statica (5 intrebari)
+    const { questions: qs, correct } = pickQuiz(lang);
+    questions = qs;
+    answerMap = Object.fromEntries(qs.map((q, i) => [q.qid, correct[i]]));
+  }
   challenges.set(id, { map: answerMap, exp: Date.now() + 15 * 60 * 1000 });
   res.json({ id, questions });
 });
@@ -80,10 +95,18 @@ router.post('/', authRequired, async (req, res) => {
   res.status(201).json({ ...r, autoApproved });
 });
 
-// GET /api/author-requests/quiz-bank — ADMIN (banca intrebarilor, cu raspunsuri corecte)
-router.get('/quiz-bank', authRequired, roleRequired('ADMIN'), (req, res) => {
+// GET /api/author-requests/quiz-bank — ADMIN (banca completa, cu raspunsuri corecte)
+router.get('/quiz-bank', authRequired, roleRequired('ADMIN'), async (req, res) => {
+  const rows = await prisma.quizQuestion.findMany({ orderBy: [{ position: 'asc' }, { id: 'asc' }] });
+  if (rows.length) {
+    return res.json(rows.map((r) => {
+      let opts = [];
+      try { opts = JSON.parse(r.options || '[]'); } catch {}
+      return { qid: r.id, q: [r.qRo, r.qRu, r.qEn], o: opts, c: r.correct };
+    }));
+  }
   const { QUIZ } = require('../lib/quiz');
-  res.json(QUIZ);
+  res.json(QUIZ.map((q, i) => ({ qid: i, q: q.q, o: q.o, c: q.c })));
 });
 
 // GET /api/author-requests/mine — cererea mea

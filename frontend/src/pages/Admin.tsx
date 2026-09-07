@@ -398,6 +398,7 @@ function AuthorsManager() {
     load();
   };
   const L = lang === 'ru' ? 1 : lang === 'en' ? 2 : 0;
+  const bankQ = (qid: number) => bank.find((b: any) => b.qid === qid);
   const quizOf = (it: any) => {
     try { return JSON.parse(it.quizAnswers || '[]'); } catch { return []; }
   };
@@ -423,7 +424,7 @@ function AuthorsManager() {
                 {open === i.id && (
                   <ul className="ing-list" style={{ marginTop: 8 }}>
                     {qa.map((a: any, j: number) => {
-                      const q = bank[a.qid];
+                      const q = bankQ(a.qid);
                       const ok = a.picked === a.correct;
                       return (
                         <li key={j}>
@@ -494,7 +495,8 @@ function MessagesManager() {
 const CONTENT_TYPES = [
   { key: 'guide', label: 'Ghid diversificare' },
   { key: 'faq', label: 'FAQ' },
-  { key: 'cookies', label: 'Politica cookies' }
+  { key: 'cookies', label: 'Politica cookies' },
+  { key: 'quiz', label: 'Quiz autori' }
 ];
 
 function ContentManager() {
@@ -509,7 +511,9 @@ function ContentManager() {
     ? { icon: '🥣', titleRo: '', titleRu: '', titleEn: '', bodyRo: '', bodyRu: '', bodyEn: '', position: items.length, active: true }
     : type === 'faq'
       ? { questionRo: '', questionRu: '', questionEn: '', answerRo: '', answerRu: '', answerEn: '', position: items.length, active: true }
-      : { titleRo: '', titleRu: '', titleEn: '', bodyRo: '', bodyRu: '', bodyEn: '', position: items.length, active: true };
+      : type === 'quiz'
+        ? { qRo: '', qRu: '', qEn: '', options: JSON.stringify([['', '', ''], ['', '', ''], ['', '', '']]), correct: 0, position: items.length, active: true }
+        : { titleRo: '', titleRu: '', titleEn: '', bodyRo: '', bodyRu: '', bodyEn: '', position: items.length, active: true };
 
   const save = async () => {
     const d = { ...modal.data, position: Number(modal.data.position) || 0 };
@@ -522,8 +526,30 @@ function ContentManager() {
     await api.delete(`/content/${type}/${id}`);
     load();
   };
-  const titleOf = (it: any) => type === 'faq' ? it.questionRo : it.titleRo;
-  const subOf = (it: any) => type === 'faq' ? it.answerRu || it.answerEn : it.bodyRu || it.bodyEn;
+  const titleOf = (it: any) => type === 'faq' ? it.questionRo : type === 'quiz' ? it.qRo : it.titleRo;
+  const subOf = (it: any) => {
+    if (type === 'faq') return it.answerRu || it.answerEn;
+    if (type === 'quiz') {
+      try {
+        const o = JSON.parse(it.options || '[]');
+        return `corect: ${o[it.correct] ? o[it.correct][0] : ''}`;
+      } catch { return ''; }
+    }
+    return it.bodyRu || it.bodyEn;
+  };
+  const setOpt = (i: number, l: number, v: string) => {
+    let o: string[][] = [['', '', ''], ['', '', ''], ['', '', '']];
+    try { const p = JSON.parse(modal.data.options || '[]'); if (Array.isArray(p) && p.length === 3) o = p; } catch {}
+    o[i][l] = v;
+    setModal({ ...modal, data: { ...modal.data, options: JSON.stringify(o) } });
+  };
+  const quizOpts = (): string[][] => {
+    try {
+      const p = JSON.parse(modal.data.options || '[]');
+      if (Array.isArray(p) && p.length === 3) return p;
+    } catch {}
+    return [['', '', ''], ['', '', ''], ['', '', '']];
+  };
 
   return (
     <div>
@@ -552,7 +578,23 @@ function ContentManager() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{modal.mode === 'add' ? 'Adaugă' : 'Editează'}</h3>
             {type === 'guide' && <input placeholder="Icon (emoji)" value={modal.data.icon || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, icon: e.target.value } })} />}
-            {type === 'faq' ? (
+            {type === 'quiz' ? (
+              <>
+                <input placeholder="Întrebare RO *" value={modal.data.qRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, qRo: e.target.value } })} />
+                <input placeholder="Întrebare RU" value={modal.data.qRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, qRu: e.target.value } })} />
+                <input placeholder="Întrebare EN" value={modal.data.qEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, qEn: e.target.value } })} />
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="radio" name="quiz-correct" style={{ width: 18 }} checked={Number(modal.data.correct) === i}
+                      onChange={() => setModal({ ...modal, data: { ...modal.data, correct: i } })} title="Răspuns corect" />
+                    <input placeholder={`Varianta ${i + 1} RO`} value={quizOpts()[i][0]} onChange={e => setOpt(i, 0, e.target.value)} />
+                    <input placeholder="RU" value={quizOpts()[i][1]} onChange={e => setOpt(i, 1, e.target.value)} />
+                    <input placeholder="EN" value={quizOpts()[i][2]} onChange={e => setOpt(i, 2, e.target.value)} />
+                  </div>
+                ))}
+                <p className="meta">Bifează varianta corectă. Din cele active se aleg random câte 5 la fiecare testare.</p>
+              </>
+            ) : type === 'faq' ? (
               <>
                 <input placeholder="Întrebare RO *" value={modal.data.questionRo || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, questionRo: e.target.value } })} />
                 <input placeholder="Întrebare RU" value={modal.data.questionRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, questionRu: e.target.value } })} />
