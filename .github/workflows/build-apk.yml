@@ -63,6 +63,13 @@ jobs:
       - name: Generate native android project (expo prebuild)
         run: npx expo prebuild --platform android --no-install
 
+      - name: Debug autolinking mirror (temporary)
+        run: |
+          node --version
+          which node
+          node --no-warnings --eval "require('expo/bin/autolinking')" expo-modules-autolinking mirror-kotlin-inline-modules --kotlin-files-mirror-directory "$PWD/node_modules/expo/android/src/main/java/inline/modules" --inline-modules-list-directory "$PWD/node_modules/expo/android/build/inline/modules" --watched-directories-serialized "[]"
+          echo "mirror exit=$?"
+
       - name: Configure Gradle heap + local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
