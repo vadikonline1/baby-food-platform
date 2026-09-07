@@ -1,11 +1,11 @@
 services:
   app:
-    # imagine pre-construita de CI (.github/workflows/docker-image.yml):
-    # pe server: docker compose pull && docker compose up -d (fara build local)
+    # DOAR pull din GHCR — fara compilare locala pe server.
+    # Build-ul se face in CI (.github/workflows/docker-image.yml).
+    # Pe server: docker compose up -d
     image: ghcr.io/vadikonline1/baby-food-platform:latest
-    # ia mereu ultimul pull la fiecare up (fara build local pe server)
+    # ia mereu ultimul pull la fiecare up
     pull_policy: always
-    build: .
     ports:
       - "${APP_PORT:-4000}:4000"
     environment:
