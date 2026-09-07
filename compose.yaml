@@ -28,7 +28,4 @@ services:
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHANNEL_ID: "${TELEGRAM_CHANNEL_ID:-}"
     volumes:
-      - sqlite_data:/data
-
-volumes:
-  sqlite_data:
+      - ./data:/data
