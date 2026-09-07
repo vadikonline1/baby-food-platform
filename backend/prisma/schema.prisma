@@ -170,6 +170,17 @@ model ContactMessage {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+  replies   ContactReply[]
+}
+
+// Raspunsuri in firul de mesaje (admin <-> utilizator)
+model ContactReply {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  message   ContactMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  from      String
+  text      String
+  createdAt DateTime @default(now())
 }
 
 // Continut editabil din Admin (Ghid diversificare / FAQ / Politica cookies)

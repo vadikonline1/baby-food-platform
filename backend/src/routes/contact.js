@@ -40,11 +40,47 @@ router.post('/', async (req, res) => {
   res.status(201).json({ ok: true });
 });
 
-// GET /api/contact/messages — ADMIN
+// GET /api/contact/messages — ADMIN (cu raspunsuri)
 router.get('/messages', authRequired, roleRequired('ADMIN'), async (req, res) => {
-  res.json(await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' }, take: 100 }));
+  res.json(await prisma.contactMessage.findMany({
+    orderBy: { createdAt: 'desc' }, take: 100,
+    include: { replies: { orderBy: { createdAt: 'asc' } } }
+  }));
 });
 
+// GET /api/contact/mine — utilizator logat: mesajele proprii (dupa email) + raspunsuri
+router.get('/mine', authRequired, async (req, res) => {
+  const me = await prisma.user.findUnique({ where: { id: req.user.id }, select: { email: true } });
+  res.json(await prisma.contactMessage.findMany({
+    where: { email: me.email },
+    orderBy: { createdAt: 'desc' },
+    include: { replies: { orderBy: { createdAt: 'asc' } } }
+  }));
+});
+
+// POST /api/contact/messages/:id/reply { text } — ADMIN (oricare) sau autorul mesajului
+router.post('/messages/:id/reply', authRequired, async (req, res) => {
+  const { text } = req.body || {};
+  if (!text || String(text).trim().length < 1 || String(text).length > 2000) {
+    return res.status(400).json({ error: 'invalid_text' });
+  }
+  const msg = await prisma.contactMessage.findUnique({ where: { id: Number(req.params.id) } });
+  if (!msg) return res.status(404).json({ error: 'not_found' });
+  const isAdmin = req.user.role === 'ADMIN';
+  if (!isAdmin) {
+    const me = await prisma.user.findUnique({ where: { id: req.user.id }, select: { email: true } });
+    if (msg.email !== me.email) return res.status(403).json({ error: 'forbidden' });
+  }
+  const reply = await prisma.contactReply.create({
+    data: { messageId: msg.id, from: isAdmin ? 'admin' : 'user', text: String(text).slice(0, 2000) }
+  });
+  if (!isAdmin) {
+    await notify('contact', `Răspuns contact: ${msg.name}`, `${msg.email} — ${reply.text.slice(0, 120)}`, '/admin?tab=messages');
+  } else {
+    await prisma.contactMessage.update({ where: { id: msg.id }, data: { read: true } });
+  }
+  res.status(201).json(reply);
+});
 // PATCH /api/contact/messages/:id/read — ADMIN
 router.patch('/messages/:id/read', authRequired, roleRequired('ADMIN'), async (req, res) => {
   await prisma.contactMessage.update({ where: { id: Number(req.params.id) }, data: { read: true } });

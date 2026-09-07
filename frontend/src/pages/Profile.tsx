@@ -34,7 +34,11 @@ export default function Profile() {
       setAreq(data); setArMsg('✓ Cererea a fost trimisă. Adminul o va analiza.');
     } catch (err: any) {
       const code = err.response?.data?.error;
-      setArMsg(code === 'already_pending' ? 'Ai deja o cerere în așteptare.' : 'Verifică răspunsurile (minim 20 / 10 caractere).');
+      if (code === 'motivation_min_20') setArMsg(`Motivația e prea scurtă (ai ${motivation.trim().length}, minim 20 caractere).`);
+      else if (code === 'experience_min_10') setArMsg(`Experiența e prea scurtă (ai ${experience.trim().length}, minim 10 caractere).`);
+      else if (code === 'already_pending') setArMsg('Ai deja o cerere în așteptare.');
+      else if (code === 'already_privileged') setArMsg('Ai deja drepturi de publicare — reîncarcă pagina.');
+      else setArMsg('Eroare la trimitere, încearcă din nou.');
     }
   };
 
@@ -72,9 +76,9 @@ export default function Profile() {
           {(!areq || areq.status === 'REJECTED') && (
             <form onSubmit={sendAuthorRequest} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {areq?.status === 'REJECTED' && <p className="meta">Cererea anterioară a fost respinsă — poți încerca din nou cu răspunsuri mai complete.</p>}
-              <label>De ce vrei să publici rețete? (min 20 caractere)
+              <label>De ce vrei să publici rețete? ({motivation.trim().length}/20 minim)
                 <textarea rows={3} value={motivation} onChange={e => setMotivation(e.target.value)} placeholder="Ex: gătesc zilnic pentru cei doi copii ai mei..." /></label>
-              <label>Ce experiență ai cu alimentația copiilor? (min 10 caractere)
+              <label>Ce experiență ai cu alimentația copiilor? ({experience.trim().length}/10 minim)
                 <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
               <div><button className="btn small">Trimite cererea</button></div>
               {arMsg && <p className="meta">{arMsg}</p>}

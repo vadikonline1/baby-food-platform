@@ -104,7 +104,7 @@ async function main() {
 
   // continut editabil (doar la prima initializare — dupa aceea se gestioneaza din Admin)
   // datele stau in backend (content-data.js), NU in frontend — in Docker frontend/src nu exista
-  const { GUIDE_ICONS, GUIDE, COOKIES, FAQ } = require('./content-data');
+  const { GUIDE_ICONS, GUIDE, COOKIES, FAQ, FAQ_EXTRA } = require('./content-data');
   if ((await prisma.guideItem.count()) === 0) {
     let pos = 0;
     for (const [i, g] of GUIDE.entries()) {
@@ -140,6 +140,17 @@ async function main() {
       });
     }
     console.log(`[seed] faq items: ${FAQ.length}`);
+  }
+  // intrebarile generale noi se adauga doar daca lipsesc (fara duplicate la update-uri)
+  for (const f of FAQ_EXTRA) {
+    const exists = await prisma.faqItem.findFirst({ where: { questionRo: f.q[0] } });
+    if (!exists) {
+      const maxPos = await prisma.faqItem.aggregate({ _max: { position: true } });
+      await prisma.faqItem.create({
+        data: { questionRo: f.q[0], questionRu: f.q[1], questionEn: f.q[2], answerRo: f.a[0], answerRu: f.a[1], answerEn: f.a[2], position: (maxPos._max.position ?? -1) + 1 }
+      });
+      console.log(`[seed] faq extra: ${f.q[0]}`);
+    }
   }
   const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
   if (!existing) {

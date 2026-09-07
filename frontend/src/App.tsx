@@ -16,6 +16,7 @@ import Cookies from './pages/Cookies';
 import CookieBanner from './components/CookieBanner';
 import Verify from './pages/Verify';
 import Contact from './pages/Contact';
+import Faq from './pages/Faq';
 import NotifBell from './components/NotifBell';
 import StoreBadges from './components/StoreBadges';
 
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/intrebari-frecvente" element={<Faq />} />
         </Routes>
       </div>
       <footer className="footer">
@@ -77,6 +79,7 @@ export default function App() {
           <Link to="/retete">{t('nav.recipes')}</Link>
           <Link to="/categorii">{t('nav.categories')}</Link>
           <Link to="/contact">{t('nav.contact')}</Link>
+          <Link to="/intrebari-frecvente">{t('contact.faqTitle')}</Link>
           <Link to="/cookies">{t('cookies.more')}</Link>
         </nav>
         <p>GustBebe — {t('tagline')}</p>

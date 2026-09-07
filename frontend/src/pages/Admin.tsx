@@ -362,22 +362,40 @@ function AuthorsManager() {
 
 function MessagesManager() {
   const [items, setItems] = useState<any[]>([]);
+  const [replyText, setReplyText] = useState<Record<number, string>>({});
   const load = () => api.get('/contact/messages').then(r => setItems(r.data)).catch(() => {});
   useEffect(() => { load(); }, []);
   const markRead = async (id: number) => {
     await api.patch(`/contact/messages/${id}/read`);
     setItems(items.map(m => (m.id === id ? { ...m, read: true } : m)));
   };
+  const sendReply = async (id: number) => {
+    const text = (replyText[id] || '').trim();
+    if (!text) return;
+    const { data } = await api.post(`/contact/messages/${id}/reply`, { text });
+    setItems(items.map(m => (m.id === id ? { ...m, replies: [...(m.replies || []), data], read: true } : m)));
+    setReplyText({ ...replyText, [id]: '' });
+  };
   return (
     <div>
       <h3>Mesaje din contact ({items.filter(m => !m.read).length} necitite)</h3>
       {!items.length && <p className="meta">Niciun mesaj.</p>}
       {items.map(m => (
-        <div className="panel" key={m.id} style={{ marginBottom: 12, opacity: m.read ? 0.75 : 1 }}>
+        <div className="panel" key={m.id} style={{ marginBottom: 12, opacity: m.read && !(m.replies || []).length ? 0.75 : 1 }}>
           <p><strong>{m.name}</strong> <span className="meta">· {m.email} · {new Date(m.createdAt).toLocaleString()}</span>{' '}
             {!m.read && <span className="pill warn">NOU</span>}</p>
           <p style={{ whiteSpace: 'pre-wrap' }}>{m.message}</p>
-          {!m.read && <button className="btn secondary small" onClick={() => markRead(m.id)}>Marchează citit</button>}
+          {(m.replies || []).map((r: any) => (
+            <p key={r.id} style={{ marginLeft: 12, padding: '6px 10px', background: r.from === 'admin' ? '#eef4fa' : '#fbf9f7', borderRadius: 8 }}>
+              <strong>{r.from === 'admin' ? 'Tu (admin)' : m.name}:</strong> {r.text}
+              <span className="meta"> · {new Date(r.createdAt).toLocaleString()}</span>
+            </p>
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <input placeholder="Răspunde utilizatorului..." value={replyText[m.id] || ''} onChange={e => setReplyText({ ...replyText, [m.id]: e.target.value })} />
+            <button className="btn small" onClick={() => sendReply(m.id)}>Trimite</button>
+            {!m.read && <button className="btn secondary small" onClick={() => markRead(m.id)}>Marchează citit</button>}
+          </div>
         </div>
       ))}
     </div>

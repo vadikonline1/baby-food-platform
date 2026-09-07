@@ -8,13 +8,17 @@ const router = express.Router();
 // POST /api/author-requests — orice user logat (o singura cerere PENDING)
 router.post('/', authRequired, async (req, res) => {
   const { motivation, experience } = req.body || {};
+  const fail = (code, extra) => {
+    console.log(`[author-request] 400 ${code} (user=${req.user.id} role=${req.user.role} ${extra || ''})`);
+    return res.status(400).json({ error: code });
+  };
   if (!motivation || String(motivation).trim().length < 20) {
-    return res.status(400).json({ error: 'motivation_min_20' });
+    return fail('motivation_min_20', `len=${String(motivation || '').trim().length}`);
   }
   if (!experience || String(experience).trim().length < 10) {
-    return res.status(400).json({ error: 'experience_min_10' });
+    return fail('experience_min_10', `len=${String(experience || '').trim().length}`);
   }
-  if (req.user.role !== 'USER') return res.status(400).json({ error: 'already_privileged' });
+  if (req.user.role !== 'USER') return fail('already_privileged', `role=${req.user.role}`);
   const pending = await prisma.authorRequest.findFirst({ where: { userId: req.user.id, status: 'PENDING' } });
   if (pending) return res.status(409).json({ error: 'already_pending', request: pending });
   const r = await prisma.authorRequest.create({
