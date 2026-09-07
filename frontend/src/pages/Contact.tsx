@@ -16,19 +16,22 @@ export default function Contact() {
   const [state, setState] = useState<'form' | 'ok' | 'err'>('form');
   const [err, setErr] = useState('');
   const [faq, setFaq] = useState<any[]>([]);
-  const [threads, setThreads] = useState<any[]>([]);
-  const [replyText, setReplyText] = useState<Record<number, string>>({});
+  const [hasThreads, setHasThreads] = useState(false);
   const benefits = (t('contact.benefits', { returnObjects: true }) as string[]) || [];
 
   const loadCaptcha = () => api.get('/contact/captcha').then(r => setCaptcha(r.data)).catch(() => {});
-  const loadMine = () => api.get('/contact/mine').then(r => setThreads(r.data)).catch(() => {});
   useEffect(() => {
     loadCaptcha();
     api.get('/content/faq').then(r => setFaq(r.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    if (user) { setName(user.name); setEmail(user.email); loadMine(); }
+    if (user) {
+      setName(user.name); setEmail(user.email);
+      api.get('/contact/mine').then(r => setHasThreads(r.data.length > 0)).catch(() => {});
+    } else {
+      setHasThreads(false);
+    }
   }, [user]);
 
   const send = async (e: any) => {
@@ -36,7 +39,7 @@ export default function Contact() {
     try {
       await api.post('/contact', { name, email, message, captchaId: captcha.id, captcha: answer });
       setState('ok');
-      setMessage(''); loadMine();
+      setMessage(''); setHasThreads(true);
     } catch (e: any) {
       const code = e.response?.data?.error;
       setErr(code === 'wrong_captcha' ? String(t('contact.wrongCaptcha')) : String(t('contact.checkFields')));
@@ -46,18 +49,13 @@ export default function Contact() {
     }
   };
 
-  const sendReply = async (id: number) => {
-    const text = (replyText[id] || '').trim();
-    if (!text) return;
-    await api.post(`/contact/messages/${id}/reply`, { text });
-    setReplyText({ ...replyText, [id]: '' });
-    loadMine();
-  };
-
   return (
     <>
       <h1>{t('contact.title')}</h1>
       <p className="meta">{t('contact.sub')}</p>
+      {!!user && hasThreads && (
+        <p><Link to="/conversatii" className="btn secondary small">💬 {t('contact.myThreads')} →</Link></p>
+      )}
 
       <div className="contact-grid">
         <form className="auth" style={{ margin: 0 }} onSubmit={send}>
@@ -78,27 +76,6 @@ export default function Contact() {
           <p className="meta">{user ? `${t('contact.loggedNote')} (${user.name})` : <>{t('contact.guestNote')} <Link to="/login">Login →</Link></>}</p>
         </section>
       </div>
-
-      {!!user && !!threads.length && (
-        <section style={{ marginTop: 22 }}>
-          <h2>{t('contact.myThreads')}</h2>
-          {threads.map((m: any) => (
-            <div className="panel" key={m.id} style={{ marginBottom: 12 }}>
-              <p className="meta">{new Date(m.createdAt).toLocaleString()}</p>
-              <p><strong>{t('contact.you')}:</strong> {m.message}</p>
-              {(m.replies || []).map((r: any) => (
-                <p key={r.id} className={r.from === 'admin' ? 'notice' : ''} style={{ padding: r.from === 'admin' ? 10 : 0 }}>
-                  <strong>{r.from === 'admin' ? t('contact.adminSays') : t('contact.you')}:</strong> {r.text}
-                </p>
-              ))}
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <input placeholder={t('contact.replyPh')} value={replyText[m.id] || ''} onChange={e => setReplyText({ ...replyText, [m.id]: e.target.value })} />
-                <button className="btn secondary small" onClick={() => sendReply(m.id)}>{t('contact.send')}</button>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
 
       {!!faq.length && (
         <section style={{ marginTop: 22 }}>

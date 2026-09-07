@@ -184,11 +184,12 @@ export default function Admin() {
       )}
 
       {tab === 'users' && user.role === 'ADMIN' && (
-        <table className="admin"><thead><tr><th>Nume</th><th>Email</th><th>Status cont</th><th>{t('admin.role')}</th><th></th></tr></thead>
+        <table className="admin"><thead><tr><th>Nume</th><th>Email</th><th>Status cont</th><th>Autor</th><th>{t('admin.role')}</th><th></th></tr></thead>
           <tbody>{users.map(u => (
             <tr key={u.id}>
               <td>{u.name}</td><td>{u.email}</td>
               <td>{u.emailVerified ? <span className="pill ok">ACTIV</span> : <span className="pill warn">NECONFIRMAT</span>}</td>
+              <td>{u.role === 'MODERATOR' ? <span className="pill ok">DA</span> : <span className="meta">NU</span>}</td>
               <td><select value={u.role} onChange={e => setRole(u.id, e.target.value)} style={{ width: 'auto' }}>
                 <option value="USER">Utilizator</option><option value="MODERATOR">Autor</option><option value="ADMIN">Administrator</option></select></td>
               <td><div className="row-btns">

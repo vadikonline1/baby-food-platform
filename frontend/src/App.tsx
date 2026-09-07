@@ -16,6 +16,7 @@ import Cookies from './pages/Cookies';
 import CookieBanner from './components/CookieBanner';
 import Verify from './pages/Verify';
 import Contact from './pages/Contact';
+import Conversations from './pages/Conversations';
 import Faq from './pages/Faq';
 import NotifBell from './components/NotifBell';
 import StoreBadges from './components/StoreBadges';
@@ -47,6 +48,7 @@ export default function App() {
             <option value="ru">Ru</option>
             <option value="en">En</option>
           </select>
+          {canAdmin && <NavLink className="link" to="/admin/retete/noua" onClick={close}>＋ Rețetă</NavLink>}
           {canAdmin && <NavLink className="link" to="/admin" onClick={close}>🛠 {t('nav.admin')}</NavLink>}
           {user?.role === 'ADMIN' && <NotifBell />}
           {user ? (<><NavLink className="link" to="/profil" onClick={close}>{t('nav.profile')} ({user.name})</NavLink><button className="btn secondary small" onClick={() => { logout(); close(); nav('/'); }}>{t('nav.logout')}</button></>) :
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/conversatii" element={<Conversations />} />
           <Route path="/intrebari-frecvente" element={<Faq />} />
         </Routes>
       </div>

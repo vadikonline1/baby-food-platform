@@ -18,20 +18,35 @@ export default function Profile() {
   const [motivation, setMotivation] = useState('');
   const [experience, setExperience] = useState('');
   const [arMsg, setArMsg] = useState('');
+  const [quiz, setQuiz] = useState<any>(null);
+  const [qans, setQans] = useState<Record<string, number>>({});
 
   useEffect(() => {
     api.get('/users/me/favorites').then(r => setFavs(r.data)).catch(() => {});
     api.get('/author-requests/mine').then(r => setAreq(r.data)).catch(() => {});
+    refresh();
   }, []);
-  useEffect(() => { if (user) setName(user.name); }, [user]);
+  useEffect(() => {
+    if (user) setName(user.name);
+    if (user?.role === 'USER' && !areq) {
+      api.get(`/author-requests/quiz?lang=${i18n.language}`).then(r => setQuiz(r.data)).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   if (!user) return <p>Necesită <Link to="/login">login</Link>.</p>;
 
   const sendAuthorRequest = async (e: any) => {
     e.preventDefault(); setArMsg('');
     try {
-      const { data } = await api.post('/author-requests', { motivation, experience });
-      setAreq(data); setArMsg('✓ Cererea a fost trimisă. Adminul o va analiza.');
+      const { data } = await api.post('/author-requests', { motivation, experience, quizId: quiz?.id, answers: qans });
+      setAreq(data);
+      if (data.autoApproved) {
+        setArMsg('✓ Felicitări! Ai răspuns corect — ești Autor acum.');
+        await refresh();
+      } else {
+        setArMsg('✓ Cererea a fost trimisă. Adminul o va analiza.');
+      }
     } catch (err: any) {
       const code = err.response?.data?.error;
       if (code === 'motivation_min_20') setArMsg(`Motivația e prea scurtă (ai ${motivation.trim().length}, minim 20 caractere).`);
@@ -67,7 +82,7 @@ export default function Profile() {
   return (
     <>
       <h1>Profil — {user.name}</h1>
-      <p className="meta">{user.email} · rol: <b>{roleLabel(user.role)}</b></p>
+      <p className="meta">{user.email} · rol: <b>{roleLabel(user.role)}</b> · <Link to="/conversatii">💬 Convorbirile mele</Link></p>
       {user.role === 'USER' && (
         <section className="panel" style={{ marginBottom: 18 }}>
           <h3>✍️ Devino Autor</h3>
@@ -80,6 +95,23 @@ export default function Profile() {
                 <textarea rows={3} value={motivation} onChange={e => setMotivation(e.target.value)} placeholder="Ex: gătesc zilnic pentru cei doi copii ai mei..." /></label>
               <label>Ce experiență ai cu alimentația copiilor? ({experience.trim().length}/10 minim)
                 <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
+              {!!quiz?.questions?.length && (
+                <div className="panel" style={{ background: '#fbf9f7' }}>
+                  <h4>Mini-test: răspunde corect la toate și devii Autor pe loc (altfel decide adminul)</h4>
+                  {quiz.questions.map((qq: any, i: number) => (
+                    <div key={qq.qid} style={{ marginBottom: 10 }}>
+                      <p style={{ margin: '6px 0' }}><strong>{i + 1}. {qq.q}</strong></p>
+                      {qq.options.map((op: string, oi: number) => (
+                        <label key={oi} className="fcheck">
+                          <input type="radio" name={`quiz-${qq.qid}`} checked={qans[qq.qid] === oi}
+                            onChange={() => setQans({ ...qans, [qq.qid]: oi })} />
+                          <span>{op}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div><button className="btn small">Trimite cererea</button></div>
               {arMsg && <p className="meta">{arMsg}</p>}
             </form>
