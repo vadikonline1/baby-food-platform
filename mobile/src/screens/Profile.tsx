@@ -7,6 +7,7 @@ import { api } from '../api';
 import { getConfig } from '../config';
 import { useAuth } from '../store';
 import { isPushEnabled, enablePush, disablePush } from '../push';
+import { checkForUpdate } from '../update';
 import { Platform } from 'react-native';
 
 // Profil: push on/off, login/register (optional), editare nume+parola, favorite, sustinere
@@ -22,11 +23,13 @@ export default function ProfileScreen() {
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
   const [support, setSupport] = useState<any>(null);
+  const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {
     isPushEnabled().then(setPush);
     const cfg = getConfig();
     if (cfg?.support?.enabled) setSupport(cfg.support);
+    if (Platform.OS === 'android') checkForUpdate(true).then(setHasUpdate).catch(() => {});
   }, []);
 
   const togglePush = async (v: boolean) => {
@@ -112,6 +115,12 @@ export default function ProfileScreen() {
       <TouchableOpacity style={s.card} onPress={() => nav.navigate('Favorites')}>
         <Text style={s.t}>❤ Favoritele mele →</Text>
       </TouchableOpacity>
+
+      {hasUpdate && Platform.OS === 'android' && (
+        <TouchableOpacity style={[s.card, { backgroundColor: '#e8f3f9' }]} onPress={() => checkForUpdate(false)}>
+          <Text style={s.t}>⬇️ Actualizare disponibilă — apasă pentru detalii</Text>
+        </TouchableOpacity>
+      )}
 
       {!!support && (
         <View style={s.card}>

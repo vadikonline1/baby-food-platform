@@ -1,40 +1,101 @@
 name: build-ios
 
-# Build iOS (Expo EAS) — la push in mobile/** sau manual.
-# Necesita: secretul EXPO_TOKEN + credentiale Apple in EAS (eas credentials).
+# Build iOS pe runner GitHub (GRATUIT, fara credite EAS):
+# expo prebuild + xcodebuild pentru Simulator (nesemnat).
+# Pentru dispozitiv fizic e nevoie de certificat Apple (vezi EAS Submit).
 on:
-  workflow_dispatch:
-    inputs:
-      profile:
-        description: "Profil EAS"
-        type: choice
-        options: [preview, production]
-        default: preview
   push:
     branches: [main]
-    paths: ["mobile/**"]
+    paths:
+      - 'mobile/**'
+      - 'GoogleService-Info.plist'
+      - '.github/workflows/build-ios.yml'
+  workflow_dispatch:
 
 jobs:
-  ios:
+  build-ios:
     runs-on: macos-latest
+
+    permissions:
+      contents: write
+
     defaults:
       run:
         working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - uses: expo/expo-github-action@v8
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Get app version
+        id: version
+        run: echo "app_version=$(node -p "require('./app.json').expo.version")" >> "$GITHUB_OUTPUT"
+
+      - name: Generate native ios project (expo prebuild)
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods --no-document || true
+          cd ios
+          if [ -f Podfile ]; then pod install; fi
+          cd ..
+
+      - name: Build iOS app (simulator, unsigned)
+        run: |
+          cd ios
+          WS=$(find . -maxdepth 1 -type d -name '*.xcworkspace' | head -1)
+          if [ -z "$WS" ]; then
+            WS=$(ls -1d *.xcworkspace 2>/dev/null | head -1)
+          fi
+          echo "workspace=${WS:-<none>}"
+          SCHEME=$(xcodebuild -list -workspace "$WS" 2>/dev/null \
+            | sed -n '/Schemes:/,$p' | tail -n +2 \
+            | grep -v '^\s*$' | grep -iv 'pod' | head -1 | xargs)
+          echo "scheme=${SCHEME:-<none>}"
+          if [ -z "$SCHEME" ]; then echo "::error::Could not detect an Xcode scheme under ios/"; exit 1; fi
+          xcodebuild -workspace "$WS" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          cd ..
+
+      - name: Upload iOS app (workflow artifact)
+        uses: actions/upload-artifact@v5
         with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          name: gustbebe-ios-simulator
+          path: mobile/ios/build/Build/Products/Release-iphonesimulator/*.app
+          if-no-files-found: warn
 
-      - run: npm ci
-      - run: npx tsc --noEmit
+      - name: Publish iOS info to GitHub Release
+        uses: softprops/action-gh-release@v3
+        if: success()
+        with:
+          tag_name: ios-${{ github.ref_name }}-${{ github.sha }}
+          name: iOS ${{ github.ref_name }} (${{ github.sha }})
+          body: |
+            Build iOS pentru Simulator, **nesemnat** (fără certificat de pe acest runner).
 
-      - name: EAS build iOS
-        run: eas build --platform ios --profile ${{ inputs.profile || 'preview' }} --non-interactive
+            **Versiune aplicație:** ${{ steps.version.outputs.app_version }}
+
+            Un `.app` pentru Simulator este disponibil ca artifact. Pentru instalare
+            pe dispozitiv fizic (iPhone) e nevoie de certificat Apple Developer
+            (EAS Submit / eas build --platform ios --profile production).
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

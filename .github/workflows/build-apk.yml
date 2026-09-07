@@ -1,41 +1,102 @@
 name: build-apk
 
-# Build Android APK (Expo EAS, profil preview) — la push in mobile/** sau manual.
-# Necesita secretul EXPO_TOKEN (Expo dashboard -> Access Tokens -> repo Settings -> Secrets -> Actions).
-# google-services.json se ia din EAS credentials (eas credentials) sau din mobile/ la build.
+# Build Android APK pe runner GitHub (GRATUIT, fara credite EAS):
+# expo prebuild + Gradle assembleRelease, la fiecare push pe `main`
+# care atinge aplicatia mobila. Tag-ul release-ului: apk-main-<sha> —
+# aplicatia foloseste acest prefix ca feed pentru actualizarile in-app.
 on:
-  workflow_dispatch:
-    inputs:
-      profile:
-        description: "Profil EAS"
-        type: choice
-        options: [preview, production]
-        default: preview
   push:
     branches: [main]
-    paths: ["mobile/**"]
+    paths:
+      - 'mobile/**'
+      - 'google-services.json'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
 
 jobs:
-  android:
+  build-apk:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     defaults:
       run:
         working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - uses: expo/expo-github-action@v8
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          distribution: temurin
+          java-version: 17
 
-      - run: npm ci
-      - run: npx tsc --noEmit
+      - name: Install dependencies
+        run: npm ci
 
-      - name: EAS build Android APK
-        run: eas build --platform android --profile ${{ inputs.profile || 'preview' }} --non-interactive
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Get app version
+        id: version
+        run: echo "app_version=$(node -p "require('./app.json').expo.version")" >> "$GITHUB_OUTPUT"
+
+      - name: Copy google-services.json (FCM push)
+        run: cp ../google-services.json ./google-services.json
+
+      - name: Embed build SHA (in-app update feed)
+        run: |
+          node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.extra.build_sha='${{ github.sha }}';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
+          echo "embedded build_sha=${{ github.sha }}"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate native android project (expo prebuild)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Configure Gradle heap + local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          if [ -f android/gradle.properties ]; then
+            echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m" >> android/gradle.properties
+            echo "org.gradle.daemon=false" >> android/gradle.properties
+          fi
+
+      - name: Build release APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+          cd ..
+
+      - name: Upload APK (workflow artifact)
+        uses: actions/upload-artifact@v5
+        with:
+          name: gustbebe-apk
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Publish APK to GitHub Release
+        uses: softprops/action-gh-release@v3
+        if: success()
+        with:
+          tag_name: apk-${{ github.ref_name }}-${{ github.sha }}
+          name: APK ${{ github.ref_name }} (${{ github.sha }})
+          body: |
+            Build automat APK Android (debug-signed, instalabil direct).
+
+            **Versiune aplicație:** ${{ steps.version.outputs.app_version }}
+            **API URL:** https://gustbebe.aalto.md/api
+            **Actualizări in-app:** aplicația verifică singură tag-urile `apk-main-*`.
+          files: mobile/android/app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

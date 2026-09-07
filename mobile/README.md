@@ -39,4 +39,10 @@ eas build --platform android --profile production
 eas build --platform ios --profile production
 ```
 
-CI: `.github/workflows/build-apk.yml` + `build-ios.yml` (necesită secretul `EXPO_TOKEN`).
+CI gratuit (fără credite EAS): `.github/workflows/build-apk.yml`
+(Gradle local + APK în Artifacts + Release `apk-main-<sha>`) și
+`build-ios.yml` (simulator). Aplicația verifică singură actualizările
+după tag-urile `apk-main-*` (buton în Profil când există versiune nouă).
+
+CI: `.github/workflows/build-apk.yml` + `build-ios.yml` (rulează pe runneri
+GitHub, fără token special — doar `GITHUB_TOKEN` implicit).
