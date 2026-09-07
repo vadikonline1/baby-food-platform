@@ -63,6 +63,22 @@ jobs:
       - name: Generate native android project (expo prebuild)
         run: npx expo prebuild --platform android --no-install
 
+      - name: Pin Kotlin Gradle Plugin to 2.3.0
+        # play-services-ads >= 25.3 (folosit de react-native-google-mobile-ads 16.5)
+        # e compilat cu Kotlin 2.3.0 -> compilatorul trebuie sa fie >= 2.3.0.
+        # expo-build-properties scrie android.kotlinVersion doar in gradle.properties
+        # (afecteaza doar catalogul expoLibs), dar modulul react-native-google-mobile-ads
+        # compileaza cu KGP-ul de pe buildscript-ul root, care ramane 2.1.x (default RN).
+        # Fix: pinam explicit versiunea KGP in android/build.gradle generat de prebuild.
+        run: |
+          sed -i.bak "s/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0')/" android/build.gradle
+          if ! grep -q "kotlin-gradle-plugin:2.3.0" android/build.gradle; then
+            echo "::error::Nu am gasit linia kotlin-gradle-plugin in android/build.gradle"
+            exit 1
+          fi
+          grep -n "kotlin-gradle-plugin" android/build.gradle
+          rm -f android/build.gradle.bak
+
       - name: Configure Gradle heap + local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
