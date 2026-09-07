@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
@@ -20,6 +20,7 @@ export default function Profile() {
   const [arMsg, setArMsg] = useState('');
   const [quiz, setQuiz] = useState<any>(null);
   const [qans, setQans] = useState<Record<string, number>>({});
+  const roleRefreshed = useRef(false);
 
   useEffect(() => {
     api.get('/users/me/favorites').then(r => setFavs(r.data)).catch(() => {});
@@ -31,8 +32,13 @@ export default function Profile() {
     if (user?.role === 'USER' && !areq) {
       api.get(`/author-requests/quiz?lang=${i18n.language}`).then(r => setQuiz(r.data)).catch(() => {});
     }
+    // cerere aprobata dar rolul din context e vechi (token emis inainte de promovare) -> reincarca o data
+    if (user?.role === 'USER' && areq?.status === 'APPROVED' && !roleRefreshed.current) {
+      roleRefreshed.current = true;
+      refresh();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, areq?.status]);
 
   if (!user) return <p>Necesită <Link to="/login">login</Link>.</p>;
 
