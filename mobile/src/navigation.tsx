@@ -10,6 +10,7 @@ import PlanScreen from './screens/Plan';
 import RandomScreen from './screens/Random';
 import ProfileScreen from './screens/Profile';
 import FavoritesScreen from './screens/Favorites';
+import { useLang, t } from './lang';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -22,11 +23,26 @@ const icons: Record<string, string> = {
   'Profil': '👤'
 };
 
+// mapare nume tab → cheie dicționar
+const labelKey: Record<string, string> = {
+  'Rețete': 'home',
+  'Categorii': 'categories',
+  'Plan': 'plan',
+  'Random': 'random',
+  'Profil': 'profile'
+};
+
 function Tabs() {
+  const { lang } = useLang();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: () => <Text style={{ fontSize: 20 }}>{icons[route.name] || '•'}</Text>,
+        tabBarLabel: ({ focused }) => (
+          <Text style={{ fontSize: 11, color: focused ? '#1486b7' : '#888', fontWeight: focused ? '700' : '400' }}>
+            {t(labelKey[route.name] || route.name, lang)}
+          </Text>
+        ),
         headerStyle: { backgroundColor: '#1486b7' },
         headerTintColor: '#fff'
       })}

@@ -35,12 +35,20 @@ async function probe(base: string): Promise<boolean> {
 }
 
 export async function initApiBase(): Promise<string | null> {
-  let baseURL: string | null = null;
+  // cache prezent → start instant; reîmprospătarea DNS-ului merge în fundal
   let cached = '';
   try {
     cached = (await AsyncStorage.getItem('gb_api_base')) || '';
   } catch {}
+  if (cached) {
+    api.defaults.baseURL = cached;
+    refreshApiBase();
+    return cached;
+  }
+  return resolveApiBaseFresh();
+}
 
+async function resolveApiBaseFresh(): Promise<string | null> {
   let fresh = '';
   try {
     const ctrl = new AbortController();
@@ -61,15 +69,18 @@ export async function initApiBase(): Promise<string | null> {
   } catch {
     // rămâne cache-ul (sau null → ecran reîncercare)
   }
-
-  baseURL = fresh || cached || null;
-  if (baseURL) {
-    api.defaults.baseURL = baseURL;
-    if (fresh) AsyncStorage.setItem('gb_api_base', fresh).catch(() => {});
-  } else {
-    api.defaults.baseURL = undefined;
+  if (fresh) {
+    api.defaults.baseURL = fresh;
+    AsyncStorage.setItem('gb_api_base', fresh).catch(() => {});
+    return fresh;
   }
-  return baseURL;
+  api.defaults.baseURL = undefined;
+  return null;
+}
+
+// reîmprospătează DNS-ul în fundal (nu strică base-ul curent dacă eșuează)
+export function refreshApiBase() {
+  resolveApiBaseFresh().catch(() => {});
 }
 
 export const api = axios.create({ timeout: 15000 });
@@ -84,6 +95,21 @@ export function localized(obj: any, base: string, lang: string): string {
   if (!obj) return '';
   const cap = lang.charAt(0).toUpperCase() + lang.slice(1);
   return obj[`${base}${cap}`] ?? obj[`${base}Ro`] ?? '';
+}
+
+// origin-ul serverului (http(s)://host[:port]) — fără /api, pentru imagini statice
+export function apiOrigin(): string {
+  const b = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+  return b.replace(/\/api\/?$/, '');
+}
+
+// convertește cale relativă /uploads/... → URL absolut (necesar pe mobil)
+export function imgUrl(u?: string | null): string {
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u)) return u;
+  const origin = apiOrigin();
+  const p = u.startsWith('/') ? u : `/${u}`;
+  return origin ? `${origin}${p}` : p;
 }
 
 // id unic stabil al dispozitivului (pentru vot guest) — generat o data, pastrat local

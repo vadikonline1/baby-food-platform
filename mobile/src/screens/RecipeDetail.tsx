@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api, localized, deviceId } from '../api';
+import { api, localized, deviceId, imgUrl } from '../api';
 import { bannerUnitId } from '../ads';
 import { useAuth } from '../store';
 import { Stars } from '../ui';
-import { useLang } from '../lang';
+import { useLang, t } from '../lang';
 
 export default function RecipeDetail({ route }: any) {
   const { id } = route.params;
@@ -62,29 +62,38 @@ export default function RecipeDetail({ route }: any) {
     } catch {}
   };
 
-  if (!r) return <View style={s.wrap}><Text>Se încarcă...</Text></View>;
+  if (!r) return <View style={s.wrap}><Text>{t('loading', lang)}</Text></View>;
   const steps: string[] = String(localized(r, 'steps', lang) || '').split('\n').map((x) => x.trim()).filter(Boolean);
   const det = r.ingredientsDetailed || [];
+  const img = imgUrl(r.imageUrl);
 
   return (
     <ScrollView style={s.wrap}>
+      {img ? (
+        <View>
+          <Image source={{ uri: img }} style={s.cover} />
+          <View style={s.coverMeta}>
+            <Text style={s.metaOnImg}>⭐ {Number(r.avgRating || 0).toFixed(1)} ({r.ratingsCount || 0}) · ⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 {r.servings}</Text>
+          </View>
+        </View>
+      ) : (
+        <Text style={s.meta}>⭐ {Number(r.avgRating || 0).toFixed(1)} ({r.ratingsCount || 0}) · ⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 {r.servings}</Text>
+      )}
       <Text style={s.h1}>{localized(r, 'title', lang)}</Text>
-      {r.imageUrl ? <Image source={{ uri: r.imageUrl }} style={s.cover} /> : null}
-      <Text style={s.meta}>⭐ {Number(r.avgRating || 0).toFixed(1)} ({r.ratingsCount || 0}) · ⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 {r.servings}</Text>
       {!!localized(r, 'summary', lang) && <Text style={s.sum}>{localized(r, 'summary', lang)}</Text>}
-      <Text style={s.h2}>Ingrediente</Text>
+      <Text style={s.h2}>{t('ingredients', lang)}</Text>
       {det.length ? det.map((d: any) => (
         <Text key={d.id} style={s.li}>• <Text style={{ fontWeight: '700' }}>{localized(d.ingredient, 'name', lang)}</Text>{[d.quantity, d.unit].filter(Boolean).length ? ` — ${[d.quantity, d.unit].filter(Boolean).join(' ')}` : ''}</Text>
       )) : <Text>{localized(r, 'ingredients', lang)}</Text>}
-      <Text style={s.h2}>Preparare</Text>
+      <Text style={s.h2}>{t('prep', lang)}</Text>
       {steps.map((x, i) => <Text key={i} style={s.li}>{i + 1}. {x}</Text>)}
-      <Text style={s.h2}>Votează {myVote ? `(${myVote}/5)` : ''}</Text>
+      <Text style={s.h2}>{t('vote', lang)}{myVote ? ` (${myVote}/5)` : ''}</Text>
       <Stars value={myVote} onPick={vote} />
-      <TouchableOpacity style={s.fav} onPress={toggleFav}>
-        <Text style={{ fontSize: 22, color: fav ? '#e11d48' : '#888' }}>{fav ? '♥ Salvat' : '♡ Salvează'}</Text>
+      <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
+        <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
       </TouchableOpacity>
       {!!unit && (
-        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+        <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <BannerAd unitId={unit} size={BannerAdSize.BANNER} />
         </View>
       )}
@@ -94,11 +103,19 @@ export default function RecipeDetail({ route }: any) {
 
 const s = {
   wrap: { flex: 1, backgroundColor: '#fbf9f7', padding: 16 },
-  h1: { fontSize: 24, fontWeight: '700' as const, marginBottom: 8 },
-  cover: { width: '100%' as const, height: 220, borderRadius: 14, marginBottom: 10 },
+  cover: { width: '100%' as const, height: 220, borderRadius: 14 },
+  coverMeta: {
+    position: 'absolute' as const, left: 10, right: 10, bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10,
+  },
+  metaOnImg: { color: '#fff', fontSize: 13, fontWeight: '600' as const },
+  h1: { fontSize: 24, fontWeight: '700' as const, marginTop: 12, marginBottom: 8 },
   meta: { color: '#5f7a70', marginBottom: 8 },
   sum: { fontSize: 15, marginBottom: 8 },
   h2: { fontSize: 18, fontWeight: '700' as const, marginTop: 14, marginBottom: 6 },
   li: { fontSize: 14, marginBottom: 5 },
-  fav: { marginTop: 12, padding: 10 }
+  saveBtn: { marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, backgroundColor: '#e11d48' },
+  saveBtnOn: { backgroundColor: '#15803d' },
+  saveBtnText: { fontSize: 17, fontWeight: '700' as const, color: '#fff' },
+  saveBtnTextOn: { color: '#fff' },
 } as any;

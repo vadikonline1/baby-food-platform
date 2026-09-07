@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, localized } from '../api';
 import { useAuth } from '../store';
-import { useLang } from '../lang';
+import { useLang, t } from '../lang';
 
 // Favorite: cont (server) + guest (cache local) — fara logare obligatorie
 export default function FavoritesScreen() {
@@ -37,7 +37,7 @@ export default function FavoritesScreen() {
 
   return (
     <View style={s.wrap}>
-      {!items.length && <Text style={s.m}>Nicio rețetă salvată încă. ♡</Text>}
+      {!items.length && <Text style={s.m}>{t('noFavorites', lang)}</Text>}
       <FlatList
         data={items}
         keyExtractor={(i) => String(i.id)}

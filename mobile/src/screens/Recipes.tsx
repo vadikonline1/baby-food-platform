@@ -3,7 +3,7 @@ import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'r
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { api } from '../api';
 import { RecipeCard, FilterModal } from '../ui';
-import { useLang } from '../lang';
+import { useLang, t } from '../lang';
 import { SupportBlock } from '../support';
 
 export default function RecipesScreen() {
@@ -31,8 +31,8 @@ export default function RecipesScreen() {
   return (
     <View style={s.wrap}>
       <View style={s.bar}>
-        <TextInput style={s.input} placeholder="Caută rețetă..." value={q} onChangeText={setQ} onSubmitEditing={load} />
-        <TouchableOpacity style={s.fbtn} onPress={() => setShowF(true)}><Text>Filtre</Text></TouchableOpacity>
+        <TextInput style={s.input} placeholder={t('search', lang)} value={q} onChangeText={setQ} onSubmitEditing={load} />
+        <TouchableOpacity style={s.fbtn} onPress={() => setShowF(true)}><Text>{t('filters', lang)}</Text></TouchableOpacity>
       </View>
       <FlatList
         data={items}

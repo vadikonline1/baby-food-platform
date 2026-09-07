@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, Modal, ScrollView } from 'react-native';
-import { api, localized } from './api';
-import { LANGS, useLang } from './lang';
+import { api, localized, imgUrl } from './api';
+import { LANGS, useLang, t } from './lang';
 
 export function Stars({ value, onPick }: { value: number; onPick?: (v: number) => void }) {
   return (
@@ -19,7 +19,7 @@ export function RecipeCard({ item, lang, onOpen }: { item: any; lang: string; on
   return (
     <TouchableOpacity style={s.card} onPress={onOpen}>
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={s.img} />
+        <Image source={{ uri: imgUrl(item.imageUrl) }} style={s.img} />
       ) : (
         <View style={[s.img, s.ph]}><Text style={{ fontSize: 36 }}>🥣</Text></View>
       )}
@@ -58,6 +58,7 @@ export function LangSelector() {
 }
 
 export function FilterModal({ visible, onClose, onApply }: { visible: boolean; onClose: () => void; onApply: (f: any) => void }) {
+  const { lang } = useLang();
   const [ages, setAges] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [selA, setSelA] = useState<number[]>([]);
@@ -71,25 +72,25 @@ export function FilterModal({ visible, onClose, onApply }: { visible: boolean; o
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <ScrollView style={{ padding: 20, marginTop: 40 }}>
-        <Text style={s.h}>Vârstă</Text>
+        <Text style={s.h}>{t('age', lang)}</Text>
         {ages.map((a) => (
           <TouchableOpacity key={a.id} onPress={() => tg(selA, a.id, setSelA)}>
-            <Text style={s.opt}>{selA.includes(a.id) ? '☑' : '☐'} {a.labelRo}</Text>
+            <Text style={s.opt}>{selA.includes(a.id) ? '☑' : '☐'} {localized(a, 'label', lang)}</Text>
           </TouchableOpacity>
         ))}
-        <Text style={s.h}>Categorii</Text>
+        <Text style={s.h}>{t('categories', lang)}</Text>
         {cats.map((c) => (
           <TouchableOpacity key={c.id} onPress={() => tg(selC, c.slug, setSelC)}>
-            <Text style={s.opt}>{selC.includes(c.slug) ? '☑' : '☐'} {c.icon} {c.nameRo}</Text>
+            <Text style={s.opt}>{selC.includes(c.slug) ? '☑' : '☐'} {c.icon} {localized(c, 'name', lang)}</Text>
           </TouchableOpacity>
         ))}
         <TouchableOpacity style={s.btn} onPress={() => { onApply({ age: selA, category: selC }); onClose(); }}>
-          <Text style={s.btnT}>Aplică</Text>
+          <Text style={s.btnT}>{t('apply', lang)}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.btn, s.ghost]} onPress={() => { setSelA([]); setSelC([]); onApply({ age: [], category: [] }); onClose(); }}>
-          <Text>Resetează</Text>
+          <Text>{t('reset', lang)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.btn, s.ghost]} onPress={onClose}><Text>Închide</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.btn, s.ghost]} onPress={onClose}><Text>{t('close', lang)}</Text></TouchableOpacity>
       </ScrollView>
     </Modal>
   );

@@ -7,12 +7,14 @@ import { isPushEnabled, enablePush, disablePush } from '../push';
 import { checkForUpdate } from '../update';
 import { SupportBlock } from '../support';
 import { LangSelector } from '../ui';
+import { useLang, t } from '../lang';
 import { Platform } from 'react-native';
 
 // Profil: push on/off, limba, login/register (optional), editare nume+parola, favorite, sustinere
 export default function ProfileScreen() {
   const nav = useNavigation<any>();
   const { user, login, register, logout, refresh } = useAuth();
+  const { lang } = useLang();
   const [push, setPush] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -96,7 +98,7 @@ export default function ProfileScreen() {
       )}
 
       <TouchableOpacity style={s.card} onPress={() => nav.navigate('Favorites')}>
-        <Text style={s.t}>❤ Favoritele mele →</Text>
+        <Text style={s.t}>{t('myFavorites', lang)}</Text>
       </TouchableOpacity>
 
       {hasUpdate && Platform.OS === 'android' && (

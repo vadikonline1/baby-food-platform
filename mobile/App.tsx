@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import mobileAds from 'react-native-google-mobile-ads';
 import { AuthProvider } from './src/store';
-import { LangProvider } from './src/lang';
-import { initApiBase } from './src/api';
+import { LangProvider, deviceLang, t } from './src/lang';
+import { initApiBase, refreshApiBase } from './src/api';
 import { loadConfig } from './src/config';
 import { registerPushToken } from './src/push';
 import Navigation from './src/navigation';
@@ -29,21 +29,34 @@ export default function App() {
     boot();
   }, []);
 
+  // la revenirea app-ului în prim-plan: re-ia config remote + DNS (setările din
+  // /admin -> Setări aplicație se aplică fără repornirea aplicației)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') {
+        refreshApiBase();
+        loadConfig().catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const lang = deviceLang();
   if (state === 'error') {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fbf9f7' }}>
         <Text style={{ fontSize: 32, marginBottom: 12 }}>🌐</Text>
         <Text style={{ fontWeight: '700', fontSize: 16, color: '#333', textAlign: 'center' }}>
-          Nu s-a putut stabili conexiunea cu serverul GustBebe.
+          {t('noConnection', lang)}
         </Text>
         <Text style={{ color: '#5f7a70', fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 18 }}>
-          Verifică internetul și apasă Reîncearcă.
+          {t('noConnectionHint', lang)}
         </Text>
         <TouchableOpacity
           onPress={boot}
           style={{ backgroundColor: '#1486b7', borderRadius: 10, paddingHorizontal: 28, paddingVertical: 12 }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Reîncearcă</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>{t('retry', lang)}</Text>
         </TouchableOpacity>
       </View>
     );

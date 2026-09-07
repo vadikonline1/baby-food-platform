@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { api, localized } from '../api';
-import { useLang } from '../lang';
+import { api, localized, imgUrl } from '../api';
+import { useLang, t } from '../lang';
 
 // Random Reteta: o reteta aleatorie + buton Alta
 export default function RandomScreen() {
@@ -15,16 +15,16 @@ export default function RandomScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   return (
     <View style={s.wrap}>
-      {!r && <Text>Se încarcă...</Text>}
+      {!r && <Text>{t('loading', lang)}</Text>}
       {!!r && (
         <TouchableOpacity style={s.card} onPress={() => nav.navigate('Detail', { id: r.id, slug: r.slug })}>
-          {r.imageUrl ? <Image source={{ uri: r.imageUrl }} style={s.img} /> : null}
+          {r.imageUrl ? <Image source={{ uri: imgUrl(r.imageUrl) }} style={s.img} /> : null}
           <Text style={s.t}>{localized(r, 'title', lang)}</Text>
           <Text style={s.m}>⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0} — deschide →</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={s.btn} onPress={load}>
-        <Text style={s.btnT}>🔀 Alta rețetă</Text>
+        <Text style={s.btnT}>{t('another', lang)}</Text>
       </TouchableOpacity>
     </View>
   );

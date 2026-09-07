@@ -18,6 +18,7 @@ const SERVER_KEYS = [
   { db: 'smtp_from', env: 'SMTP_FROM' },
   { db: 'telegram_bot_token', env: 'TELEGRAM_BOT_TOKEN' },
   { db: 'telegram_channel_id', env: 'TELEGRAM_CHANNEL_ID' },
+  { db: 'telegram_topic_id', env: 'TELEGRAM_TOPIC_ID' },
   { db: 'telegram_channel_admin', env: 'TELEGRAM_CHANNEL_ADMIN' }
 ];
 

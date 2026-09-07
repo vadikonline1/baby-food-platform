@@ -15,7 +15,7 @@ function pickSupported(tag: string): Lang {
   return (LANGS as readonly string[]).includes(code) ? (code as Lang) : 'ro';
 }
 
-function deviceLang(): Lang {
+export function deviceLang(): Lang {
   try {
     const locales = Localization.getLocales();
     return pickSupported(locales[0]?.languageCode || '');
@@ -28,6 +28,39 @@ type Ctx = { lang: Lang; setLang: (l: Lang) => void };
 
 const LangContext = createContext<Ctx>({ lang: 'ro', setLang: () => {} });
 export const useLang = () => useContext(LangContext);
+
+// dicționar minim UI (conținutul rețetelor e deja localizat pe server)
+const STRINGS: Record<string, Record<Lang, string>> = {
+  loading: { ro: 'Se încarcă...', ru: 'Загрузка...', en: 'Loading...' },
+  ingredients: { ro: 'Ingrediente', ru: 'Ингредиенты', en: 'Ingredients' },
+  prep: { ro: 'Preparare', ru: 'Приготовление', en: 'Preparation' },
+  vote: { ro: 'Votează', ru: 'Оценить', en: 'Rate' },
+  save: { ro: 'Salvează', ru: 'Сохранить', en: 'Save' },
+  saved: { ro: 'Salvat', ru: 'Сохранено', en: 'Saved' },
+  search: { ro: 'Caută rețetă...', ru: 'Поиск рецепта...', en: 'Search recipe...' },
+  filters: { ro: 'Filtre', ru: 'Фильтры', en: 'Filters' },
+  apply: { ro: 'Aplică', ru: 'Применить', en: 'Apply' },
+  reset: { ro: 'Resetează', ru: 'Сбросить', en: 'Reset' },
+  close: { ro: 'Închide', ru: 'Закрыть', en: 'Close' },
+  age: { ro: 'Vârstă', ru: 'Возраст', en: 'Age' },
+  categories: { ro: 'Categorii', ru: 'Категории', en: 'Categories' },
+  favorites: { ro: 'Favorite', ru: 'Избранное', en: 'Favorites' },
+  myFavorites: { ro: '❤ Favoritele mele →', ru: '❤ Моё избранное →', en: '❤ My favorites →' },
+  noFavorites: { ro: 'Nicio rețetă salvată încă. ♡', ru: 'Пока нет сохранённых рецептов. ♡', en: 'No saved recipes yet. ♡' },
+  home: { ro: 'Rețete', ru: 'Рецепты', en: 'Recipes' },
+  plan: { ro: 'Plan', ru: 'План', en: 'Plan' },
+  random: { ro: 'Surpriză', ru: 'Сюрприз', en: 'Surprise' },
+  profile: { ro: 'Profil', ru: 'Профиль', en: 'Profile' },
+  another: { ro: '🔀 Alta rețetă', ru: '🔀 Другой рецепт', en: '🔀 Another recipe' },
+  noConnection: { ro: 'Nu s-a putut stabili conexiunea cu serverul GustBebe.', ru: 'Не удалось установить соединение с сервером GustBebe.', en: 'Could not connect to the GustBebe server.' },
+  noConnectionHint: { ro: 'Verifică internetul și apasă Reîncearcă.', ru: 'Проверьте интернет и нажмите «Повторить».', en: 'Check your internet and press Retry.' },
+  retry: { ro: 'Reîncearcă', ru: 'Повторить', en: 'Retry' },
+};
+
+export function t(key: string, lang: Lang): string {
+  const row = STRINGS[key];
+  return row?.[lang] ?? row?.ro ?? key;
+}
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('ro');

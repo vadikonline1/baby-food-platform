@@ -3,12 +3,15 @@
 const { getValue } = require('./settings');
 
 async function cfg() {
-  const [token, chat, appUrl] = await Promise.all([
+  const [token, chat, topic, appUrl] = await Promise.all([
     getValue('TELEGRAM_BOT_TOKEN'),
     getValue('TELEGRAM_CHANNEL_ID'),
+    getValue('TELEGRAM_TOPIC_ID'),
     getValue('APP_URL', null, 'http://localhost:4000')
   ]);
-  return { token, chat, app: appUrl.replace(/\/$/, '') };
+  // topic (thread) in canal: pasat ca message_thread_id daca e setat
+  const topicId = String(topic || '').trim();
+  return { token, chat, topic: topicId ? Number(topicId) : undefined, app: appUrl.replace(/\/$/, '') };
 }
 
 function recipeLink(r, app) {
@@ -43,19 +46,20 @@ async function tg(token, method, body) {
 
 // reteta publicata -> mesaj cu poza (upload direct daca e fisier local /uploads/*)
 async function postRecipe(r) {
-  const { token, chat, app } = await cfg();
+  const { token, chat, topic, app } = await cfg();
   if (!token || !chat) {
     const err = new Error('telegram_not_configured');
     err.code = 'not_configured';
     throw err;
   }
   const text = caption(r, app);
+  const thread = topic !== undefined ? { message_thread_id: topic } : {};
   const fs = require('fs');
   const path = require('path');
 
   const img = r.imageUrl && /^https?:\/\//.test(r.imageUrl) ? r.imageUrl : null;
   if (img) {
-    return tg(token, 'sendPhoto', { chat_id: chat, photo: img, caption: text, parse_mode: 'HTML' });
+    return tg(token, 'sendPhoto', { chat_id: chat, ...thread, photo: img, caption: text, parse_mode: 'HTML' });
   }
   if (r.imageUrl && r.imageUrl.startsWith('/uploads/')) {
     const dir = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
@@ -63,6 +67,7 @@ async function postRecipe(r) {
     if (fs.existsSync(file)) {
       const form = new FormData();
       form.append('chat_id', chat);
+      if (topic !== undefined) form.append('message_thread_id', String(topic));
       form.append('caption', text);
       form.append('parse_mode', 'HTML');
       form.append('photo', new Blob([fs.readFileSync(file)]), path.basename(file));
@@ -76,7 +81,7 @@ async function postRecipe(r) {
       return data.result;
     }
   }
-  return tg(token, 'sendMessage', { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: false });
+  return tg(token, 'sendMessage', { chat_id: chat, ...thread, text, parse_mode: 'HTML', disable_web_page_preview: false });
 }
 
 // fire-and-forget din rute (nu blocheaza requestul, doar logheaza)

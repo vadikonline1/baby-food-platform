@@ -263,6 +263,7 @@ function AppSettings() {
           <label>SMTP_FROM {src('smtp_from')}<input value={vals.smtp_from || ''} onChange={e => set('smtp_from', e.target.value)} /></label>
           <label>TELEGRAM_BOT_TOKEN {src('telegram_bot_token')}<input type="password" value={vals.telegram_bot_token || ''} onChange={e => set('telegram_bot_token', e.target.value)} /></label>
           <label>TELEGRAM_CHANNEL_ID (canal publicare, @nume sau -100...) {src('telegram_channel_id')}<input value={vals.telegram_channel_id || ''} placeholder="@gustbebe" onChange={e => set('telegram_channel_id', e.target.value)} /></label>
+          <label>TELEGRAM_TOPIC_ID (ID topic/thread din canal, opțional — dacă se publică într-un topic) {src('telegram_topic_id')}<input value={vals.telegram_topic_id || ''} placeholder="ex: 474" onChange={e => set('telegram_topic_id', e.target.value)} /></label>
           <label>TELEGRAM_CHANNEL_ADMIN (mesaje directe admin: cereri autor, rețete noi, contact) {src('telegram_channel_admin')}<input value={vals.telegram_channel_admin || ''} placeholder="@admin sau -100123456" onChange={e => set('telegram_channel_admin', e.target.value)} /></label>
           <label>TELEGRAM_PUBLIC_URL (link public abonare: t.me/gustbebe — apare în aplicație la „Abonare Telegram”) {src('telegram_public_url')}<input value={vals.telegram_public_url || ''} placeholder="https://t.me/gustbebe" onChange={e => set('telegram_public_url', e.target.value)} /></label>
         </div>
