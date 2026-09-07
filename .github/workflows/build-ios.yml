@@ -1,0 +1,40 @@
+name: build-ios
+
+# Build iOS (Expo EAS) — la push in mobile/** sau manual.
+# Necesita: secretul EXPO_TOKEN + credentiale Apple in EAS (eas credentials).
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Profil EAS"
+        type: choice
+        options: [preview, production]
+        default: preview
+  push:
+    branches: [main]
+    paths: ["mobile/**"]
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+      - name: EAS build iOS
+        run: eas build --platform ios --profile ${{ inputs.profile || 'preview' }} --non-interactive

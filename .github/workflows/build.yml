@@ -1,0 +1,60 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx prisma generate
+        env:
+          DATABASE_URL: "file:/tmp/ci.db"
+      - run: node --check src/index.js && node --check src/resolve-dns.js && node --check prisma/seed.js
+      - name: smoke test API
+        run: |
+          export DATABASE_URL="file:/tmp/ci.db" PORT=4001 JWT_SECRET=ci-secret-min-32-caractere-123456789 APP_URL=http://localhost:4001
+          npx prisma db push
+          node prisma/seed.js
+          node src/index.js &
+          sleep 6
+          curl -fsS http://localhost:4001/api/health
+          curl -fsS http://localhost:4001/api/settings/config
+          curl -fsS "http://localhost:4001/api/recipes?limit=3"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_API_URL: "/api"
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: gustbebe-app:ci
