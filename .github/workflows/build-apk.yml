@@ -66,9 +66,11 @@ jobs:
       - name: Configure Gradle heap + local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          # printf cu \n initial: expo-build-properties scrie kotlinVersion
+          # fara newline la final, iar echo >> ar lipi pe aceeasi linie
+          # (asa a ajuns "2.3.0org.gradle.jvmargs=..." -> rezolvare esuata)
           if [ -f android/gradle.properties ]; then
-            echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m" >> android/gradle.properties
-            echo "org.gradle.daemon=false" >> android/gradle.properties
+            printf '\norg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m\norg.gradle.daemon=false\n' >> android/gradle.properties
           fi
 
       - name: Build release APK
