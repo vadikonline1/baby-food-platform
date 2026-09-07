@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1486b7"/>
+      <stop offset="0.55" stop-color="#0e6e8f"/>
+      <stop offset="1" stop-color="#065f46"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#g)"/>
+  <g font-family="Inter, Segoe UI, sans-serif">
+    <text x="80" y="190" fill="#ffffff" font-size="84" font-weight="700">GustBebe</text>
+    <text x="82" y="250" fill="#d1fae5" font-size="34">Rețete sănătoase pentru bebeluși</text>
+    <text x="82" y="300" fill="#d1fae5" font-size="28">Diversificare 6 luni – 4 ani · RO / RU / EN</text>
+    <rect x="80" y="340" width="300" height="72" rx="16" fill="#ffffff"/>
+    <text x="110" y="386" fill="#0d6488" font-size="30" font-weight="700">Explorează rețetele</text>
+  </g>
+  <g>
+    <circle cx="830" cy="250" r="120" fill="#ffffff" opacity="0.15"/>
+    <ellipse cx="830" cy="330" rx="90" ry="12" fill="#ffffff" opacity="0.25"/>
+    <path d="M760 250 h140 l-16 52 a16 16 0 0 1 -15 12 h-78 a16 16 0 0 1 -15 -12 z" fill="#ffffff"/>
+    <ellipse cx="830" cy="250" rx="70" ry="17" fill="#d1fae5"/>
+    <ellipse cx="830" cy="250" rx="54" ry="12" fill="#6ea28b"/>
+    <circle cx="858" cy="170" r="38" fill="#ffe3c2"/>
+    <circle cx="844" cy="172" r="4" fill="#1e2f2b"/>
+    <circle cx="872" cy="172" r="4" fill="#1e2f2b"/>
+    <path d="M848 184 q10 8 18 0" stroke="#a16207" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
