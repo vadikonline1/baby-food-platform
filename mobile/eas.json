@@ -1,5 +1,5 @@
 {
-  "cli": { "version": ">= 23.2.0" },
+  "cli": { "version": ">= 23.2.0", "appVersionSource": "remote" },
   "build": {
     "development": { "developmentClient": true, "distribution": "internal" },
     "preview": {
