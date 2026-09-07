@@ -5,10 +5,11 @@ const { z } = require('zod');
 const { prisma } = require('../lib/db');
 const { signToken, authRequired } = require('../middleware/auth');
 const { sendVerifyEmail } = require('../lib/mail');
+const { getValue } = require('../lib/settings');
 
 const router = express.Router();
 
-const APP_URL = () => (process.env.APP_URL || 'http://localhost:4000').replace(/\/$/, '');
+const appUrl = async () => (await getValue('APP_URL', null, 'http://localhost:4000')).replace(/\/$/, '');
 
 function makeToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -18,7 +19,7 @@ async function issueVerification(user) {
   const verifyToken = makeToken();
   const verifyExpires = new Date(Date.now() + 24 * 3600 * 1000);
   await prisma.user.update({ where: { id: user.id }, data: { verifyToken, verifyExpires } });
-  const verifyUrl = `${APP_URL()}/verify?token=${verifyToken}`;
+  const verifyUrl = `${await appUrl()}/verify?token=${verifyToken}`;
   return sendVerifyEmail(user.email, user.name, verifyUrl);
 }
 

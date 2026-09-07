@@ -98,7 +98,10 @@ async function main() {
     seo_head_end: '', seo_body_start: '', seo_body_end: '',
     store_android_url: '', store_ios_url: '',
     auth_google_enabled: 'false', auth_google_web_client_id: '', auth_google_ios_client_id: '', auth_google_android_client_id: '',
-    auth_apple_enabled: 'false', auth_apple_service_id: ''
+    auth_apple_enabled: 'false', auth_apple_service_id: '',
+    app_url: '', dns_source_url: '',
+    smtp_host: '', smtp_port: '587', smtp_secure: 'false', smtp_user: '', smtp_pass: '', smtp_from: 'GustBebe <no-reply@gustbebe.md>',
+    telegram_bot_token: '', telegram_channel_id: ''
   };
   for (const [key, value] of Object.entries(defaults)) {
     await prisma.appSetting.upsert({ where: { key }, update: {}, create: { key, value } });

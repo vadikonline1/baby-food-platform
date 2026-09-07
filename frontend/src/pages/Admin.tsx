@@ -218,12 +218,14 @@ export default function Admin() {
 
 function AppSettings() {
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [sources, setSources] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState('');
   useEffect(() => {
     api.get('/settings').then(r => {
       const o: Record<string, string> = {};
-      r.data.forEach((s: any) => { o[s.key] = s.value; });
-      setVals(o);
+      const s: Record<string, string> = {};
+      r.data.forEach((x: any) => { o[x.key] = x.value; if (x.source) s[x.key] = x.source; });
+      setVals(o); setSources(s);
     }).catch(() => {});
   }, []);
   const set = (k: string, v: string) => setVals({ ...vals, [k]: v });
@@ -232,6 +234,9 @@ function AppSettings() {
     await api.put('/settings', vals);
     setMsg('✓ Setările au fost salvate. Aplicațiile mobile le preiau automat (remote config).');
   };
+  const src = (k: string) => sources[k] === 'env'
+    ? <span className="pill">ENV</span>
+    : <span className="pill ok">UI</span>;
   const field = (k: string, label: string, ph = '') => (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13.5px' }}>
       {label}
@@ -240,6 +245,26 @@ function AppSettings() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720 }}>
+      <section className="panel">
+        <h3>Server (ENV bate UI — completati aici doar ce lipseste din .env)</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label>APP_URL {src('app_url')}<input value={vals.app_url || ''} placeholder="https://gustbebe.aalto.md" onChange={e => set('app_url', e.target.value)} /></label>
+          <label>SMTP_HOST {src('smtp_host')}<input value={vals.smtp_host || ''} placeholder="mail.example.com" onChange={e => set('smtp_host', e.target.value)} /></label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <label>SMTP_PORT {src('smtp_port')}<input value={vals.smtp_port || ''} onChange={e => set('smtp_port', e.target.value)} /></label>
+            <label>SMTP_SECURE {src('smtp_secure')}
+              <select value={vals.smtp_secure || 'false'} onChange={e => set('smtp_secure', e.target.value)}>
+                <option value="false">false (587)</option><option value="true">true (465)</option>
+              </select>
+            </label>
+          </div>
+          <label>SMTP_USER {src('smtp_user')}<input value={vals.smtp_user || ''} onChange={e => set('smtp_user', e.target.value)} /></label>
+          <label>SMTP_PASS {src('smtp_pass')}<input type="password" value={vals.smtp_pass || ''} onChange={e => set('smtp_pass', e.target.value)} /></label>
+          <label>SMTP_FROM {src('smtp_from')}<input value={vals.smtp_from || ''} onChange={e => set('smtp_from', e.target.value)} /></label>
+          <label>TELEGRAM_BOT_TOKEN {src('telegram_bot_token')}<input type="password" value={vals.telegram_bot_token || ''} onChange={e => set('telegram_bot_token', e.target.value)} /></label>
+          <label>TELEGRAM_CHANNEL_ID {src('telegram_channel_id')}<input value={vals.telegram_channel_id || ''} placeholder="@gustbebe" onChange={e => set('telegram_channel_id', e.target.value)} /></label>
+        </div>
+      </section>
       <section className="panel">
         <h3>AdMob — Android</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
-const { postRecipe, postRecipeAsync, configured: tgConfigured } = require('../lib/telegram');
+const { postRecipe, postRecipeAsync } = require('../lib/telegram');
 const { notify } = require('./notifications');
 
 const router = express.Router();
@@ -307,15 +307,14 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
 
 // publicare manuala pe Telegram — DOAR ADMIN (nu si utilizatorii/moderatorii)
 router.post('/:id/telegram', authRequired, roleRequired('ADMIN'), async (req, res) => {
-  if (!tgConfigured()) return res.status(400).json({ error: 'telegram_not_configured' });
   const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
   if (!recipe) return res.status(404).json({ error: 'not_found' });
   if (recipe.status !== 'PUBLISHED') return res.status(400).json({ error: 'not_published' });
-  if (req.user.role === 'MODERATOR' && recipe.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
   try {
     await postRecipe(recipe);
     res.json({ ok: true });
   } catch (e) {
+    if (e.code === 'not_configured') return res.status(400).json({ error: 'telegram_not_configured' });
     res.status(502).json({ error: 'telegram_failed', message: e.message });
   }
 });

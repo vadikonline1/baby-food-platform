@@ -1,8 +1,24 @@
 const express = require('express');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
+const { invalidate } = require('../lib/settings');
 
 const router = express.Router();
+
+// chei de server (ENV) cu corespondent editabil in UI (DB, lowercase).
+// La runtime: ENV castiga daca e setat, altfel valoarea din UI.
+const SERVER_KEYS = [
+  { db: 'app_url', env: 'APP_URL' },
+  { db: 'dns_source_url', env: 'DNS_SOURCE_URL' },
+  { db: 'smtp_host', env: 'SMTP_HOST' },
+  { db: 'smtp_port', env: 'SMTP_PORT' },
+  { db: 'smtp_secure', env: 'SMTP_SECURE' },
+  { db: 'smtp_user', env: 'SMTP_USER' },
+  { db: 'smtp_pass', env: 'SMTP_PASS' },
+  { db: 'smtp_from', env: 'SMTP_FROM' },
+  { db: 'telegram_bot_token', env: 'TELEGRAM_BOT_TOKEN' },
+  { db: 'telegram_channel_id', env: 'TELEGRAM_CHANNEL_ID' }
+];
 
 // chei publice citite de aplicatiile mobile + web (remote config — fara rebuild)
 // ATENTIE: aici intra doar valori publice (cheile Firebase web sunt publice by design)
@@ -18,23 +34,37 @@ const PUBLIC_KEYS = [
   'auth_apple_enabled', 'auth_apple_service_id'
 ];
 
-// GET /api/settings — ADMIN (toate)
+// GET /api/settings — ADMIN (toate, cu valoarea efectiva si sursa env/db)
 router.get('/', authRequired, roleRequired('ADMIN'), async (req, res) => {
-  res.json(await prisma.appSetting.findMany({ orderBy: { key: 'asc' } }));
+  const rows = await prisma.appSetting.findMany({ orderBy: { key: 'asc' } });
+  const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  const out = rows.map(r => ({ key: r.key, value: r.value, source: 'db' }));
+  for (const { db, env } of SERVER_KEYS) {
+    const e = process.env[env];
+    const existing = out.find(o => o.key === db);
+    if (e !== undefined && e !== '') {
+      if (existing) { existing.value = e; existing.source = 'env'; }
+      else out.push({ key: db, value: e, source: 'env' });
+    } else if (!existing) {
+      out.push({ key: db, value: '', source: 'db' });
+    }
+  }
+  res.json(out);
 });
 
-// PUT /api/settings — ADMIN (upsert in masa {key: value})
+// PUT /api/settings — ADMIN (upsert in masa {key: value}; cheile ajung in DB)
 router.put('/', authRequired, roleRequired('ADMIN'), async (req, res) => {
   const body = req.body || {};
   const keys = Object.keys(body).slice(0, 100);
   for (const key of keys) {
-    if (!/^[a-z0-9_]{1,64}$/.test(key)) continue;
+    if (!/^[A-Za-z0-9_]{1,64}$/.test(key)) continue;
     await prisma.appSetting.upsert({
       where: { key },
       create: { key, value: String(body[key] ?? '') },
       update: { value: String(body[key] ?? '') }
     });
   }
+  invalidate();
   res.json({ ok: true, saved: keys.length });
 });
 
