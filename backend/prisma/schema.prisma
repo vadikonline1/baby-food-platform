@@ -98,6 +98,7 @@ model Recipe {
   status      String   @default("PUBLISHED")
   avgRating   Float        @default(0)
   ratingsCount Int         @default(0)
+  viewsCount  Int          @default(0)
 
   authorId Int?
   author   User? @relation("AuthoredRecipes", fields: [authorId], references: [id], onDelete: SetNull)
@@ -263,6 +264,17 @@ model PushLog {
   sent      Int      @default(0)
   failed    Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+// Vizualizari unice: o persoana = max 1/zi/reteta (ident = user sau hash IP+UA)
+model RecipeView {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  day       String
+  identHash String
+  createdAt DateTime @default(now())
+  @@unique([recipeId, day, identHash])
 }
 
 // Unitati de masura pentru ingrediente (buc, g, ml...) — gestionate din Taxonomii

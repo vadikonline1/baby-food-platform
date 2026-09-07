@@ -30,6 +30,7 @@ export default function RecipeDetail() {
   const [r, setR] = useState<any>(null);
   const [myVote, setMyVote] = useState(0);
   const [fav, setFav] = useState(false);
+  const [views, setViews] = useState(0);
   const [related, setRelated] = useState<any[]>([]);
   const lang = i18n.language;
 
@@ -39,12 +40,14 @@ export default function RecipeDetail() {
       setR(data);
       setMyVote(data.myRating || 0);
       setFav(Boolean(data.isFavorite));
+      setViews(data.viewsCount || 0);
       // recomandate: aceeasi prima categorie, altfel populare
       const cat = data.categories?.[0]?.category?.slug;
       const params = cat ? { category: cat, limit: 8 } : { sort: 'popular', limit: 8 };
       api.get('/recipes', { params }).then(rr => {
         setRelated(rr.data.items.filter((x: any) => x.id !== data.id).slice(0, 4));
       }).catch(() => {});
+      api.post(`/recipes/${data.id}/view`).then(v => setViews(v.data.views)).catch(() => {});
     });
   }, [slug]);
   if (!r) return <p>{t('common.loading')}</p>;
@@ -80,6 +83,7 @@ export default function RecipeDetail() {
         <span className="meta-sep" />
         <span>⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min</span>
         <span>🍽 {r.servings}</span>
+        <span title="Vizionări unice">👁 {views}</span>
         {user && (
           <>
             <span className="meta-sep" />

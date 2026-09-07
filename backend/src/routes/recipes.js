@@ -368,6 +368,25 @@ router.post('/:id/guest-rate', async (req, res) => {
   res.json({ avgRating: recipe.avgRating, ratingsCount: recipe.ratingsCount });
 });
 
+// inregistrare vizualizare unica/zi (public, fara cont obligatoriu)
+// identitate: user logat sau hash(IP + user-agent); aceeasi persoana in aceeasi zi = 1
+router.post('/:id/view', async (req, res) => {
+  const recipeId = Number(req.params.id);
+  const crypto = require('crypto');
+  const me = optionalAuth(req);
+  const day = new Date().toISOString().slice(0, 10);
+  const raw = me ? `u${me.id}` : `g${req.ip || ''}|${req.headers['user-agent'] || ''}`;
+  const identHash = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 32);
+  try {
+    await prisma.recipeView.create({ data: { recipeId, day, identHash } });
+    const recipe = await prisma.recipe.update({ where: { id: recipeId }, data: { viewsCount: { increment: 1 } } });
+    return res.json({ views: recipe.viewsCount, counted: true });
+  } catch {
+    const recipe = await prisma.recipe.findUnique({ where: { id: recipeId }, select: { viewsCount: true } });
+    return res.json({ views: recipe?.viewsCount || 0, counted: false });
+  }
+});
+
 // favorites
 router.post('/:id/favorite', authRequired, async (req, res) => {
   const recipeId = Number(req.params.id);
