@@ -96,18 +96,20 @@ export default function Profile() {
               <label>Ce experiență ai cu alimentația copiilor? ({experience.trim().length}/10 minim)
                 <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
               {!!quiz?.questions?.length && (
-                <div className="panel" style={{ background: '#fbf9f7' }}>
+                <div className="quiz-block">
                   <h4>Mini-test: răspunde corect la toate și devii Autor pe loc (altfel decide adminul)</h4>
                   {quiz.questions.map((qq: any, i: number) => (
-                    <div key={qq.qid} style={{ marginBottom: 10 }}>
-                      <p style={{ margin: '6px 0' }}><strong>{i + 1}. {qq.q}</strong></p>
-                      {qq.options.map((op: string, oi: number) => (
-                        <label key={oi} className="fcheck">
-                          <input type="radio" name={`quiz-${qq.qid}`} checked={qans[qq.qid] === oi}
-                            onChange={() => setQans({ ...qans, [qq.qid]: oi })} />
-                          <span>{op}</span>
-                        </label>
-                      ))}
+                    <div key={qq.qid} className="quiz-q">
+                      <p><strong>{i + 1}. {qq.q}</strong></p>
+                      <div className="quiz-opts">
+                        {qq.options.map((op: string, oi: number) => (
+                          <label key={oi} className={`quiz-opt ${qans[qq.qid] === oi ? 'sel' : ''}`}>
+                            <input type="radio" name={`quiz-${qq.qid}`} checked={qans[qq.qid] === oi}
+                              onChange={() => setQans({ ...qans, [qq.qid]: oi })} />
+                            <span>{op}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>

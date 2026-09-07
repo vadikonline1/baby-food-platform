@@ -44,12 +44,21 @@ router.post('/', authRequired, async (req, res) => {
 
   // verificare quiz (optional dar incurajat): 3/3 corect -> aprobare automata
   let autoApproved = false;
+  let quizTotal = 0, quizCorrect = 0;
+  const quizLog = [];
   const ch = challenges.get(String(quizId || ''));
   if (ch) {
     challenges.delete(String(quizId));
     const entries = Object.entries(ch.map || {});
-    if (ch.exp >= Date.now() && entries.length === 3 && entries.every(([qid, c]) => Number(answers?.[qid]) === c)) {
-      autoApproved = true;
+    if (ch.exp >= Date.now() && entries.length > 0) {
+      quizTotal = entries.length;
+      for (const [qid, c] of entries) {
+        const picked = Number(answers?.[qid]);
+        const ok = picked === c;
+        if (ok) quizCorrect++;
+        quizLog.push({ qid: Number(qid), picked: Number.isFinite(picked) ? picked : null, correct: c });
+      }
+      autoApproved = quizCorrect === quizTotal;
     }
   }
   const r = await prisma.authorRequest.create({
@@ -57,7 +66,9 @@ router.post('/', authRequired, async (req, res) => {
       userId: req.user.id,
       motivation: String(motivation).slice(0, 2000),
       experience: String(experience).slice(0, 2000),
-      status: autoApproved ? 'APPROVED' : 'PENDING'
+      status: autoApproved ? 'APPROVED' : 'PENDING',
+      quizTotal, quizCorrect,
+      quizAnswers: JSON.stringify(quizLog).slice(0, 2000)
     },
     include: { user: { select: { name: true, email: true } } }
   });
@@ -67,6 +78,12 @@ router.post('/', authRequired, async (req, res) => {
     await notify('author_request', `Cerere autor: ${r.user.name}`, `${r.user.email} dorește să publice rețete.`, '/admin?tab=authors');
   }
   res.status(201).json({ ...r, autoApproved });
+});
+
+// GET /api/author-requests/quiz-bank — ADMIN (banca intrebarilor, cu raspunsuri corecte)
+router.get('/quiz-bank', authRequired, roleRequired('ADMIN'), (req, res) => {
+  const { QUIZ } = require('../lib/quiz');
+  res.json(QUIZ);
 });
 
 // GET /api/author-requests/mine — cererea mea

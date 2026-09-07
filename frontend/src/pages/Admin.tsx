@@ -378,31 +378,67 @@ function SeoManager() {
 
 function AuthorsManager() {
   const [items, setItems] = useState<any[]>([]);
+  const [bank, setBank] = useState<any[]>([]);
+  const [open, setOpen] = useState<number | null>(null);
+  const { i18n } = useTranslation();
+  const lang = i18n.language;
   const load = () => api.get('/author-requests').then(r => setItems(r.data)).catch(() => {});
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.get('/author-requests/quiz-bank').then(r => setBank(r.data)).catch(() => {});
+  }, []);
   const decide = async (id: number, status: string) => {
     await api.patch(`/author-requests/${id}`, { status });
     load();
+  };
+  const L = lang === 'ru' ? 1 : lang === 'en' ? 2 : 0;
+  const quizOf = (it: any) => {
+    try { return JSON.parse(it.quizAnswers || '[]'); } catch { return []; }
   };
   const pending = items.filter(i => i.status === 'PENDING');
   return (
     <div>
       <h3>Cereri de autor {pending.length ? `(${pending.length} în așteptare)` : ''}</h3>
       {!items.length && <p className="meta">Nicio cerere.</p>}
-      {items.map(i => (
-        <div className="panel" key={i.id} style={{ marginBottom: 12 }}>
-          <p><strong>{i.user?.name}</strong> <span className="meta">· {i.user?.email} · {new Date(i.createdAt).toLocaleString()}</span>{' '}
-            <span className={`pill ${i.status === 'PENDING' ? 'warn' : i.status === 'APPROVED' ? 'ok' : ''}`}>{i.status}</span></p>
-          <p><b>Motivație:</b> {i.motivation}</p>
-          <p><b>Experiență:</b> {i.experience}</p>
-          {i.status === 'PENDING' && (
-            <div className="row-btns">
-              <button className="btn small" onClick={() => decide(i.id, 'APPROVED')}>Aprobă → devine Autor</button>
-              <button className="btn danger small" onClick={() => decide(i.id, 'REJECTED')}>Respinge</button>
-            </div>
-          )}
-        </div>
-      ))}
+      {items.map(i => {
+        const qa = quizOf(i);
+        return (
+          <div className="panel" key={i.id} style={{ marginBottom: 12 }}>
+            <p><strong>{i.user?.name}</strong> <span className="meta">· {i.user?.email} · {new Date(i.createdAt).toLocaleString()}</span>{' '}
+              <span className={`pill ${i.status === 'PENDING' ? 'warn' : i.status === 'APPROVED' ? 'ok' : ''}`}>{i.status}</span>{' '}
+              {!!i.quizTotal && <span className={`pill ${i.quizCorrect === i.quizTotal ? 'ok' : 'warn'}`}>Quiz {i.quizCorrect}/{i.quizTotal}</span>}</p>
+            <p><b>Motivație:</b> {i.motivation}</p>
+            <p><b>Experiență:</b> {i.experience}</p>
+            {!!qa.length && (
+              <>
+                <button className="btn secondary small" onClick={() => setOpen(open === i.id ? null : i.id)}>
+                  {open === i.id ? 'Ascunde răspunsurile' : 'Vezi răspunsurile la quiz'}
+                </button>
+                {open === i.id && (
+                  <ul className="ing-list" style={{ marginTop: 8 }}>
+                    {qa.map((a: any, j: number) => {
+                      const q = bank[a.qid];
+                      const ok = a.picked === a.correct;
+                      return (
+                        <li key={j}>
+                          {ok ? '✅' : '❌'} <strong>{q ? q.q[L] : `Întrebarea #${a.qid}`}</strong>
+                          <br /><span className="meta">A răspuns: {q && q.o[a.picked] ? q.o[a.picked][L] : '—'} · Corect: {q ? q.o[a.correct][L] : a.correct}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+            {i.status === 'PENDING' && (
+              <div className="row-btns" style={{ marginTop: 8 }}>
+                <button className="btn small" onClick={() => decide(i.id, 'APPROVED')}>Aprobă → devine Autor</button>
+                <button className="btn danger small" onClick={() => decide(i.id, 'REJECTED')}>Respinge</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

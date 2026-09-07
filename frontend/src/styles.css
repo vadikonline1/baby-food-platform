@@ -317,6 +317,16 @@ pre { font-family: inherit; }
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: 6px; }
 @media (max-width: 860px) { .contact-grid { grid-template-columns: 1fr; } }
 
+/* ---- quiz autor ---- */
+.quiz-block { background: var(--primary-soft); border: 1px solid var(--line-strong); border-radius: 14px; padding: 16px 18px; margin-top: 12px; }
+.quiz-block h4 { margin: 0 0 6px; }
+.quiz-q { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+.quiz-q p { margin: 0 0 8px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt { display: flex; gap: 9px; align-items: center; font-size: 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: #fff; }
+.quiz-opt:hover { border-color: var(--primary); }
+.quiz-opt.sel { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 1px var(--primary); font-weight: 600; }
+
 /* ---- FAQ acordeon ---- */
 .faq-item { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; box-shadow: var(--shadow); }
 .faq-item summary { cursor: pointer; font-weight: 600; font-size: 15px; }

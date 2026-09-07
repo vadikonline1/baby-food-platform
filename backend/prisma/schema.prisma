@@ -150,6 +150,9 @@ model AuthorRequest {
   motivation String
   experience String
   status     String   @default("PENDING")
+  quizTotal  Int      @default(0)
+  quizCorrect Int     @default(0)
+  quizAnswers String  @default("[]")
   createdAt  DateTime @default(now())
 }
 
