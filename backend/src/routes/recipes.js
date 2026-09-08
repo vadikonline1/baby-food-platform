@@ -4,8 +4,29 @@ const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { postRecipe, postRecipeAsync, notifyAdminAsync } = require('../lib/telegram');
 const { notify } = require('./notifications');
+const { resolveTokens, sendExpoPush } = require('./push');
 
 const router = express.Router();
+
+// notificare push la utilizatori cand apare o reteta noua publicata
+async function pushNewRecipe(r) {
+  try {
+    const tokens = await resolveTokens('all');
+    if (!tokens.length) return;
+    const title = (r.titleRo || r.titleRu || 'Rețetă nouă') + ' 🍼';
+    const body = String(r.summaryRo || r.summaryRu || r.summaryEn || 'Vezi rețeta nouă!').slice(0, 140);
+    await sendExpoPush(tokens.map(t => ({
+      to: t.token, sound: 'default', title, body,
+      data: { url: `retete/${r.id}-${r.slug}` }
+    })));
+    console.log(`[push] new recipe ${r.id} → ${tokens.length} devices`);
+  } catch (e) {
+    console.error('[push] new recipe failed:', e.message);
+  }
+}
+function pushNewRecipeAsync(r) {
+  pushNewRecipe(r).catch(() => {});
+}
 
 function slugify(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -234,8 +255,10 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
       },
       include: recipeInclude
     });
-    if (recipe.status === 'PUBLISHED') postRecipeAsync(recipe);
-    else {
+    if (recipe.status === 'PUBLISHED') {
+      postRecipeAsync(recipe);
+      pushNewRecipeAsync(recipe);
+    } else {
       const author = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
       await notify('recipe_pending', `Rețetă de validat: ${recipe.titleRo}`, `Autor: ${author?.name || ''}`, `/admin/retete/${recipe.id}/editeaza`);
       notifyAdminAsync(`📝 <b>Rețetă nouă de validat</b>\n${recipe.titleRo}\nAutor: ${author?.name || ''}`);
@@ -302,7 +325,10 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
   const { status } = req.body || {};
   if (!['DRAFT', 'PUBLISHED'].includes(status)) return res.status(400).json({ error: 'invalid_status' });
   const recipe = await prisma.recipe.update({ where: { id: Number(req.params.id) }, data: { status }, include: recipeInclude });
-  if (status === 'PUBLISHED') postRecipeAsync(recipe);
+  if (status === 'PUBLISHED') {
+    postRecipeAsync(recipe);
+    pushNewRecipeAsync(recipe);
+  }
   res.json(recipe);
 });
 

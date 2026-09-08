@@ -102,3 +102,5 @@ router.get('/history', authRequired, roleRequired('ADMIN'), async (req, res) => 
 });
 
 module.exports = router;
+module.exports.resolveTokens = resolveTokens;
+module.exports.sendExpoPush = sendExpoPush;

@@ -52,35 +52,9 @@ async function postRecipe(r) {
     err.code = 'not_configured';
     throw err;
   }
+  // trimitem mereu sendMessage (text + link cu preview) — fiabil, fara upload multipart
   const text = caption(r, app);
   const thread = topic !== undefined ? { message_thread_id: topic } : {};
-  const fs = require('fs');
-  const path = require('path');
-
-  const img = r.imageUrl && /^https?:\/\//.test(r.imageUrl) ? r.imageUrl : null;
-  if (img) {
-    return tg(token, 'sendPhoto', { chat_id: chat, ...thread, photo: img, caption: text, parse_mode: 'HTML' });
-  }
-  if (r.imageUrl && r.imageUrl.startsWith('/uploads/')) {
-    const dir = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
-    const file = path.join(dir, path.basename(r.imageUrl));
-    if (fs.existsSync(file)) {
-      const form = new FormData();
-      form.append('chat_id', chat);
-      if (topic !== undefined) form.append('message_thread_id', String(topic));
-      form.append('caption', text);
-      form.append('parse_mode', 'HTML');
-      form.append('photo', new Blob([fs.readFileSync(file)]), path.basename(file));
-      const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: form });
-      const data = await res.json().catch(() => ({}));
-      if (!data.ok) {
-        const err = new Error(data.description || 'telegram_sendPhoto_failed');
-        err.code = 'telegram_failed';
-        throw err;
-      }
-      return data.result;
-    }
-  }
   return tg(token, 'sendMessage', { chat_id: chat, ...thread, text, parse_mode: 'HTML', disable_web_page_preview: false });
 }
 
