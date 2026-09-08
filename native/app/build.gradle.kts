@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    // Kotlin vine incorporat in AGP 9 (fara org.jetbrains.kotlin.android)
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
