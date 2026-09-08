@@ -151,8 +151,7 @@ private fun ActiveChips(vm: RecipesViewModel) {
             Text(
                 tr("filterActive", lang) + ":",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                color = MaterialTheme.colorScheme.primary
             )
         }
         items(chips) { (kind, v, label) ->

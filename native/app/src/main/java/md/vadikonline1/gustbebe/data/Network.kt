@@ -58,7 +58,11 @@ object DnsResolver {
                 .build()
             val req = okhttp3.Request.Builder().url(DNS_SOURCE).get().build()
             client.newCall(req).execute().use { res ->
-                val text = res.body?.string() ?: ""
+                val text = try {
+                    res.peekBody(Long.MAX_VALUE).string()
+                } catch (_: Exception) {
+                    ""
+                }
                 val line = text.lines().map { it.trim() }.firstOrNull { it.startsWith("$DNS_KEY=") }
                 val dns = line?.substringAfter("=")?.trim().orEmpty()
                 if (dns.isNotEmpty()) {

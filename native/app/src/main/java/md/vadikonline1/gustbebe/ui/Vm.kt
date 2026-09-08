@@ -9,7 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import md.vadikonline1.gustbebe.GustBebeApp
 import md.vadikonline1.gustbebe.data.Lang
@@ -202,7 +202,7 @@ class FavoritesViewModel(private val repo: RecipeRepository) : ViewModel() {
                 val serverIds = server.map { it.id }.toSet()
                 val local = mutableListOf<RecipeDto>()
                 try {
-                    kotlinx.coroutines.flow.first(repo.localFavorites()).forEach { e ->
+                    first(repo.localFavorites()).forEach { e ->
                         if (e.id !in serverIds) {
                             local.add(RecipeDto(e.id, e.slug, e.titleRo, e.titleRu, e.titleEn, imageUrl = e.imageUrl, avgRating = e.avgRating, ratingsCount = e.ratingsCount))
                         }

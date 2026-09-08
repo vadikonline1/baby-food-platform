@@ -19,8 +19,8 @@ import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 import md.vadikonline1.gustbebe.ads.Ads
 import md.vadikonline1.gustbebe.data.RemoteConfig
+import md.vadikonline1.gustbebe.data.UiLang
 import md.vadikonline1.gustbebe.data.tr
-import md.vadikonline1.gustbebe.data.Lang
 
 // Buton "Susține proiectul": Intercalat cu recompensa, fallback Cu recompensa.
 @Composable
@@ -52,7 +52,7 @@ fun SupportAdButton(cfg: RemoteConfig?, modifier: Modifier = Modifier) {
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
         modifier = modifier.fillMaxWidth()
     ) {
-        Text("🎁 ${tr("supportUs", Lang.current)}")
+        Text("🎁 ${tr("supportUs", UiLang.current)}")
     }
 }
 
