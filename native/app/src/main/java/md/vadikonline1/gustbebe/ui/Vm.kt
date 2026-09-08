@@ -75,6 +75,16 @@ class RecipesViewModel(private val repo: RecipeRepository) : ViewModel() {
             }
         }
     }
+
+    fun toggleFav(r: RecipeDto) {
+        viewModelScope.launch {
+            try {
+                val now = repo.toggleFavorite(r)
+                _items.value = _items.value.map { if (it.id == r.id) it.copy(isFavorite = now) else it }
+            } catch (_: Exception) {
+            }
+        }
+    }
 }
 
 class TaxViewModel(private val repo: RecipeRepository) : ViewModel() {

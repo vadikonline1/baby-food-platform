@@ -80,6 +80,7 @@ private val STRINGS: Map<String, Map<String, String>> = mapOf(
     "cancel" to mapOf("ro" to "Anulează", "ru" to "Отмена", "en" to "Cancel"),
     "votes" to mapOf("ro" to "voturi", "ru" to "оценок", "en" to "votes"),
     "views" to mapOf("ro" to "vizionări", "ru" to "просмотров", "en" to "views"),
+    "min" to mapOf("ro" to "min", "ru" to "мин", "en" to "min"),
     "recipes" to mapOf("ro" to "rețete", "ru" to "рецептов", "en" to "recipes"),
     "loading" to mapOf("ro" to "Se încarcă...", "ru" to "Загрузка...", "en" to "Loading..."),
     "retry" to mapOf("ro" to "Reîncearcă", "ru" to "Повторить", "en" to "Retry"),

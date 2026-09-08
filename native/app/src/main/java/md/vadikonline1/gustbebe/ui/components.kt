@@ -3,7 +3,10 @@ package md.vadikonline1.gustbebe.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.LocalIndication
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
@@ -47,7 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import md.vadikonline1.gustbebe.data.Lang
 import md.vadikonline1.gustbebe.data.UiLang
 import md.vadikonline1.gustbebe.data.Network
@@ -68,14 +72,28 @@ fun Modifier.pressable(onClick: () -> Unit): Modifier = composed(
 }
 
 @Composable
+fun ImagePlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("🍽️", style = MaterialTheme.typography.headlineLarge)
+    }
+}
+
+@Composable
 fun RecipeImage(url: String?, modifier: Modifier = Modifier) {
     val absolute = Network.absoluteImage(url)
-    if (absolute != null) {
-        AsyncImage(
+    if (absolute.isNullOrBlank()) {
+        ImagePlaceholder(modifier)
+    } else {
+        SubcomposeAsyncImage(
             model = absolute,
             contentDescription = null,
             modifier = modifier,
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            loading = { ImagePlaceholder(Modifier.matchParentSize()) },
+            error = { ImagePlaceholder(Modifier.matchParentSize()) }
         )
     }
 }
@@ -85,34 +103,71 @@ fun RecipeCard(
     item: RecipeDto,
     lang: String,
     onOpen: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fav: Boolean = item.isFavorite,
+    onFav: (() -> Unit)? = null
 ) {
+    val totalMin = item.prepMinutes + item.cookMinutes
     Card(
         onClick = onOpen,
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp, pressedElevation = 4.dp)
     ) {
         Column {
-            RecipeImage(
-                url = item.imageUrl,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-            )
+            Box {
+                RecipeImage(
+                    url = item.imageUrl,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                )
+                if (onFav != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .background(Color.White.copy(alpha = 0.92f), CircleShape)
+                            .size(38.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        FavButton(fav = fav, onToggle = onFav)
+                    }
+                }
+            }
             Column(Modifier.padding(12.dp)) {
                 Text(
                     item.title(lang),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 2
+                    maxLines = 2,
+                    minLines = 1
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "⭐ ${"%.1f".format(item.avgRating)} · ${item.ratingsCount} · 👁 ${item.viewsCount}",
+                    "⭐ ${"%.1f".format(item.avgRating)} · ${item.ratingsCount} ${tr("votes", lang)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "👁 ${item.viewsCount} ${tr("views", lang)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                    if (totalMin > 0) {
+                        Text(
+                            " · ⏱ $totalMin ${tr("min", lang)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                }
             }
         }
     }

@@ -1,13 +1,18 @@
 package md.vadikonline1.gustbebe.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,7 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,40 +66,69 @@ fun HomeTab(nav: NavController) {
     LaunchedEffect(Unit) { vm.load() }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
+        // Search adaptiv: pe ecrane inguste filtrul devine iconita cu badge,
+        // ca sa ramana loc pentru textul de cautare.
+        BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            OutlinedTextField(
-                value = q,
-                onValueChange = {
-                    q = it
-                    vm.query = it
-                    vm.load()
-                },
-                placeholder = { Text(tr("searchHint", lang)) },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (q.isNotEmpty()) {
-                        IconButton(onClick = { q = ""; vm.query = ""; vm.load() }) {
-                            Icon(Icons.Rounded.Close, contentDescription = null)
+            val compact = maxWidth < 420.dp
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = q,
+                    onValueChange = {
+                        q = it
+                        vm.query = it
+                        vm.load()
+                    },
+                    placeholder = { Text(tr("searchHint", lang)) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (q.isNotEmpty()) {
+                            IconButton(onClick = { q = ""; vm.query = ""; vm.load() }) {
+                                Icon(Icons.Rounded.Close, contentDescription = null)
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(100.dp),
+                    modifier = Modifier.weight(1f)
+                )
+                if (compact) {
+                    BadgedBox(
+                        badge = {
+                            if (!vm.filters.isEmpty()) {
+                                Badge { Text("${vm.filters.count()}") }
+                            }
+                        }
+                    ) {
+                        IconButton(
+                            onClick = { showFilters = true },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Rounded.FilterList,
+                                contentDescription = tr("filters", lang),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(100.dp),
-                modifier = Modifier.weight(1f)
-            )
-            androidx.compose.material3.AssistChip(
-                onClick = { showFilters = true },
-                label = { Text(tr("filters", lang)) },
-                trailingIcon = if (!vm.filters.isEmpty()) {
-                    { Text("${vm.filters.count()}", style = MaterialTheme.typography.labelMedium) }
-                } else null
-            )
+                } else {
+                    androidx.compose.material3.AssistChip(
+                        onClick = { showFilters = true },
+                        label = { Text(tr("filters", lang)) },
+                        trailingIcon = if (!vm.filters.isEmpty()) {
+                            { Text("${vm.filters.count()}", style = MaterialTheme.typography.labelMedium) }
+                        } else null
+                    )
+                }
+            }
         }
         if (!vm.filters.isEmpty()) {
             ActiveChips(vm = vm)
@@ -102,11 +139,19 @@ fun HomeTab(nav: NavController) {
             EmptyState(tr("emptyRecipes", lang))
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.padding(horizontal = 8.dp)
+                columns = GridCells.Adaptive(160.dp),
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(items, key = { it.id }) { r ->
-                    RecipeCard(item = r, lang = lang, onOpen = { nav.navigate("detail/${r.id}-${r.slug}") })
+                    RecipeCard(
+                        item = r,
+                        lang = lang,
+                        onOpen = { nav.navigate("detail/${r.id}-${r.slug}") },
+                        fav = r.isFavorite,
+                        onFav = { vm.toggleFav(r) }
+                    )
                 }
             }
         }
@@ -322,11 +367,19 @@ fun FilteredListScreen(slug: String, nav: NavController) {
             EmptyState(tr("emptyRecipes", lang))
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.padding(horizontal = 8.dp)
+                columns = GridCells.Adaptive(160.dp),
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(items, key = { it.id }) { r ->
-                    RecipeCard(item = r, lang = lang, onOpen = { nav.navigate("detail/${r.id}-${r.slug}") })
+                    RecipeCard(
+                        item = r,
+                        lang = lang,
+                        onOpen = { nav.navigate("detail/${r.id}-${r.slug}") },
+                        fav = r.isFavorite,
+                        onFav = { vm.toggleFav(r) }
+                    )
                 }
             }
         }

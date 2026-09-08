@@ -62,5 +62,6 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.12.0")
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("io.coil-kt.coil3:coil-compose:3.6.2")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.2")
     implementation("com.google.android.gms:play-services-ads:25.4.0")
 }
