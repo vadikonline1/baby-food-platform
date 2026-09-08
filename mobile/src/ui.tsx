@@ -61,14 +61,22 @@ export function FilterModal({ visible, onClose, onApply }: { visible: boolean; o
   const { lang } = useLang();
   const [ages, setAges] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
+  const [feeds, setFeeds] = useState<any[]>([]);
+  const [restrs, setRestrs] = useState<any[]>([]);
   const [selA, setSelA] = useState<number[]>([]);
   const [selC, setSelC] = useState<string[]>([]);
+  const [selF, setSelF] = useState<number[]>([]);
+  const [selR, setSelR] = useState<string[]>([]);
   useEffect(() => {
     if (!visible) return;
     api.get('/taxonomies/ages').then((r: any) => setAges(r.data)).catch(() => {});
     api.get('/taxonomies/categories').then((r: any) => setCats(r.data)).catch(() => {});
+    api.get('/taxonomies/feeding-types').then((r: any) => setFeeds(r.data)).catch(() => {});
+    api.get('/taxonomies/restrictions').then((r: any) => setRestrs(r.data)).catch(() => {});
   }, [visible]);
   const tg = (arr: any[], v: any, set: any) => set(arr.includes(v) ? arr.filter((x: any) => x !== v) : [...arr, v]);
+  const apply = (a: any[] = selA, c: any[] = selC, f: any[] = selF, r: any[] = selR) =>
+    onApply({ age: a, category: c, feeding: f, restriction: r });
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <ScrollView style={{ padding: 20, marginTop: 40 }}>
@@ -78,16 +86,28 @@ export function FilterModal({ visible, onClose, onApply }: { visible: boolean; o
             <Text style={s.opt}>{selA.includes(a.id) ? '☑' : '☐'} {localized(a, 'label', lang)}</Text>
           </TouchableOpacity>
         ))}
+        <Text style={s.h}>{t('feeding', lang)}</Text>
+        {feeds.map((f) => (
+          <TouchableOpacity key={f.id} onPress={() => tg(selF, f.id, setSelF)}>
+            <Text style={s.opt}>{selF.includes(f.id) ? '☑' : '☐'} {localized(f, 'name', lang)}</Text>
+          </TouchableOpacity>
+        ))}
         <Text style={s.h}>{t('categories', lang)}</Text>
         {cats.map((c) => (
           <TouchableOpacity key={c.id} onPress={() => tg(selC, c.slug, setSelC)}>
             <Text style={s.opt}>{selC.includes(c.slug) ? '☑' : '☐'} {c.icon} {localized(c, 'name', lang)}</Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={s.btn} onPress={() => { onApply({ age: selA, category: selC }); onClose(); }}>
+        <Text style={s.h}>{t('restrictions', lang)}</Text>
+        {restrs.map((x) => (
+          <TouchableOpacity key={x.id} onPress={() => tg(selR, x.slug, setSelR)}>
+            <Text style={s.opt}>{selR.includes(x.slug) ? '☑' : '☐'} {localized(x, 'name', lang)}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity style={s.btn} onPress={() => { apply(); onClose(); }}>
           <Text style={s.btnT}>{t('apply', lang)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.btn, s.ghost]} onPress={() => { setSelA([]); setSelC([]); onApply({ age: [], category: [] }); onClose(); }}>
+        <TouchableOpacity style={[s.btn, s.ghost]} onPress={() => { setSelA([]); setSelC([]); setSelF([]); setSelR([]); apply([], [], [], []); onClose(); }}>
           <Text>{t('reset', lang)}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.btn, s.ghost]} onPress={onClose}><Text>{t('close', lang)}</Text></TouchableOpacity>

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useNavigation } from '@react-navigation/native';
 import { api, localized } from '../api';
 import { RecipeCard } from '../ui';
-import { useLang } from '../lang';
+import { useLang, t } from '../lang';
 
 // Plan diversificare: pasi din Ghid (gestionat din web) + retete cele mai votate
 export default function PlanScreen() {
@@ -17,7 +17,7 @@ export default function PlanScreen() {
   }, []);
   return (
     <ScrollView style={s.wrap}>
-      <Text style={s.h}>Plan diversificare</Text>
+      <Text style={s.h}>{t('planTitle', lang)}</Text>
       {guide.map((g, i) => (
         <View key={g.id || i} style={s.step}>
           <Text style={s.n}>{i + 1}</Text>
@@ -27,7 +27,7 @@ export default function PlanScreen() {
           </View>
         </View>
       ))}
-      <Text style={s.h}>Rețete recomandate</Text>
+      <Text style={s.h}>{t('recommended', lang)}</Text>
       {top.map((r) => (
         <TouchableOpacity key={r.id} style={s.row} onPress={() => nav.navigate('Detail', { id: r.id, slug: r.slug })}>
           <Text style={s.t}>⭐ {Number(r.avgRating || 0).toFixed(1)} — {localized(r, 'title', lang)}</Text>

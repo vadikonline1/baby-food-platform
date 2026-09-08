@@ -336,6 +336,7 @@ function AppSettings() {
           {field('support_text_ro', 'Text RO')}
           {field('support_text_ru', 'Text RU')}
           {field('support_text_en', 'Text EN')}
+          {field('telegram_public_url', 'Link canal Telegram (buton Abonare în aplicații)', 'https://t.me/...')}
         </div>
       </section>
       {msg && <p className="notice">{msg}</p>}
@@ -637,6 +638,7 @@ function PushComposer() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [msg, setMsg] = useState('');
+  const [pushErrors, setPushErrors] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
 
   const loadHist = () => api.get('/push/history').then(r => setHistory(r.data)).catch(() => {});
@@ -658,6 +660,8 @@ function PushComposer() {
     try {
       const { data } = await api.post('/push/send', { title: title.trim(), body: body.trim(), target, userId });
       setMsg(`✓ Trimise: ${data.sent}, eșuate: ${data.failed} (tokenuri: ${data.total}).`);
+      setPushErrors(data.errors || []);
+      if (data.cleaned) setMsg((m) => `${m} ${data.cleaned} tokenuri moarte șterse.`);
       setTitle(''); setBody(''); loadHist();
     } catch { setMsg('Eroare la trimitere.'); }
   };
@@ -681,6 +685,16 @@ function PushComposer() {
           <textarea rows={3} placeholder="Text (max 180)" value={body} onChange={e => setBody(e.target.value)} />
           <div><button className="btn" onClick={send}>Trimite notificarea</button></div>
           {msg && <p className="notice">{msg}</p>}
+          {!!pushErrors.length && (
+            <ul className="dash-list">
+              {pushErrors.map((e: any, i: number) => (
+                <li key={i}>✕ <span className="meta">{e.token}</span> — <strong>{e.error}</strong>
+                  {String(e.error).includes('DeviceNotRegistered') && <span className="meta"> (token șters automat)</span>}
+                  {String(e.error).includes('InvalidCredentials') && <span className="meta"> (verifică FCM în Expo: eas credentials)</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
       <section className="panel">

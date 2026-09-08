@@ -1,41 +1,32 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
+import { View, Text, Button } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { api, localized, imgUrl } from '../api';
+import { api } from '../api';
 import { useLang, t } from '../lang';
+import RecipeView from '../components/RecipeView';
 
-// Random Reteta: o reteta aleatorie + buton Alta
+// Random Reteta: reteta intreaga afisata direct + buton Alta in header
 export default function RandomScreen() {
   const nav = useNavigation<any>();
   const { lang } = useLang();
   const [r, setR] = useState<any>(null);
   const load = useCallback(() => {
+    setR(null);
     api.get('/recipes/random').then((res) => setR(res.data)).catch(() => {});
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
-  return (
-    <View style={s.wrap}>
-      {!r && <Text>{t('loading', lang)}</Text>}
-      {!!r && (
-        <TouchableOpacity style={s.card} onPress={() => nav.navigate('Detail', { id: r.id, slug: r.slug })}>
-          {r.imageUrl ? <Image source={{ uri: imgUrl(r.imageUrl) }} style={s.img} /> : null}
-          <Text style={s.t}>{localized(r, 'title', lang)}</Text>
-          <Text style={s.m}>⭐ {Number(r.avgRating || 0).toFixed(1)} · {r.ratingsCount || 0} — deschide →</Text>
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity style={s.btn} onPress={load}>
-        <Text style={s.btnT}>{t('another', lang)}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
+  useLayoutEffect(() => {
+    nav.setOptions({
+      headerRight: () => <Button title={t('another', lang)} onPress={load} color="#fff" />
+    });
+  }, [nav, lang, load]);
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#fbf9f7', padding: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 16 },
-  img: { width: '100%', height: 220 },
-  t: { fontWeight: '700', fontSize: 18, padding: 14 },
-  m: { color: '#5f7a70', paddingHorizontal: 14, paddingBottom: 14 },
-  btn: { backgroundColor: '#1486b7', borderRadius: 12, padding: 14, alignItems: 'center' },
-  btnT: { color: '#fff', fontWeight: '700', fontSize: 16 }
-});
+  if (!r) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#fbf9f7', padding: 16 }}>
+        <Text>{t('loading', lang)}</Text>
+      </View>
+    );
+  }
+  return <RecipeView recipe={r} />;
+}

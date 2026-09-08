@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api, localized } from '../api';
-import { useLang } from '../lang';
+import { useLang, t } from '../lang';
 
 export default function CategoriesScreen() {
   const nav = useNavigation<any>();
@@ -21,7 +21,7 @@ export default function CategoriesScreen() {
             <Text style={{ fontSize: 28 }}>{item.icon || '🍽️'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={s.t}>{localized(item, 'name', lang)}</Text>
-              <Text style={s.m}>{item._count?.recipes ?? ''} rețete</Text>
+              <Text style={s.m}>{item._count?.recipes ?? ''} {t('recipesCount', lang)}</Text>
             </View>
             <Text>→</Text>
           </TouchableOpacity>

@@ -42,32 +42,32 @@ export default function ProfileScreen() {
       if (mode === 'login') await login(email, password);
       else {
         const data = await register(name, email, password);
-        if (!data.token) setErr('Verifică emailul pentru activare.');
+        if (!data.token) setErr(t('verifyEmail', lang));
       }
     } catch (e: any) {
-      setErr(e.response?.data?.error === 'email_not_verified' ? 'Cont neconfirmat — verifică emailul.' : 'Date invalide.');
+      setErr(e.response?.data?.error === 'email_not_verified' ? t('unverified', lang) : t('invalidData', lang));
     }
   };
 
   const saveName = async () => {
-    try { await api.patch('/auth/me', { name }); await refresh(); Alert.alert('OK', 'Nume salvat.'); }
-    catch { Alert.alert('Eroare', 'Nu s-a salvat.'); }
+    try { await api.patch('/auth/me', { name }); await refresh(); Alert.alert('OK', t('okSaved', lang)); }
+    catch { Alert.alert(t('details', lang), t('errSave', lang)); }
   };
   const savePw = async () => {
-    if (npw.length < 6) { Alert.alert('Eroare', 'Minim 6 caractere.'); return; }
-    try { await api.patch('/auth/me/password', { currentPassword: cur, newPassword: npw }); setCur(''); setNpw(''); Alert.alert('OK', 'Parolă schimbată.'); }
-    catch { Alert.alert('Eroare', 'Parola curentă e greșită.'); }
+    if (npw.length < 6) { Alert.alert(t('details', lang), t('minChars', lang)); return; }
+    try { await api.patch('/auth/me/password', { currentPassword: cur, newPassword: npw }); setCur(''); setNpw(''); Alert.alert('OK', t('okPass', lang)); }
+    catch { Alert.alert(t('details', lang), t('errPass', lang)); }
   };
 
   return (
     <ScrollView style={s.wrap}>
       <View style={s.row}>
-        <Text style={s.t}>Notificări push</Text>
+        <Text style={s.t}>{t('pushNotif', lang)}</Text>
         <Switch value={push} onValueChange={togglePush} />
       </View>
 
       <View style={s.row}>
-        <Text style={s.t}>Limba</Text>
+        <Text style={s.t}>{t('language', lang)}</Text>
         <LangSelector />
       </View>
 
@@ -77,23 +77,23 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => setMode('login')}><Text style={mode === 'login' ? s.tabOn : s.tab}>Login</Text></TouchableOpacity>
             <TouchableOpacity onPress={() => setMode('register')}><Text style={mode === 'register' ? s.tabOn : s.tab}>Register</Text></TouchableOpacity>
           </View>
-          {mode === 'register' && <TextInput style={s.in} placeholder="Nume" value={name} onChangeText={setName} />}
-          <TextInput style={s.in} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
-          <TextInput style={s.in} placeholder="Parolă" value={password} onChangeText={setPassword} secureTextEntry />
+          {mode === 'register' && <TextInput style={s.in} placeholder={t('authName', lang)} value={name} onChangeText={setName} />}
+          <TextInput style={s.in} placeholder={t('authEmail', lang)} value={email} onChangeText={setEmail} autoCapitalize="none" />
+          <TextInput style={s.in} placeholder={t('authPass', lang)} value={password} onChangeText={setPassword} secureTextEntry />
           {!!err && <Text style={s.err}>{err}</Text>}
-          <TouchableOpacity style={s.btn} onPress={doAuth}><Text style={s.btnT}>Continuă (opțional)</Text></TouchableOpacity>
-          <Text style={s.m}>Contul e opțional — rețetele, votul și favoritele merg și fără.</Text>
+          <TouchableOpacity style={s.btn} onPress={doAuth}><Text style={s.btnT}>{t('continueOpt', lang)}</Text></TouchableOpacity>
+          <Text style={s.m}>{t('optionalNote', lang)}</Text>
         </View>
       ) : (
         <View style={s.card}>
           <Text style={s.t}>{user.name}</Text>
           <Text style={s.m}>{user.email}</Text>
-          <TextInput style={s.in} placeholder="Nume nou" value={name} onChangeText={setName} />
-          <TouchableOpacity style={s.btn} onPress={saveName}><Text style={s.btnT}>Salvează numele</Text></TouchableOpacity>
-          <TextInput style={s.in} placeholder="Parola curentă" value={cur} onChangeText={setCur} secureTextEntry />
-          <TextInput style={s.in} placeholder="Parola nouă" value={npw} onChangeText={setNpw} secureTextEntry />
-          <TouchableOpacity style={s.btn} onPress={savePw}><Text style={s.btnT}>Schimbă parola</Text></TouchableOpacity>
-          <TouchableOpacity style={[s.btn, s.ghost]} onPress={async () => { await logout(); }}><Text>Deconectare</Text></TouchableOpacity>
+          <TextInput style={s.in} placeholder={t('newName', lang)} value={name} onChangeText={setName} />
+          <TouchableOpacity style={s.btn} onPress={saveName}><Text style={s.btnT}>{t('saveName', lang)}</Text></TouchableOpacity>
+          <TextInput style={s.in} placeholder={t('curPass', lang)} value={cur} onChangeText={setCur} secureTextEntry />
+          <TextInput style={s.in} placeholder={t('newPass', lang)} value={npw} onChangeText={setNpw} secureTextEntry />
+          <TouchableOpacity style={s.btn} onPress={savePw}><Text style={s.btnT}>{t('changePass', lang)}</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.btn, s.ghost]} onPress={async () => { await logout(); }}><Text>{t('logout', lang)}</Text></TouchableOpacity>
         </View>
       )}
 
@@ -103,7 +103,7 @@ export default function ProfileScreen() {
 
       {hasUpdate && Platform.OS === 'android' && (
         <TouchableOpacity style={[s.card, { backgroundColor: '#e8f3f9' }]} onPress={() => checkForUpdate(false)}>
-          <Text style={s.t}>⬇️ Actualizare disponibilă — apasă pentru detalii</Text>
+          <Text style={s.t}>{t('updateAvailable', lang)}</Text>
         </TouchableOpacity>
       )}
 

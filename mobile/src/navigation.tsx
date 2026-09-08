@@ -57,12 +57,13 @@ function Tabs() {
 }
 
 export default function Navigation() {
+  const { lang } = useLang();
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1486b7' }, headerTintColor: '#fff' }}>
         <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-        <Stack.Screen name="Detail" component={RecipeDetail} options={{ title: 'Rețeta' }} />
-        <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Favorite' }} />
+        <Stack.Screen name="Detail" component={RecipeDetail} options={{ title: t('detailTitle', lang) }} />
+        <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: t('favTitle', lang) }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

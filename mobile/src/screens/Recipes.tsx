@@ -20,7 +20,9 @@ export default function RecipesScreen() {
       params: {
         q: q || undefined,
         age: filters.age?.length ? filters.age.join(',') : undefined,
+        feeding: filters.feeding?.length ? filters.feeding.join(',') : undefined,
         category: filters.category?.length ? filters.category.join(',') : route.params?.category,
+        restriction: filters.restriction?.length ? filters.restriction.join(',') : undefined,
         limit: 30
       }
     }).then((r) => setItems(r.data.items)).catch(() => {});

@@ -83,17 +83,29 @@ router.post('/send', authRequired, roleRequired('ADMIN'), async (req, res) => {
   }
   const tokens = await resolveTokens(target, userId);
   const messages = tokens.map(t => ({ to: t.token, sound: 'default', title: String(title).slice(0, 120), body: String(body).slice(0, 180) }));
-  let sent = 0, failed = 0;
+  let sent = 0, failed = 0, cleaned = 0;
+  const errors = [];
   if (messages.length) {
     try {
       const tickets = await sendExpoPush(messages);
-      for (const t of tickets) (t.status === 'ok' ? sent++ : failed++);
+      for (let i = 0; i < tickets.length; i++) {
+        const tk = tickets[i] || {};
+        if (tk.status === 'ok') { sent++; continue; }
+        failed++;
+        const code = tk.details?.error || tk.message || 'unknown';
+        if (errors.length < 5) errors.push({ token: messages[i].to.slice(0, 24) + '…', error: code });
+        // tokenuri moarte (dezinstalări) se șterg automat
+        if (code === 'DeviceNotRegistered') {
+          try { await prisma.pushToken.delete({ where: { token: messages[i].to } }); cleaned++; } catch {}
+        }
+      }
     } catch (e) {
       failed = messages.length;
+      errors.push({ error: 'network: ' + e.message });
     }
   }
   await prisma.pushLog.create({ data: { title: String(title).slice(0, 120), body: String(body).slice(0, 300), target, sent, failed } });
-  res.json({ ok: true, sent, failed, total: messages.length });
+  res.json({ ok: true, sent, failed, cleaned, total: messages.length, errors });
 });
 
 // GET /api/push/history — ADMIN

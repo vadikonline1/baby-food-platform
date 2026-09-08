@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, Linking } from 'react-native';
 import { RewardedInterstitialAd, RewardedAd, TestIds } from 'react-native-google-mobile-ads';
 import { getConfig } from './config';
-import { useLang } from './lang';
+import { useLang, t } from './lang';
 
 // Sustinere: reclama rewarded (AdMob). Folosit de Profil + Home.
 export function supportUs() {
@@ -27,6 +27,7 @@ export function supportUs() {
 }
 
 // Card "Susține proiectul" + "Abonare Telegram" — remote config, fără rebuild.
+// Butoanele stau inline (pe un rând).
 export function SupportBlock() {
   const { lang } = useLang();
   const cfg = getConfig();
@@ -34,24 +35,24 @@ export function SupportBlock() {
   const tgUrl = cfg?.telegram?.channelUrl;
   if (!support && !tgUrl) return null;
 
-  const title = support?.title?.[lang] || support?.title?.ro || 'Susține proiectul';
+  const title = support?.title?.[lang] || support?.title?.ro || t('supportFallback', lang);
   const text = support?.text?.[lang] || support?.text?.ro;
   return (
     <View style={s.card}>
-      {support && (
-        <>
-          <Text style={s.t}>{title}</Text>
-          {!!text && <Text style={s.m}>{text}</Text>}
-          <TouchableOpacity style={[s.btn, { backgroundColor: '#065f46' }]} onPress={supportUs}>
-            <Text style={s.btnT}>Susține proiectul 🎁</Text>
+      {!!title && <Text style={s.t}>{support ? title : ''}</Text>}
+      {!!text && support && <Text style={s.m}>{text}</Text>}
+      <View style={s.row}>
+        {support && (
+          <TouchableOpacity style={[s.btn, s.flex, { backgroundColor: '#065f46' }]} onPress={supportUs}>
+            <Text style={s.btnT}>{t('supportFallback', lang)}</Text>
           </TouchableOpacity>
-        </>
-      )}
-      {!!tgUrl && (
-        <TouchableOpacity style={[s.btn, { backgroundColor: '#1c8cd8' }]} onPress={() => Linking.openURL(tgUrl)}>
-          <Text style={s.btnT}>📢 Abonare Telegram</Text>
-        </TouchableOpacity>
-      )}
+        )}
+        {!!tgUrl && (
+          <TouchableOpacity style={[s.btn, s.flex, { backgroundColor: '#1c8cd8' }]} onPress={() => Linking.openURL(tgUrl)}>
+            <Text style={s.btnT}>{t('tgSubscribe', lang)}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -60,6 +61,8 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#fff', margin: 12, padding: 14, borderRadius: 14 },
   t: { fontWeight: '700', fontSize: 15 },
   m: { color: '#5f7a70', fontSize: 12, marginVertical: 6 },
+  row: { flexDirection: 'row', gap: 8, marginTop: 8 },
   btn: { borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 8 },
+  flex: { flex: 1, marginTop: 0 },
   btnT: { color: '#fff', fontWeight: '700' }
 });

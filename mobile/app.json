@@ -8,6 +8,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1486b7"
+    },
 
     "ios": {
       "supportsTablet": true,
@@ -19,7 +24,13 @@
       "googleServicesFile": "./google-services.json"
     },
 
-    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1486b7",
+          "image": "./assets/icon.png"
+        }
+      ],
       [
         "expo-notifications",
         {
