@@ -24,6 +24,7 @@
       "googleServicesFile": "./google-services.json"
     },
 
+    "plugins": [
       [
         "expo-splash-screen",
         {
