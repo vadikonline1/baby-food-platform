@@ -1,9 +1,9 @@
 package md.vadikonline1.gustbebe.ui
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -28,9 +28,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -137,42 +137,44 @@ fun AppRoot() {
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
                 )
-            },
-            bottomBar = {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    tonalElevation = 0.dp,
-                    modifier = Modifier
-                        .height(80.dp)
-                        .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-                ) {
-                    BarItem(Icons.Rounded.Home, tr("home", lang), route == "home") { nav.navigate("home") }
-                    BarItem(Icons.Rounded.Shuffle, tr("random", lang), route == "random") { nav.navigate("random") }
-                    BarItem(Icons.Rounded.Favorite, tr("favorites", lang), route == "favorites") { nav.navigate("favorites") }
-                    BarItem(Icons.Rounded.Settings, tr("settings", lang), route == "settings") { nav.navigate("settings") }
-                }
             }
         ) { padding ->
-            NavHost(
-                navController = nav,
-                startDestination = "home",
-                modifier = Modifier
+            // Sidebar permanent (rail) in locul barei de jos + continut.
+            Row(
+                Modifier
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                composable("home") {
-                    HomeWithTabs(tab = tab, onTab = { tab = it }, nav = nav)
+                NavigationRail(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
+                ) {
+                    RailItem(Icons.Rounded.Home, tr("home", lang), route == "home") { nav.navigate("home") }
+                    RailItem(Icons.Rounded.Shuffle, tr("random", lang), route == "random") { nav.navigate("random") }
+                    RailItem(Icons.Rounded.Favorite, tr("favorites", lang), route == "favorites") { nav.navigate("favorites") }
+                    RailItem(Icons.Rounded.Settings, tr("settings", lang), route == "settings") { nav.navigate("settings") }
                 }
-                composable("detail/{slug}") { back ->
-                    DetailScreen(slug = back.arguments?.getString("slug").orEmpty(), nav = nav)
+                NavHost(
+                    navController = nav,
+                    startDestination = "home",
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                ) {
+                    composable("home") {
+                        HomeWithTabs(tab = tab, onTab = { tab = it }, nav = nav)
+                    }
+                    composable("detail/{slug}") { back ->
+                        DetailScreen(slug = back.arguments?.getString("slug").orEmpty(), nav = nav)
+                    }
+                    composable("category/{slug}") { back ->
+                        FilteredListScreen(slug = back.arguments?.getString("slug").orEmpty(), nav = nav)
+                    }
+                    composable("random") { RandomScreen(nav = nav) }
+                    composable("favorites") { FavoritesScreen(nav = nav) }
+                    composable("settings") { SettingsScreen(nav = nav) }
+                    composable("auth") { AuthScreen(nav = nav) }
                 }
-                composable("category/{slug}") { back ->
-                    FilteredListScreen(slug = back.arguments?.getString("slug").orEmpty(), nav = nav)
-                }
-                composable("random") { RandomScreen(nav = nav) }
-                composable("favorites") { FavoritesScreen(nav = nav) }
-                composable("settings") { SettingsScreen(nav = nav) }
-                composable("auth") { AuthScreen(nav = nav) }
             }
         }
     }
@@ -188,8 +190,8 @@ fun AppRoot() {
 }
 
 @Composable
-private fun BarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
-    androidx.compose.material3.NavigationBarItem(
+private fun RailItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
+    NavigationRailItem(
         selected = selected,
         onClick = onClick,
         icon = { Icon(icon, contentDescription = null) },
