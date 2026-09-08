@@ -84,7 +84,7 @@ export default function Admin() {
     } catch (e: any) {
       alert(e.response?.data?.error === 'telegram_not_configured'
         ? 'Botul Telegram nu e configurat (.env: TELEGRAM_BOT_TOKEN + TELEGRAM_CHANNEL_ID).'
-        : 'Eroare la publicare.');
+        : `Eroare la publicare pe Telegram: ${e.response?.data?.message || e.message || 'necunoscută'}`);
     }
   };
 

@@ -68,7 +68,7 @@ export default function RecipeDetail({ route }: any) {
   const img = imgUrl(r.imageUrl);
 
   return (
-    <ScrollView style={s.wrap}>
+    <ScrollView style={s.wrap} contentContainerStyle={{ paddingBottom: 96 }}>
       {img ? (
         <View>
           <Image source={{ uri: img }} style={s.cover} />
@@ -79,7 +79,12 @@ export default function RecipeDetail({ route }: any) {
       ) : (
         <Text style={s.meta}>⭐ {Number(r.avgRating || 0).toFixed(1)} ({r.ratingsCount || 0}) · ⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 {r.servings}</Text>
       )}
-      <Text style={s.h1}>{localized(r, 'title', lang)}</Text>
+      <View style={s.titleRow}>
+        <Text style={s.h1}>{localized(r, 'title', lang)}</Text>
+        <TouchableOpacity style={[s.favSmall, fav && s.favSmallOn]} onPress={toggleFav} hitSlop={8}>
+          <Text style={[s.favSmallTxt, fav && s.favSmallTxtOn]}>{fav ? '♥' : '♡'}</Text>
+        </TouchableOpacity>
+      </View>
       {!!localized(r, 'summary', lang) && <Text style={s.sum}>{localized(r, 'summary', lang)}</Text>}
       <Text style={s.h2}>{t('ingredients', lang)}</Text>
       {det.length ? det.map((d: any) => (
@@ -109,7 +114,15 @@ const s = {
     backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10,
   },
   metaOnImg: { color: '#fff', fontSize: 13, fontWeight: '600' as const },
-  h1: { fontSize: 24, fontWeight: '700' as const, marginTop: 12, marginBottom: 8 },
+  h1: { fontSize: 22, fontWeight: '700' as const, marginTop: 12, marginBottom: 8, flex: 1, paddingRight: 8 },
+  titleRow: { flexDirection: 'row' as const, alignItems: 'flex-start' as const },
+  favSmall: {
+    marginTop: 14, width: 44, height: 40, borderRadius: 10, alignItems: 'center' as const,
+    justifyContent: 'center' as const, borderWidth: 1.5, borderColor: '#e11d48',
+  },
+  favSmallOn: { backgroundColor: '#e11d48' },
+  favSmallTxt: { fontSize: 20, color: '#e11d48' },
+  favSmallTxtOn: { color: '#fff' },
   meta: { color: '#5f7a70', marginBottom: 8 },
   sum: { fontSize: 15, marginBottom: 8 },
   h2: { fontSize: 18, fontWeight: '700' as const, marginTop: 14, marginBottom: 6 },
