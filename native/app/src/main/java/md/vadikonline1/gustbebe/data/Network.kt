@@ -18,9 +18,11 @@ private val Context.dataStore by preferencesDataStore("gustbebe")
 object PrefsKeys {
     val TOKEN = stringPreferencesKey("token")
     val LANG = stringPreferencesKey("lang")
+    val THEME = stringPreferencesKey("theme")
     val API_BASE = stringPreferencesKey("api_base")
     val DEVICE_ID = stringPreferencesKey("device_id")
     val USER_JSON = stringPreferencesKey("user_json")
+    val PUSH_TOKEN_SENT = stringPreferencesKey("push_token_sent")
 }
 
 class Prefs(private val context: Context) {

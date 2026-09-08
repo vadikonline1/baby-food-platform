@@ -1,5 +1,6 @@
 package md.vadikonline1.gustbebe.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.navigation.NavController
 import md.vadikonline1.gustbebe.BuildConfig
 import md.vadikonline1.gustbebe.data.Lang
 import md.vadikonline1.gustbebe.data.UiLang
+import md.vadikonline1.gustbebe.data.UiTheme
 import md.vadikonline1.gustbebe.data.tr
 
 @Composable
@@ -41,6 +43,7 @@ fun SettingsScreen(nav: NavController) {
     val cfg by vm.config.collectAsState()
     val authVm: AuthViewModel = appViewModel(::AuthViewModel)
     val user by authVm.user.collectAsState()
+    val theme by UiTheme.flow.collectAsState()
 
     LaunchedEffect(Unit) {
         vm.loadConfig()
@@ -56,6 +59,11 @@ fun SettingsScreen(nav: NavController) {
         Text(tr("language", lang), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         LangChips(current = lang) { vm.setLang(context, it) }
+        Spacer(Modifier.height(16.dp))
+
+        Text(tr("theme", lang), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        ThemeChips(current = theme, lang = lang) { vm.setTheme(context, it) }
         Spacer(Modifier.height(16.dp))
 
         Card(

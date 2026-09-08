@@ -1,24 +1,26 @@
 package md.vadikonline1.gustbebe.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,20 +54,29 @@ fun RandomScreen(nav: NavController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(tr("random", lang), style = MaterialTheme.typography.titleLarge) },
-            actions = {
-                Button(
-                    onClick = { vm.load() },
-                    shape = RoundedCornerShape(100.dp),
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(Icons.Rounded.Refresh, contentDescription = null)
-                    Text("  ${tr("anotherRecipe", lang)}", style = MaterialTheme.typography.titleSmall)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-        )
+        // Antet compact (fara al doilea TopAppBar — facea spatiu masiv sub "GustBebe").
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text(
+                tr("random", lang),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            FilledTonalButton(
+                onClick = { vm.load() },
+                shape = CircleShape,
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(tr("anotherRecipe", lang), style = MaterialTheme.typography.labelLarge)
+            }
+        }
         if (recipe == null || detail?.id != recipe?.id) {
             LoadingRow()
         } else {

@@ -95,6 +95,14 @@ class RecipeRepository(private val context: Context) {
         }
     }
 
+    // ---- push nativ (FCM) ----
+    suspend fun registerNativePush(token: String) {
+        try {
+            api().nativePushToken(mapOf("token" to token, "platform" to "fcm-android"))
+        } catch (_: Exception) {
+        }
+    }
+
     // ---- auth ----
     suspend fun me(): UserDto {
         val me = api().me()

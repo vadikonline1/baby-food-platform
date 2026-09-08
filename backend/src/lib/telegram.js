@@ -18,16 +18,33 @@ function recipeLink(r, app) {
   return `${app}/retete/${r.id}-${r.slug}`;
 }
 
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function taxLabel(x) {
+  if (!x) return '';
+  return x.labelRo || x.nameRo || x.slug || '';
+}
+
 function caption(r, app) {
+  const totalMin = (r.prepMinutes || 0) + (r.cookMinutes || 0);
+  const groups = [];
+  const ages = (r.ageGroups || []).map(a => taxLabel(a.ageGroup)).filter(Boolean);
+  if (ages.length) groups.push(`Vârsta: ${ages.join(', ')}`);
+  const cats = (r.categories || []).map(c => taxLabel(c.category)).filter(Boolean);
+  if (cats.length) groups.push(`Categorii: ${cats.join(', ')}`);
+  const restrs = (r.restrictions || []).map(x => taxLabel(x.restriction)).filter(Boolean);
+  if (restrs.length) groups.push(`Restricții: ${restrs.join(', ')}`);
+  const chars = (r.characteristics || []).map(x => taxLabel(x.characteristic)).filter(Boolean);
+  if (chars.length) groups.push(`Caracteristici: ${chars.join(', ')}`);
   const lines = [
-    `🍼 <b>${r.titleRo || ''}</b>`,
-    r.summaryRo || '',
+    `Titlul: ${esc(r.titleRo || '')}`,
     '',
-    `⏱ ${(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 ${r.servings || ''} porții`,
-    `⭐ ${Number(r.avgRating || 0).toFixed(1)} (${r.ratingsCount || 0} voturi)`,
-    '',
-    `👉 ${recipeLink(r, app)}`
+    `Timpul: ⏱ ${totalMin} min · 🍽 ${r.servings || ''} porții`
   ];
+  if (groups.length) lines.push(`tag: ${groups.join(' · ')}`);
+  lines.push(`Link: ${recipeLink(r, app)}`);
   return lines.join('\n');
 }
 

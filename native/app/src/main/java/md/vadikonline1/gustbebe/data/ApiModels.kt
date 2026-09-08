@@ -151,7 +151,8 @@ data class GuideItemDto(
 data class RemoteConfig(
     @SerializedName("admob") val admob: AdmobCfg? = null,
     @SerializedName("support") val support: SupportCfg? = null,
-    @SerializedName("telegram") val telegram: TelegramCfg? = null
+    @SerializedName("telegram") val telegram: TelegramCfg? = null,
+    @SerializedName("firebase") val firebase: FirebaseCfg? = null
 )
 
 data class AdmobCfg(
@@ -172,6 +173,13 @@ data class SupportCfg(
 )
 
 data class TelegramCfg(@SerializedName("channelUrl") val channelUrl: String = "")
+
+data class FirebaseCfg(
+    @SerializedName("apiKey") val apiKey: String = "",
+    @SerializedName("projectId") val projectId: String = "",
+    @SerializedName("messagingSenderId") val senderId: String = "",
+    @SerializedName("appId") val appId: String = ""
+)
 
 data class UserDto(
     @SerializedName("id") val id: Int = 0,

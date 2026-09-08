@@ -259,6 +259,16 @@ class SettingsViewModel(private val repo: RecipeRepository) : ViewModel() {
             UiLang.current = code
         }
     }
+
+    fun setTheme(context: android.content.Context, mode: String) {
+        viewModelScope.launch {
+            try {
+                SessionStore(context).setTheme(mode)
+            } catch (_: Exception) {
+            }
+            UiTheme.current = mode
+        }
+    }
 }
 
 class AuthViewModel(private val repo: RecipeRepository) : ViewModel() {

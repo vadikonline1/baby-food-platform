@@ -79,4 +79,7 @@ interface ApiService {
 
     @POST("recipes/{id}/view")
     suspend fun view(@Path("id") id: Int): ViewsResponse
+
+    @POST("push/native-tokens")
+    suspend fun nativePushToken(@Body body: Map<String, String>): OkResponse
 }

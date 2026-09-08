@@ -1,10 +1,12 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { postRecipe, postRecipeAsync, notifyAdminAsync } = require('../lib/telegram');
 const { notify } = require('./notifications');
-const { resolveTokens, sendExpoPush } = require('./push');
+const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
 const router = express.Router();
 
@@ -15,11 +17,18 @@ async function pushNewRecipe(r) {
     if (!tokens.length) return;
     const title = (r.titleRo || r.titleRu || 'Rețetă nouă') + ' 🍼';
     const body = String(r.summaryRo || r.summaryRu || r.summaryEn || 'Vezi rețeta nouă!').slice(0, 140);
-    await sendExpoPush(tokens.map(t => ({
-      to: t.token, sound: 'default', title, body,
-      data: { url: `retete/${r.id}-${r.slug}` }
-    })));
-    console.log(`[push] new recipe ${r.id} → ${tokens.length} devices`);
+    const data = { url: `retete/${r.id}-${r.slug}` };
+    const expo = tokens.filter(t => String(t.token).startsWith('ExponentPushToken['));
+    const fcm = tokens.filter(t => !String(t.token).startsWith('ExponentPushToken[') && /^fcm/i.test(t.platform || ''));
+    if (expo.length) {
+      await sendExpoPush(expo.map(t => ({
+        to: t.token, sound: 'default', title, body, data
+      })));
+    }
+    if (fcm.length) {
+      await sendFcmPush(fcm.map(t => ({ token: t.token, title, body, data })));
+    }
+    console.log(`[push] new recipe ${r.id} → ${tokens.length} devices (expo:${expo.length} fcm:${fcm.length})`);
   } catch (e) {
     console.error('[push] new recipe failed:', e.message);
   }
@@ -31,6 +40,40 @@ function pushNewRecipeAsync(r) {
 function slugify(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '').slice(0, 80) || ('reteta-' + Date.now());
+}
+
+// coperta /uploads/* se redenumeste in {id}-{titlu-slug}.ext (dupa create/update/publicare)
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
+function adoptCover(recipe) {
+  try {
+    const m = /^\/uploads\/(.+)$/.exec(recipe.imageUrl || '');
+    if (!m) return null;
+    const cur = m[1];
+    const ext = (path.extname(cur) || '.jpg').toLowerCase();
+    const want = `${recipe.id}-${slugify(recipe.titleRo)}${ext}`;
+    if (cur === want) return null;
+    const from = path.join(UPLOAD_DIR, path.basename(cur));
+    const to = path.join(UPLOAD_DIR, want);
+    if (!fs.existsSync(from)) return null;
+    if (fs.existsSync(to)) fs.unlinkSync(to);
+    fs.renameSync(from, to);
+    // curata orfani mai vechi ai aceleiasi retete ({id}-*.ext)
+    try {
+      for (const f of fs.readdirSync(UPLOAD_DIR)) {
+        if (f !== want && f.startsWith(`${recipe.id}-`) && /\.(jpe?g|png|webp|gif)$/i.test(f)) {
+          try { fs.unlinkSync(path.join(UPLOAD_DIR, f)); } catch {}
+        }
+      }
+    } catch {}
+    return `/uploads/${want}`;
+  } catch { return null; }
+}
+async function refreshCover(id) {
+  const recipe = await prisma.recipe.findUnique({ where: { id } });
+  if (!recipe) return null;
+  const url = adoptCover(recipe);
+  if (url) await prisma.recipe.update({ where: { id }, data: { imageUrl: url } });
+  return url;
 }
 
 // auth optional din header (pentru DRAFT / votul si favoritul meu)
@@ -256,6 +299,8 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
       include: recipeInclude
     });
     if (recipe.status === 'PUBLISHED') {
+      const cover = await refreshCover(recipe.id);
+      if (cover) recipe.imageUrl = cover;
       postRecipeAsync(recipe);
       pushNewRecipeAsync(recipe);
     } else {
@@ -314,6 +359,10 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
     // statusul se schimba doar via /status (ADMIN) — ignoram aici daca vine de la moderator
     if (req.user.role !== 'ADMIN') delete scalar.status;
     const recipe = await prisma.recipe.update({ where: { id }, data: scalar, include: recipeInclude });
+    if (b.imageUrl || b.titleRo) {
+      const cover = await refreshCover(id);
+      if (cover) recipe.imageUrl = cover;
+    }
     res.json(recipe);
   } catch (e) {
     res.status(400).json({ error: 'update_failed', message: e.message });
@@ -326,6 +375,8 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
   if (!['DRAFT', 'PUBLISHED'].includes(status)) return res.status(400).json({ error: 'invalid_status' });
   const recipe = await prisma.recipe.update({ where: { id: Number(req.params.id) }, data: { status }, include: recipeInclude });
   if (status === 'PUBLISHED') {
+    const cover = await refreshCover(Number(req.params.id));
+    if (cover) recipe.imageUrl = cover;
     postRecipeAsync(recipe);
     pushNewRecipeAsync(recipe);
   }

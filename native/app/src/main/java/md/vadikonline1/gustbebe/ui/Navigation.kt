@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
@@ -32,20 +34,28 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
+import md.vadikonline1.gustbebe.DeepLink
 import md.vadikonline1.gustbebe.data.UiLang
 import md.vadikonline1.gustbebe.data.tr
 
@@ -75,6 +85,24 @@ fun AppRoot() {
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // Deep link din notificarea push: la revenirea in aplicatie deschide reteta.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val obs = LifecycleEventObserver { _, e ->
+            if (e == Lifecycle.Event.ON_RESUME) {
+                DeepLink.pending?.let { slug ->
+                    try {
+                        nav.navigate("detail/$slug")
+                    } catch (_: Exception) {
+                    }
+                }
+                DeepLink.pending = null
+            }
+        }
+        lifecycle.addObserver(obs)
+        onDispose { lifecycle.removeObserver(obs) }
     }
 
     Scaffold(
@@ -193,6 +221,20 @@ private fun RowScope.FooterItem(icon: ImageVector, label: String, selected: Bool
 @Composable
 private fun HomeWithTabs(tab: Int, onTab: (Int) -> Unit, nav: androidx.navigation.NavController) {
     val lang by UiLang.flow.collectAsState()
+    // Swipe orizontal intre Rețete / Categorii / Ghid, sincronizat cu taburile.
+    val pager = rememberPagerState(initialPage = tab.coerceIn(0, TABS.size - 1)) { TABS.size }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(pager.currentPage) {
+        if (pager.currentPage != tab) onTab(pager.currentPage)
+    }
+    LaunchedEffect(tab) {
+        if (tab != pager.currentPage && !pager.isScrollInProgress) {
+            try {
+                pager.scrollToPage(tab)
+            } catch (_: Exception) {
+            }
+        }
+    }
     Column(Modifier.fillMaxSize()) {
         androidx.compose.material3.PrimaryTabRow(
             selectedTabIndex = tab,
@@ -204,15 +246,17 @@ private fun HomeWithTabs(tab: Int, onTab: (Int) -> Unit, nav: androidx.navigatio
             TABS.forEachIndexed { i, key ->
                 androidx.compose.material3.Tab(
                     selected = tab == i,
-                    onClick = { onTab(i) },
+                    onClick = { scope.launch { pager.animateScrollToPage(i) } },
                     text = { Text(tr(key, lang), style = MaterialTheme.typography.titleSmall) }
                 )
             }
         }
-        when (tab) {
-            0 -> HomeTab(nav = nav)
-            1 -> CategoriesTab(nav = nav)
-            else -> GuideTab()
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+            when (page) {
+                0 -> HomeTab(nav = nav)
+                1 -> CategoriesTab(nav = nav)
+                else -> GuideTab()
+            }
         }
     }
 }

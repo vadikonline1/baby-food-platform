@@ -41,10 +41,13 @@ jobs:
 
       - name: Get app version
         id: version
-        run: echo "app_version=$(grep -m1 versionName app/build.gradle.kts | sed 's/[^0-9.]//g')" >> "$GITHUB_OUTPUT"
+        run: echo "app_version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Build release APK (signed debug key)
+      - name: Build release APK (persistent debug key + rising versionCode)
         run: gradle :app:assembleRelease --no-daemon
+        env:
+          APP_VERSION_CODE: ${{ 100000 + github.run_number }}
+          APP_VERSION_NAME: 1.0.${{ github.run_number }}
 
       - name: Upload APK (workflow artifact)
         uses: actions/upload-artifact@v5
@@ -60,9 +63,9 @@ jobs:
           tag_name: native-apk-${{ github.ref_name }}-${{ github.sha }}
           name: Native APK ${{ github.ref_name }} (${{ github.sha }})
           body: |
-            Aplicatia NATIVA Android (Jetpack Compose, Material 3 Expressive) — APK release semnat cu cheie debug, instalabil direct.
+            Aplicatia NATIVA Android (Jetpack Compose, Material 3 Expressive) — APK release instalabil direct.
 
-            **Versiune aplicație:** ${{ steps.version.outputs.app_version }}
+            **Versiune aplicație:** ${{ steps.version.outputs.app_version }} (versionCode din CI, crescător — update-urile se instalează peste versiunile anterioare fără conflict de pachet)
             **API URL:** https://gustbebe.aalto.md/api
           files: native/app/build/outputs/apk/release/*.apk
         env:

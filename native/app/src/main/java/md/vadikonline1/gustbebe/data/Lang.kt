@@ -85,7 +85,11 @@ private val STRINGS: Map<String, Map<String, String>> = mapOf(
     "loading" to mapOf("ro" to "Se încarcă...", "ru" to "Загрузка...", "en" to "Loading..."),
     "retry" to mapOf("ro" to "Reîncearcă", "ru" to "Повторить", "en" to "Retry"),
     "noConnection" to mapOf("ro" to "Fără conexiune la server.", "ru" to "Нет соединения.", "en" to "No connection."),
-    "emptyRecipes" to mapOf("ro" to "Nicio rețetă găsită.", "ru" to "Рецепты не найдены.", "en" to "No recipes found.")
+    "emptyRecipes" to mapOf("ro" to "Nicio rețetă găsită.", "ru" to "Рецепты не найдены.", "en" to "No recipes found."),
+    "theme" to mapOf("ro" to "Tema", "ru" to "Тема", "en" to "Theme"),
+    "themeSystem" to mapOf("ro" to "Sistem", "ru" to "Система", "en" to "System"),
+    "themeLight" to mapOf("ro" to "Deschisă", "ru" to "Светлая", "en" to "Light"),
+    "themeDark" to mapOf("ro" to "Închisă", "ru" to "Тёмная", "en" to "Dark")
 )
 
 fun tr(key: String, lang: String): String {
@@ -101,6 +105,18 @@ object UiLang {
         set(v) { flow.value = v }
 }
 
+// Tema UI: system/light/dark — persistata local, comutabila din Setari.
+object UiTheme {
+    const val SYSTEM = "system"
+    const val LIGHT = "light"
+    const val DARK = "dark"
+    val ALL = listOf(SYSTEM, LIGHT, DARK)
+    val flow = kotlinx.coroutines.flow.MutableStateFlow(SYSTEM)
+    var current: String
+        get() = flow.value
+        set(v) { flow.value = v }
+}
+
 class SessionStore(context: Context) {
     private val prefs = Prefs(context)
     private val gson = Gson()
@@ -109,6 +125,8 @@ class SessionStore(context: Context) {
     suspend fun setToken(t: String?) = prefs.set(PrefsKeys.TOKEN, t)
     suspend fun lang(): String = prefs.get(PrefsKeys.LANG) ?: Lang.RO
     suspend fun setLang(l: String) = prefs.set(PrefsKeys.LANG, l)
+    suspend fun theme(): String = prefs.get(PrefsKeys.THEME) ?: UiTheme.SYSTEM
+    suspend fun setTheme(t: String) = prefs.set(PrefsKeys.THEME, t)
     suspend fun deviceId(): String = prefs.deviceId()
 
     suspend fun user(): UserDto? {

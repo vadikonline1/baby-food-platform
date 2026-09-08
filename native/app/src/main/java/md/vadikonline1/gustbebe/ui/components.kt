@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import md.vadikonline1.gustbebe.data.Lang
 import md.vadikonline1.gustbebe.data.UiLang
+import md.vadikonline1.gustbebe.data.UiTheme
 import md.vadikonline1.gustbebe.data.Network
 import md.vadikonline1.gustbebe.data.RecipeDto
 import md.vadikonline1.gustbebe.data.RemoteConfig
@@ -304,6 +305,29 @@ fun BannerSlot(unitId: String) {
             }
         }
     )
+}
+
+@Composable
+fun ThemeChips(current: String, lang: String, onPick: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        UiTheme.ALL.forEach { mode ->
+            val label = when (mode) {
+                UiTheme.LIGHT -> tr("themeLight", lang)
+                UiTheme.DARK -> tr("themeDark", lang)
+                else -> tr("themeSystem", lang)
+            }
+            val selected = current == mode
+            if (selected) {
+                Button(onClick = { onPick(mode) }, shape = RoundedCornerShape(100.dp)) {
+                    Text(label)
+                }
+            } else {
+                OutlinedButton(onClick = { onPick(mode) }, shape = RoundedCornerShape(100.dp)) {
+                    Text(label)
+                }
+            }
+        }
+    }
 }
 
 @Composable
