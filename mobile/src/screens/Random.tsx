@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useState } from 'react';
-import { View, Text, Button } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api } from '../api';
 import { useLang, t } from '../lang';
@@ -17,7 +17,14 @@ export default function RandomScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   useLayoutEffect(() => {
     nav.setOptions({
-      headerRight: () => <Button title={t('another', lang)} onPress={load} color="#fff" />
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={load}
+          style={{ backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 }}
+        >
+          <Text style={{ color: '#1486b7', fontWeight: '700', fontSize: 13 }}>🔀 {t('anotherShort', lang)}</Text>
+        </TouchableOpacity>
+      )
     });
   }, [nav, lang, load]);
 

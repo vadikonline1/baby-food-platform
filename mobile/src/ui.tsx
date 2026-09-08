@@ -57,16 +57,17 @@ export function LangSelector() {
   );
 }
 
-export function FilterModal({ visible, onClose, onApply }: { visible: boolean; onClose: () => void; onApply: (f: any) => void }) {
+export type Filters = { age: number[]; category: string[]; feeding: number[]; restriction: string[] };
+export const EMPTY_FILTERS: Filters = { age: [], category: [], feeding: [], restriction: [] };
+
+export function FilterModal({ visible, onClose, filters, setFilters, onSearch }: {
+  visible: boolean; onClose: () => void; filters: Filters; setFilters: (f: Filters) => void; onSearch: () => void;
+}) {
   const { lang } = useLang();
   const [ages, setAges] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [feeds, setFeeds] = useState<any[]>([]);
   const [restrs, setRestrs] = useState<any[]>([]);
-  const [selA, setSelA] = useState<number[]>([]);
-  const [selC, setSelC] = useState<string[]>([]);
-  const [selF, setSelF] = useState<number[]>([]);
-  const [selR, setSelR] = useState<string[]>([]);
   useEffect(() => {
     if (!visible) return;
     api.get('/taxonomies/ages').then((r: any) => setAges(r.data)).catch(() => {});
@@ -74,40 +75,36 @@ export function FilterModal({ visible, onClose, onApply }: { visible: boolean; o
     api.get('/taxonomies/feeding-types').then((r: any) => setFeeds(r.data)).catch(() => {});
     api.get('/taxonomies/restrictions').then((r: any) => setRestrs(r.data)).catch(() => {});
   }, [visible]);
-  const tg = (arr: any[], v: any, set: any) => set(arr.includes(v) ? arr.filter((x: any) => x !== v) : [...arr, v]);
-  const apply = (a: any[] = selA, c: any[] = selC, f: any[] = selF, r: any[] = selR) =>
-    onApply({ age: a, category: c, feeding: f, restriction: r });
+  const tg = (key: keyof Filters, v: any) => {
+    const arr = filters[key] as any[];
+    setFilters({ ...filters, [key]: arr.includes(v) ? arr.filter((x: any) => x !== v) : [...arr, v] });
+  };
+  const group = (label: string, list: any[], key: keyof Filters, getKey: (x: any) => any, getName: (x: any) => string) => (
+    <View key={label}>
+      <Text style={s.h}>{label}</Text>
+      {list.map((x) => {
+        const k = getKey(x);
+        const on = (filters[key] as any[]).includes(k);
+        return (
+          <TouchableOpacity key={String(k)} onPress={() => tg(key, k)}>
+            <Text style={s.opt}>{on ? '☑' : '☐'} {getName(x)}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <ScrollView style={{ padding: 20, marginTop: 40 }}>
-        <Text style={s.h}>{t('age', lang)}</Text>
-        {ages.map((a) => (
-          <TouchableOpacity key={a.id} onPress={() => tg(selA, a.id, setSelA)}>
-            <Text style={s.opt}>{selA.includes(a.id) ? '☑' : '☐'} {localized(a, 'label', lang)}</Text>
-          </TouchableOpacity>
-        ))}
-        <Text style={s.h}>{t('feeding', lang)}</Text>
-        {feeds.map((f) => (
-          <TouchableOpacity key={f.id} onPress={() => tg(selF, f.id, setSelF)}>
-            <Text style={s.opt}>{selF.includes(f.id) ? '☑' : '☐'} {localized(f, 'name', lang)}</Text>
-          </TouchableOpacity>
-        ))}
-        <Text style={s.h}>{t('categories', lang)}</Text>
-        {cats.map((c) => (
-          <TouchableOpacity key={c.id} onPress={() => tg(selC, c.slug, setSelC)}>
-            <Text style={s.opt}>{selC.includes(c.slug) ? '☑' : '☐'} {c.icon} {localized(c, 'name', lang)}</Text>
-          </TouchableOpacity>
-        ))}
-        <Text style={s.h}>{t('restrictions', lang)}</Text>
-        {restrs.map((x) => (
-          <TouchableOpacity key={x.id} onPress={() => tg(selR, x.slug, setSelR)}>
-            <Text style={s.opt}>{selR.includes(x.slug) ? '☑' : '☐'} {localized(x, 'name', lang)}</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={s.btn} onPress={() => { apply(); onClose(); }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 48, paddingBottom: 64, flexGrow: 1 }}>
+        <Text style={{ fontSize: 19, fontWeight: '800', marginBottom: 4 }}>{t('filters', lang)}</Text>
+        {group(t('age', lang), ages, 'age', (x) => x.id, (x) => localized(x, 'label', lang))}
+        {group(t('feeding', lang), feeds, 'feeding', (x) => x.id, (x) => localized(x, 'name', lang))}
+        {group(t('categories', lang), cats, 'category', (x) => x.slug, (x) => `${x.icon || ''} ${localized(x, 'name', lang)}`)}
+        {group(t('restrictions', lang), restrs, 'restriction', (x) => x.slug, (x) => localized(x, 'name', lang))}
+        <TouchableOpacity style={s.btn} onPress={() => { onSearch(); onClose(); }}>
           <Text style={s.btnT}>{t('apply', lang)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.btn, s.ghost]} onPress={() => { setSelA([]); setSelC([]); setSelF([]); setSelR([]); apply([], [], [], []); onClose(); }}>
+        <TouchableOpacity style={[s.btn, s.ghost]} onPress={() => { setFilters({ ...EMPTY_FILTERS }); onSearch(); onClose(); }}>
           <Text>{t('reset', lang)}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.btn, s.ghost]} onPress={onClose}><Text>{t('close', lang)}</Text></TouchableOpacity>

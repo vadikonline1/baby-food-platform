@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator();
 const icons: Record<string, string> = {
   'Rețete': '🍽️',
   'Categorii': '🗂️',
-  'Plan': '📅',
+  'Ghid': '📅',
   'Random': '🎲',
   'Profil': '👤'
 };
@@ -27,7 +27,7 @@ const icons: Record<string, string> = {
 const labelKey: Record<string, string> = {
   'Rețete': 'home',
   'Categorii': 'categories',
-  'Plan': 'plan',
+  'Ghid': 'plan',
   'Random': 'random',
   'Profil': 'profile'
 };
@@ -49,7 +49,7 @@ function Tabs() {
     >
       <Tab.Screen name="Rețete" component={RecipesScreen} />
       <Tab.Screen name="Categorii" component={CategoriesScreen} />
-      <Tab.Screen name="Plan" component={PlanScreen} />
+      <Tab.Screen name="Ghid" component={PlanScreen} />
       <Tab.Screen name="Random" component={RandomScreen} />
       <Tab.Screen name="Profil" component={ProfileScreen} />
     </Tab.Navigator>
