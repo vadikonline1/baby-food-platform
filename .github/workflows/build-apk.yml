@@ -4,6 +4,7 @@ name: build-apk
 # expo prebuild + Gradle assembleRelease, la fiecare push pe `main`
 # care atinge aplicatia mobila. Tag-ul release-ului: apk-main-<sha> —
 # aplicatia foloseste acest prefix ca feed pentru actualizarile in-app.
+# (workflow unic pentru APK — cel nativ a fost scos)
 on:
   push:
     branches: [main]
