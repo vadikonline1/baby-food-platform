@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "md.vadikonline1.gustbebe"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "md.vadikonline1.gustbebe"
