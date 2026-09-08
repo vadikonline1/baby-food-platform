@@ -123,7 +123,7 @@ fun AuthScreen(nav: NavController) {
                 }
             }
         } else {
-            val u = user
+            val u = user ?: return
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)

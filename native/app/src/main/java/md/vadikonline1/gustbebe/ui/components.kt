@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import md.vadikonline1.gustbebe.data.Lang
+import md.vadikonline1.gustbebe.data.UiLang
 import md.vadikonline1.gustbebe.data.Network
 import md.vadikonline1.gustbebe.data.RecipeDto
 import md.vadikonline1.gustbebe.data.RemoteConfig
@@ -190,8 +191,8 @@ fun ConfirmDialog(title: String, text: String, onYes: () -> Unit, onNo: () -> Un
         shape = RoundedCornerShape(28.dp),
         title = { Text(title) },
         text = { Text(text) },
-        confirmButton = { Button(onClick = onYes, shape = RoundedCornerShape(100.dp)) { Text(tr("yes", Lang.current)) } },
-        dismissButton = { TextButton(onClick = onNo) { Text(tr("cancel", Lang.current)) } }
+        confirmButton = { Button(onClick = onYes, shape = RoundedCornerShape(100.dp)) { Text(tr("yes", UiLang.current)) } },
+        dismissButton = { TextButton(onClick = onNo) { Text(tr("cancel", UiLang.current)) } }
     )
 }
 

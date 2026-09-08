@@ -202,7 +202,7 @@ class FavoritesViewModel(private val repo: RecipeRepository) : ViewModel() {
                 val serverIds = server.map { it.id }.toSet()
                 val local = mutableListOf<RecipeDto>()
                 try {
-                    first(repo.localFavorites()).forEach { e ->
+                    repo.localFavorites().first().forEach { e ->
                         if (e.id !in serverIds) {
                             local.add(RecipeDto(e.id, e.slug, e.titleRo, e.titleRu, e.titleEn, imageUrl = e.imageUrl, avgRating = e.avgRating, ratingsCount = e.ratingsCount))
                         }
