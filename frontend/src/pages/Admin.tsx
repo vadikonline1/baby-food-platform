@@ -285,6 +285,13 @@ function AppSettings() {
         </div>
       </section>
       <section className="panel">
+        <h3>app-ads.txt (verificare AdMob)</h3>
+        <p className="meta">Servit la <code>/app-ads.txt</code> — o linie pe editor/distribuitor. Se aplică instant (fără rebuild).</p>
+        <textarea rows={4} spellCheck={false} placeholder="google.com, pub-..., DIRECT, ..."
+          value={vals.app_ads_txt || ''} onChange={e => set('app_ads_txt', e.target.value)}
+          style={{ fontFamily: 'monospace', fontSize: 13 }} />
+      </section>
+      <section className="panel">
         <h3>Firebase web (Analytics)</h3>
         <p className="meta">Configurația publică din consola Firebase (Project settings → Your apps → Web). Fără measurementId, Analytics nu pornește.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

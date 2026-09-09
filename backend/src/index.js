@@ -134,6 +134,16 @@ async function indexedHtml(reqPath) {
 }
 if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir, { index: false }));
+  // app-ads.txt pentru AdMob (continut editabil din Admin → Setari aplicatie)
+  app.get('/app-ads.txt', async (req, res) => {
+    try {
+      const { getValue } = require('./lib/settings');
+      const txt = await getValue('APP_ADS_TXT', 'app_ads_txt', 'google.com, pub-9949545458988251, DIRECT, f08c47fec0942fa0');
+      res.type('text/plain').send(String(txt).trim() + '\n');
+    } catch (e) {
+      res.type('text/plain').send('google.com, pub-9949545458988251, DIRECT, f08c47fec0942fa0\n');
+    }
+  });
   app.get(/^\/(?!api|uploads).*/, async (req, res) => {
     res.type('html').send(await indexedHtml(req.path));
   });
