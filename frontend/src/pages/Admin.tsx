@@ -685,6 +685,19 @@ function PushComposer() {
           <textarea rows={3} placeholder="Text (max 180)" value={body} onChange={e => setBody(e.target.value)} />
           <div><button className="btn" onClick={send}>Trimite notificarea</button></div>
           {msg && <p className="notice">{msg}</p>}
+          {pushErrors.some((e: any) => String(e.error).includes('InvalidCredentials')) && (
+            <div className="notice" style={{ borderColor: '#f0c9c9', background: '#fef2f2', color: '#7f1d1d' }}>
+              <strong>Expo Push nu e autorizat să trimită pe Android.</strong><br />
+              Tokenurile sunt bune — lipsește cheia FCM în proiectul Expo (pe Android, Expo Push ajunge tot prin FCM, în fundal; aplicația rămâne pe Expo Push, fără FCM direct).
+              Pași (o singură dată, fără rebuild):
+              <ol style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+                <li>Firebase Console → proiectul <code>gustbebe-6513e</code> → Project settings → Service accounts → Generate new private key (descarci un JSON).</li>
+                <li>expo.dev → proiectul <code>mdvadikonline1gustbebe</code> → Credentials → Android → Google Service Account Key for FCM → Upload JSON.</li>
+                <li>Retrimiți notificarea de aici — tokenurile existente încep să funcționeze.</li>
+              </ol>
+              Pentru iOS (mai târziu): Apple Developer → Keys → cheie APNs (.p8) → Expo → Credentials → iOS → Push Notifications.
+            </div>
+          )}
           {!!pushErrors.length && (
             <ul className="dash-list">
               {pushErrors.map((e: any, i: number) => (
