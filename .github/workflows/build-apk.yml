@@ -119,6 +119,7 @@ jobs:
             Build automat APK Android (debug-signed, instalabil direct).
 
             **Versiune aplicație:** ${{ steps.version.outputs.app_version }}
+            **APK-uri per-arhitectură:** alege `app-arm64-v8a-release.apk` (telefoane moderne) sau `app-armeabi-v7a-release.apk` (vechi, 32-bit).
             **API URL:** https://gustbebe.aalto.md/api
             **Actualizări in-app:** aplicația verifică singură tag-urile `apk-main-*`.
           files: mobile/android/app/build/outputs/apk/release/*.apk

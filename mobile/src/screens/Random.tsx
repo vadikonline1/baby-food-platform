@@ -3,12 +3,15 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api } from '../api';
 import { useLang, t } from '../lang';
+import { useTheme } from '../theme';
 import RecipeView from '../components/RecipeView';
 
 // Random Reteta: reteta intreaga afisata direct + buton Alta in header
+// (header compact: titlul + butonul 🔀 Alta in navigation header — fara spatii mari)
 export default function RandomScreen() {
   const nav = useNavigation<any>();
   const { lang } = useLang();
+  const { c } = useTheme();
   const [r, setR] = useState<any>(null);
   const load = useCallback(() => {
     setR(null);
@@ -30,8 +33,8 @@ export default function RandomScreen() {
 
   if (!r) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#fbf9f7', padding: 16 }}>
-        <Text>{t('loading', lang)}</Text>
+      <View style={{ flex: 1, backgroundColor: c.bg, padding: 16 }}>
+        <Text style={{ color: c.ink }}>{t('loading', lang)}</Text>
       </View>
     );
   }

@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import mobileAds from 'react-native-google-mobile-ads';
 import { AuthProvider } from './src/store';
 import { LangProvider, deviceLang, t } from './src/lang';
+import { ThemeProvider, useTheme } from './src/theme';
 import { initApiBase, refreshApiBase } from './src/api';
 import { loadConfig } from './src/config';
 import { registerPushToken } from './src/push';
@@ -79,10 +80,17 @@ export default function App() {
   }
   return (
     <AuthProvider>
-      <LangProvider>
-        <Navigation />
-        <StatusBar style="auto" />
-      </LangProvider>
+      <ThemeProvider>
+        <LangProvider>
+          <Navigation />
+          <ThemedBar />
+        </LangProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
+}
+
+function ThemedBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }

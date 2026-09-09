@@ -6,15 +6,18 @@ import { useAuth } from '../store';
 import { isPushEnabled, enablePush, disablePush } from '../push';
 import { checkForUpdate } from '../update';
 import { SupportBlock } from '../support';
-import { LangSelector } from '../ui';
+import { LangSelector, ThemeSelector } from '../ui';
 import { useLang, t } from '../lang';
+import { useTheme } from '../theme';
 import { Platform } from 'react-native';
 
-// Profil: push on/off, limba, login/register (optional), editare nume+parola, favorite, sustinere
+// Profil: push on/off, limba, tema, login/register (optional), editare nume+parola, favorite, sustinere
 export default function ProfileScreen() {
   const nav = useNavigation<any>();
   const { user, login, register, logout, refresh } = useAuth();
   const { lang } = useLang();
+  const { c } = useTheme();
+  const s = sx(c);
   const [push, setPush] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,6 +74,11 @@ export default function ProfileScreen() {
         <LangSelector />
       </View>
 
+      <View style={s.row}>
+        <Text style={s.t}>{t('theme', lang)}</Text>
+        <ThemeSelector />
+      </View>
+
       {!user ? (
         <View style={s.card}>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
@@ -93,7 +101,7 @@ export default function ProfileScreen() {
           <TextInput style={s.in} placeholder={t('curPass', lang)} value={cur} onChangeText={setCur} secureTextEntry />
           <TextInput style={s.in} placeholder={t('newPass', lang)} value={npw} onChangeText={setNpw} secureTextEntry />
           <TouchableOpacity style={s.btn} onPress={savePw}><Text style={s.btnT}>{t('changePass', lang)}</Text></TouchableOpacity>
-          <TouchableOpacity style={[s.btn, s.ghost]} onPress={async () => { await logout(); }}><Text>{t('logout', lang)}</Text></TouchableOpacity>
+          <TouchableOpacity style={[s.btn, s.ghost]} onPress={async () => { await logout(); }}><Text style={{ color: c.ink }}>{t('logout', lang)}</Text></TouchableOpacity>
         </View>
       )}
 
@@ -112,17 +120,17 @@ export default function ProfileScreen() {
   );
 }
 
-const s: any = {
-  wrap: { flex: 1, backgroundColor: '#fbf9f7' },
-  card: { backgroundColor: '#fff', margin: 12, padding: 14, borderRadius: 14 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', margin: 12, marginBottom: 0, padding: 14, borderRadius: 14 },
-  t: { fontWeight: '700', fontSize: 15 },
-  m: { color: '#5f7a70', fontSize: 12, marginVertical: 6 },
-  in: { backgroundColor: '#fbf9f7', borderWidth: 1, borderColor: '#cfdfee', borderRadius: 10, padding: 10, marginBottom: 8 },
-  btn: { backgroundColor: '#1486b7', borderRadius: 10, padding: 12, alignItems: 'center', marginBottom: 8 },
-  btnT: { color: '#fff', fontWeight: '700' },
-  ghost: { backgroundColor: '#eef4fa' },
-  err: { color: 'red', marginBottom: 8 },
-  tab: { fontSize: 15, color: '#888' },
-  tabOn: { fontSize: 15, fontWeight: '700', color: '#1486b7' }
-};
+const sx = (c: any) => ({
+  wrap: { flex: 1, backgroundColor: c.bg },
+  card: { backgroundColor: c.card, margin: 12, padding: 14, borderRadius: 14 },
+  row: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, backgroundColor: c.card, margin: 12, marginBottom: 0, padding: 14, borderRadius: 14 },
+  t: { fontWeight: '700' as const, fontSize: 15, color: c.ink },
+  m: { color: c.muted, fontSize: 12, marginVertical: 6 },
+  in: { backgroundColor: c.inputBg, color: c.ink, borderWidth: 1, borderColor: c.lineStrong, borderRadius: 10, padding: 10, marginBottom: 8 },
+  btn: { backgroundColor: c.primary, borderRadius: 10, padding: 12, alignItems: 'center' as const, marginBottom: 8 },
+  btnT: { color: c.onPrimary, fontWeight: '700' as const },
+  ghost: { backgroundColor: c.ghostBg },
+  err: { color: c.danger, marginBottom: 8 },
+  tab: { fontSize: 15, color: c.tabInactive },
+  tabOn: { fontSize: 15, fontWeight: '700' as const, color: c.primary }
+});

@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TextInput, FlatList, TouchableOpacity, Text } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { api, localized } from '../api';
 import { RecipeCard, FilterModal, EMPTY_FILTERS, Filters } from '../ui';
 import { useLang, t } from '../lang';
+import { useTheme } from '../theme';
 import { SupportBlock } from '../support';
 
 export default function RecipesScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const { lang } = useLang();
+  const { c } = useTheme();
+  const s = sx(c);
   const [q, setQ] = useState('');
   const [items, setItems] = useState<any[]>([]);
   const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS });
@@ -71,8 +74,8 @@ export default function RecipesScreen() {
   return (
     <View style={s.wrap}>
       <View style={s.bar}>
-        <TextInput style={s.input} placeholder={t('search', lang)} value={q} onChangeText={setQ} onSubmitEditing={load} />
-        <TouchableOpacity style={s.fbtn} onPress={() => setShowF(true)}><Text>{t('filters', lang)}</Text></TouchableOpacity>
+        <TextInput style={s.input} placeholder={t('search', lang)} placeholderTextColor={c.muted} value={q} onChangeText={setQ} onSubmitEditing={load} />
+        <TouchableOpacity style={s.fbtn} onPress={() => setShowF(true)}><Text style={{ color: c.primaryDark, fontWeight: '600' }}>{t('filters', lang)}</Text></TouchableOpacity>
       </View>
       {!!activeChips.length && (
         <View style={s.chips}>
@@ -96,13 +99,13 @@ export default function RecipesScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#fbf9f7', padding: 8 },
-  bar: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 8 },
-  input: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#cfdfee' },
-  fbtn: { backgroundColor: '#e8f3f9', borderRadius: 10, padding: 10 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 },
-  chipsTitle: { fontSize: 12, fontWeight: '700', color: '#1486b7' },
-  chip: { backgroundColor: '#e8f3f9', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#bcd9ea' },
-  chipT: { fontSize: 12, color: '#0d6488', fontWeight: '600' }
+const sx = (c: any) => ({
+  wrap: { flex: 1, backgroundColor: c.bg, padding: 8 },
+  bar: { flexDirection: 'row' as const, gap: 8, alignItems: 'center' as const, padding: 8 },
+  input: { flex: 1, backgroundColor: c.inputBg, color: c.ink, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: c.lineStrong },
+  fbtn: { backgroundColor: c.primarySoft, borderRadius: 10, padding: 10 },
+  chips: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, alignItems: 'center' as const, paddingHorizontal: 8, paddingBottom: 8 },
+  chipsTitle: { fontSize: 12, fontWeight: '700' as const, color: c.primary },
+  chip: { backgroundColor: c.primarySoft, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: c.chipBorder },
+  chipT: { fontSize: 12, color: c.primaryDark, fontWeight: '600' as const }
 });

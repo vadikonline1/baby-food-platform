@@ -16,7 +16,9 @@ export async function checkForUpdate(silent = true): Promise<boolean> {
     if (!latest) return false;
     const latestSha = String(latest.tag_name).replace(/^apk-main-/, '');
     if (current && latestSha === current) return false;
-    const apk = (latest.assets || []).find((a: any) => String(a.name || '').endsWith('.apk'));
+    // Release-urile contin APK-uri per-ABI (arm64-v8a, armeabi-v7a): preferam arm64.
+    const apks = (latest.assets || []).filter((a: any) => String(a.name || '').endsWith('.apk'));
+    const apk = apks.find((a: any) => /arm64-v8a/i.test(a.name)) || apks[0];
     const url = apk?.browser_download_url || latest.html_url;
     if (!silent) {
       Alert.alert('Actualizare disponibilă', `Versiune nouă a aplicației GustBebe.`, [

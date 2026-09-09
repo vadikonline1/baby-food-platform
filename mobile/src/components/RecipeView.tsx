@@ -7,11 +7,14 @@ import { bannerUnitId } from '../ads';
 import { useAuth } from '../store';
 import { Stars } from '../ui';
 import { useLang, t } from '../lang';
+import { useTheme } from '../theme';
 
 // Vedere completa reteta (ca la deschidere): folosita de Detail + Random
 export default function RecipeView({ recipe: initial }: { recipe: any }) {
   const { user } = useAuth();
   const { lang } = useLang();
+  const { c } = useTheme();
+  const s = sx(c);
   const [r, setR] = useState<any>(initial);
   const [myVote, setMyVote] = useState(initial?.myRating || 0);
   const [fav, setFav] = useState(Boolean(initial?.isFavorite));
@@ -90,7 +93,7 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
       <Text style={s.h2}>{t('ingredients', lang)}</Text>
       {det.length ? det.map((d: any) => (
         <Text key={d.id} style={s.li}>• <Text style={{ fontWeight: '700' }}>{localized(d.ingredient, 'name', lang)}</Text>{[d.quantity, d.unit].filter(Boolean).length ? ` — ${[d.quantity, d.unit].filter(Boolean).join(' ')}` : ''}</Text>
-      )) : <Text>{localized(r, 'ingredients', lang)}</Text>}
+      )) : <Text style={{ color: c.ink }}>{localized(r, 'ingredients', lang)}</Text>}
       <Text style={s.h2}>{t('prep', lang)}</Text>
       {steps.map((x, i) => <Text key={i} style={s.li}>{i + 1}. {x}</Text>)}
       <Text style={s.h2}>{t('vote', lang)}{myVote ? ` (${myVote}/5)` : ''}</Text>
@@ -107,29 +110,29 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
   );
 }
 
-const s = {
-  wrap: { flex: 1, backgroundColor: '#fbf9f7', padding: 16 },
+const sx = (c: any) => ({
+  wrap: { flex: 1, backgroundColor: c.bg, padding: 16 },
   cover: { width: '100%' as const, height: 220, borderRadius: 14 },
   coverMeta: {
     position: 'absolute' as const, left: 10, right: 10, bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10,
+    backgroundColor: c.overlay, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10,
   },
   metaOnImg: { color: '#fff', fontSize: 13, fontWeight: '600' as const },
-  h1: { fontSize: 22, fontWeight: '700' as const, marginTop: 12, marginBottom: 8, flex: 1, paddingRight: 8 },
+  h1: { fontSize: 22, fontWeight: '700' as const, marginTop: 12, marginBottom: 8, flex: 1, paddingRight: 8, color: c.ink },
   titleRow: { flexDirection: 'row' as const, alignItems: 'flex-start' as const },
   favSmall: {
     marginTop: 14, width: 44, height: 40, borderRadius: 10, alignItems: 'center' as const,
-    justifyContent: 'center' as const, borderWidth: 1.5, borderColor: '#e11d48',
+    justifyContent: 'center' as const, borderWidth: 1.5, borderColor: c.heart,
   },
-  favSmallOn: { backgroundColor: '#e11d48' },
-  favSmallTxt: { fontSize: 20, color: '#e11d48' },
+  favSmallOn: { backgroundColor: c.heart },
+  favSmallTxt: { fontSize: 20, color: c.heart },
   favSmallTxtOn: { color: '#fff' },
-  meta: { color: '#5f7a70', marginBottom: 8 },
-  sum: { fontSize: 15, marginBottom: 8 },
-  h2: { fontSize: 18, fontWeight: '700' as const, marginTop: 14, marginBottom: 6 },
-  li: { fontSize: 14, marginBottom: 5 },
-  saveBtn: { marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, backgroundColor: '#e11d48' },
-  saveBtnOn: { backgroundColor: '#15803d' },
+  meta: { color: c.muted, marginBottom: 8 },
+  sum: { fontSize: 15, marginBottom: 8, color: c.ink },
+  h2: { fontSize: 18, fontWeight: '700' as const, marginTop: 14, marginBottom: 6, color: c.ink },
+  li: { fontSize: 14, marginBottom: 5, color: c.ink },
+  saveBtn: { marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, backgroundColor: c.heart },
+  saveBtnOn: { backgroundColor: c.saveOn },
   saveBtnText: { fontSize: 17, fontWeight: '700' as const, color: '#fff' },
   saveBtnTextOn: { color: '#fff' },
-} as any;
+});

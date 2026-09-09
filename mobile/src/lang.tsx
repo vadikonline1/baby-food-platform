@@ -91,6 +91,11 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   minChars: { ro: 'Minim 6 caractere.', ru: 'Минимум 6 символов.', en: 'Minimum 6 characters.' },
   supportFallback: { ro: 'Susține proiectul 🎁', ru: 'Поддержать проект 🎁', en: 'Support the project 🎁' },
   tgSubscribe: { ro: '📢 Abonare Telegram', ru: '📢 Telegram-канал', en: '📢 Telegram channel' },
+  theme: { ro: 'Tema', ru: 'Тема', en: 'Theme' },
+  themeSystem: { ro: 'Sistem', ru: 'Система', en: 'System' },
+  themeLight: { ro: 'Deschisă', ru: 'Светлая', en: 'Light' },
+  themeDark: { ro: 'Închisă', ru: 'Тёмная', en: 'Dark' },
+  acasa: { ro: 'Acasă', ru: 'Главная', en: 'Home' },
 };
 
 export function t(key: string, lang: Lang): string {
