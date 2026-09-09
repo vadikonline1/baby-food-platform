@@ -60,9 +60,14 @@ jobs:
             WS=$(ls -1d *.xcworkspace 2>/dev/null | head -1)
           fi
           echo "workspace=${WS:-<none>}"
-          SCHEME=$(xcodebuild -list -workspace "$WS" 2>/dev/null \
-            | sed -n '/Schemes:/,$p' | tail -n +2 \
-            | grep -v '^\s*$' | grep -iv 'pod' | head -1 | xargs)
+          # Schema = numele workspace-ului (ex: GustBebe), nu primul utilitar (ex: EASClient).
+          APP_NAME=$(basename "$WS" .xcworkspace)
+          LIST=$(xcodebuild -list -workspace "$WS" 2>/dev/null | sed -n '/Schemes:/,$p' | tail -n +2)
+          if echo "$LIST" | grep -q "^[[:space:]]*${APP_NAME}[[:space:]]*$"; then
+            SCHEME="$APP_NAME"
+          else
+            SCHEME=$(echo "$LIST" | grep -v '^\s*$' | grep -iv 'pod' | grep -iv 'EASClient' | head -1 | xargs)
+          fi
           echo "scheme=${SCHEME:-<none>}"
           if [ -z "$SCHEME" ]; then echo "::error::Could not detect an Xcode scheme under ios/"; exit 1; fi
           xcodebuild -workspace "$WS" \
