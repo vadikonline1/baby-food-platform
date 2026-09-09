@@ -18,6 +18,7 @@ export default function RecipesScreen() {
   const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS });
   const [showF, setShowF] = useState(false);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [loadErr, setLoadErr] = useState(false);
 
   // categoria venita din ecranul Categorii se aplica in filtru (sursa unica de adevar)
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function RecipesScreen() {
   }, [route.params?.category]);
 
   const load = useCallback(() => {
+    setLoadErr(false);
     api.get('/recipes', {
       params: {
         q: q || undefined,
@@ -38,7 +40,7 @@ export default function RecipesScreen() {
         restriction: filters.restriction?.length ? filters.restriction.join(',') : undefined,
         limit: 30
       }
-    }).then((r) => setItems(r.data.items)).catch(() => {});
+    }).then((r) => setItems(r.data.items)).catch(() => setLoadErr(true));
   }, [q, filters]);
 
   useEffect(() => {
@@ -92,6 +94,17 @@ export default function RecipesScreen() {
         numColumns={2}
         keyExtractor={(i) => String(i.id)}
         ListHeaderComponent={<SupportBlock />}
+        ListEmptyComponent={
+          loadErr ? (
+            <View style={s.errBox}>
+              <Text style={s.errT}>{t('noConnection', lang)}</Text>
+              <Text style={s.errM}>{t('noConnectionHint', lang)}</Text>
+              <TouchableOpacity style={s.errBtn} onPress={load}>
+                <Text style={s.errBtnT}>{t('retry', lang)}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => <RecipeCard item={item} lang={lang} onOpen={() => nav.navigate('Detail', { id: item.id, slug: item.slug })} />}
       />
       <FilterModal visible={showF} onClose={() => setShowF(false)} filters={filters} setFilters={setFilters} onSearch={load} />
@@ -107,5 +120,10 @@ const sx = (c: any) => ({
   chips: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, alignItems: 'center' as const, paddingHorizontal: 8, paddingBottom: 8 },
   chipsTitle: { fontSize: 12, fontWeight: '700' as const, color: c.primary },
   chip: { backgroundColor: c.primarySoft, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: c.chipBorder },
-  chipT: { fontSize: 12, color: c.primaryDark, fontWeight: '600' as const }
+  chipT: { fontSize: 12, color: c.primaryDark, fontWeight: '600' as const },
+  errBox: { backgroundColor: c.card, margin: 12, padding: 18, borderRadius: 14, alignItems: 'center' as const },
+  errT: { fontWeight: '700' as const, fontSize: 15, color: c.ink, textAlign: 'center' as const },
+  errM: { color: c.muted, fontSize: 13, textAlign: 'center' as const, marginTop: 6, marginBottom: 12 },
+  errBtn: { backgroundColor: c.primary, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  errBtnT: { color: c.onPrimary, fontWeight: '700' as const }
 });

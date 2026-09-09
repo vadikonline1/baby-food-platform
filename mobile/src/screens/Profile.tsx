@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { api } from '../api';
+import { api, getApiBase, checkConnection } from '../api';
 import { useAuth } from '../store';
 import { isPushEnabled, enablePush, disablePush } from '../push';
 import { checkForUpdate } from '../update';
@@ -27,9 +27,11 @@ export default function ProfileScreen() {
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [apiBase, setApiBase] = useState('');
 
   useEffect(() => {
     isPushEnabled().then(setPush);
+    setApiBase(getApiBase());
     if (Platform.OS === 'android') checkForUpdate(true).then(setHasUpdate).catch(() => {});
   }, []);
 
@@ -110,10 +112,25 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {hasUpdate && Platform.OS === 'android' && (
-        <TouchableOpacity style={[s.card, { backgroundColor: '#e8f3f9' }]} onPress={() => checkForUpdate(false)}>
+        <TouchableOpacity style={[s.card, { backgroundColor: c.primarySoft }]} onPress={() => checkForUpdate(false)}>
           <Text style={s.t}>{t('updateAvailable', lang)}</Text>
         </TouchableOpacity>
       )}
+
+      <View style={s.card}>
+        <Text style={s.t}>{t('apiBase', lang)}</Text>
+        <Text style={s.m} selectable>{apiBase || '—'}</Text>
+        <TouchableOpacity
+          style={s.btn}
+          onPress={async () => {
+            const ok = await checkConnection();
+            setApiBase(getApiBase());
+            Alert.alert(t('checkConn', lang), ok ? t('connOk', lang) : t('connFail', lang));
+          }}
+        >
+          <Text style={s.btnT}>{t('checkConn', lang)}</Text>
+        </TouchableOpacity>
+      </View>
 
       <SupportBlock />
     </ScrollView>

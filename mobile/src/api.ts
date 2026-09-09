@@ -85,6 +85,18 @@ export function refreshApiBase() {
 
 export const api = axios.create({ timeout: 15000 });
 
+// baza curenta (pentru diagnostic in Profil)
+export function getApiBase(): string {
+  return typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+}
+
+// verificare manuala: raspunde baza curenta?
+export async function checkConnection(): Promise<boolean> {
+  const b = getApiBase();
+  if (!b) return false;
+  return probe(b);
+}
+
 api.interceptors.request.use(async (cfg) => {
   const token = await SecureStore.getItemAsync('gb_token');
   if (token) cfg.headers.Authorization = `Bearer ${token}`;
