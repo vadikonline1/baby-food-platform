@@ -15,7 +15,7 @@ export default function PlanScreen() {
   const [guide, setGuide] = useState<any[]>([]);
   const [top, setTop] = useState<any[]>([]);
   useEffect(() => {
-    api.get('/content/guide').then((r) => setGuide(r.data.slice(0, 8))).catch(() => {});
+    api.get('/content/guide').then((r) => setGuide(r.data)).catch(() => {});
     api.get('/recipes', { params: { sort: 'popular', limit: 5 } }).then((r) => setTop(r.data.items)).catch(() => {});
   }, []);
   return (

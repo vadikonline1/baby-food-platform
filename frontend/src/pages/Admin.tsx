@@ -248,7 +248,7 @@ function AppSettings() {
       <section className="panel">
         <h3>Server (ENV bate UI — completati aici doar ce lipseste din .env)</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label>APP_URL {src('app_url')}<input value={vals.app_url || ''} placeholder="https://gustbebe.aalto.md" onChange={e => set('app_url', e.target.value)} /></label>
+          <label>APP_URL {src('app_url')}<input value={vals.app_url || ''} placeholder="https://domeniul-tau.md" onChange={e => set('app_url', e.target.value)} /></label>
           <label>SMTP_HOST {src('smtp_host')}<input value={vals.smtp_host || ''} placeholder="mail.example.com" onChange={e => set('smtp_host', e.target.value)} /></label>
           <div style={{ display: 'flex', gap: 8 }}>
             <label>SMTP_PORT {src('smtp_port')}<input value={vals.smtp_port || ''} onChange={e => set('smtp_port', e.target.value)} /></label>
