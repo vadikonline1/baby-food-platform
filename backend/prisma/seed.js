@@ -51,6 +51,30 @@ async function main() {
     await prisma.recipeAge.deleteMany({ where: { ageGroupId: o.id } });
     await prisma.ageGroup.delete({ where: { id: o.id } });
   }
+  // extindere "Potrivit de la": fiecare reteta primeste toate pragurile >= minimul ei
+  // (inclusiv retetele vechi — la urmatorul deploy se completeaza automat)
+  {
+    const linked = await prisma.recipeAge.findMany({ include: { ageGroup: { select: { minMonths: true } } } });
+    const have = new Set(linked.map(l => `${l.recipeId}:${l.ageGroupId}`));
+    const minByRecipe = {};
+    for (const l of linked) {
+      const m = l.ageGroup?.minMonths;
+      if (m === undefined) continue;
+      if (minByRecipe[l.recipeId] === undefined || m < minByRecipe[l.recipeId]) minByRecipe[l.recipeId] = m;
+    }
+    const allAges = await prisma.ageGroup.findMany({ select: { id: true, minMonths: true } });
+    let added = 0;
+    for (const [rid, min] of Object.entries(minByRecipe)) {
+      for (const a of allAges) {
+        if (a.minMonths >= min && !have.has(`${rid}:${a.id}`)) {
+          await prisma.recipeAge.create({ data: { recipeId: Number(rid), ageGroupId: a.id } });
+          have.add(`${rid}:${a.id}`);
+          added++;
+        }
+      }
+    }
+    if (added) console.log(`[seed] varste extinse: +${added} legaturi`);
+  }
 
   // helper generic: upsert canonic + sterge necanonice fara retete
   async function syncTax(model, linkModel, linkField, canon, extraFields) {
