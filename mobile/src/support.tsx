@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback, useReducer } from 'react';
 import { View, Text, TouchableOpacity, Alert, Platform, Linking } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { RewardedInterstitialAd, RewardedAd, TestIds } from 'react-native-google-mobile-ads';
-import { getConfig } from './config';
+import { getConfig, loadConfig } from './config';
 import { useLang, t } from './lang';
 import { useTheme } from './theme';
 
@@ -33,6 +34,11 @@ export function SupportBlock() {
   const { lang } = useLang();
   const { c } = useTheme();
   const s = sx(c);
+  // re-citeste configul la fiecare afisare (daca a ajuns mai tarziu, butoanele apar fara restart)
+  const [, bump] = useReducer((x: number) => x + 1, 0);
+  useFocusEffect(useCallback(() => {
+    loadConfig().catch(() => {}).finally(() => bump());
+  }, []));
   const cfg = getConfig();
   const support = cfg?.support?.enabled ? cfg.support : null;
   const tgUrl = cfg?.telegram?.channelUrl;

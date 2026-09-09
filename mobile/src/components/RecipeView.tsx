@@ -98,14 +98,14 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
       {steps.map((x, i) => <Text key={i} style={s.li}>{i + 1}. {x}</Text>)}
       <Text style={s.h2}>{t('vote', lang)}{myVote ? ` (${myVote}/5)` : ''}</Text>
       <Stars value={myVote} onPick={vote} />
-      <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
-        <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
-      </TouchableOpacity>
       {!!unit && (
         <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <BannerAd unitId={unit} size={BannerAdSize.BANNER} />
         </View>
       )}
+      <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
+        <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
