@@ -5,6 +5,7 @@ import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
 function Stars({ value, onPick, size = 30 }: { value: number; onPick?: (v: number) => void; size?: number }) {
+  const { t } = useTranslation();
   const [hover, setHover] = useState(0);
   const shown = hover || value;
   return (
@@ -103,6 +104,14 @@ export default function RecipeDetail() {
         {r.feedingType && <span className="badge orange">{localized(r.feedingType, 'name', lang)}</span>}
         {(r.categories || []).map((c: any) => <span key={c.categoryId ?? c.category?.id} className="badge gray">{localized(c.category, 'name', lang)}</span>)}
       </div>
+
+      {!user && (
+        <div className="notice" style={{ marginTop: 12 }}>
+          <strong>{t('auth.whyAccount')}</strong><br />
+          {t('auth.whyAccountText')}{' '}
+          <Link to="/register">{t('auth.whyAccountCta')}</Link>
+        </div>
+      )}
 
       <div className="detail-grid">
         {r.imageUrl && (

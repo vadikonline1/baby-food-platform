@@ -165,7 +165,13 @@
     "verifyErr": "Invalid or expired link",
     "backToLogin": "Back to login",
     "newLinkNote": "request a new link from the registration page.",
-    "needLogin": "Requires"
+    "needLogin": "Requires",
+    "whyAccount": "Why create an account?",
+    "whyAccountText": "Share your parenting experience with us — through recipes, tips and ratings: save favorites, rate recipes and, if you like, publish your own for other parents.",
+    "whyAccountCta": "Create a free account",
+    "regB1": "🗳 Rate recipes and save your favorites",
+    "regB2": "📝 Publish your recipes and help other parents",
+    "regB3": "💬 Ask for help and get answers from the team"
   },
   "admin": {
     "title": "Admin panel",

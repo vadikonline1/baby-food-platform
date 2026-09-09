@@ -165,7 +165,13 @@
     "verifyErr": "Link invalid sau expirat",
     "backToLogin": "Înapoi la login",
     "newLinkNote": "cere un link nou din pagina de înregistrare.",
-    "needLogin": "Necesită"
+    "needLogin": "Necesită",
+    "whyAccount": "De ce să-ți faci cont?",
+    "whyAccountText": "Împarte experiența ta de părinte cu noi — prin rețete, informații și voturi: salvează-ți favoritele, votează rețetele și, dacă vrei, publică rețetele tale pentru alți părinți.",
+    "whyAccountCta": "Creează cont gratuit",
+    "regB1": "🗳 Votează rețetele și salvează-ți favoritele",
+    "regB2": "📝 Publică rețetele tale și ajută alți părinți",
+    "regB3": "💬 Cere ajutor și primește răspunsuri de la echipă"
   },
   "admin": {
     "title": "Panou administrare",

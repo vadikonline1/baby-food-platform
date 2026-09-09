@@ -38,6 +38,14 @@ export default function Register() {
     );
   }
   return (<form className="auth" onSubmit={go}><h2>{t('auth.register')}</h2>
+    <div className="notice" style={{ textAlign: 'left' }}>
+      <strong>{t('auth.whyAccount')}</strong>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 14 }}>
+        <span>{t('auth.regB1')}</span>
+        <span>{t('auth.regB2')}</span>
+        <span>{t('auth.regB3')}</span>
+      </div>
+    </div>
     <input placeholder={t('auth.name')} value={name} onChange={e => setName(e.target.value)} />
     <input placeholder={t('auth.email')} value={email} onChange={e => setEmail(e.target.value)} />
     <input placeholder={t('auth.password')} type="password" value={password} onChange={e => setPassword(e.target.value)} />
