@@ -228,7 +228,8 @@ export default function RecipeForm() {
                 <label>Porții<input value={servings} onChange={e => setServings(e.target.value)} inputMode="numeric" /></label>
               </div>
               <p className="meta">Total: <strong>{totalTime} min</strong></p>
-              <h4>Vârsta (bifează)</h4>
+              <h4>Vârsta — potrivit de la (bifează minimul)</h4>
+              <p className="meta">Alegi de la ce vârstă se poate oferi (ex: 8+); restul lunilor mai mari se bifează automat, ca rețeta să apară și la ele.</p>
               <div className="check-list">
                 {ages.map(a => (
                   <label key={a.id} className="fcheck">

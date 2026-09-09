@@ -110,6 +110,18 @@ function numList(v) {
   return [...new Set(String(v).split(',').map(Number).filter(n => Number.isFinite(n)))];
 }
 
+// varsta "Potrivit de la X": cand se alege un prag (ex: 8+), se leaga automat
+// toate pragurile >= minimul selectat — reteta apare si la filtrele lunilor mai mari
+async function expandAges(ids) {
+  const uniq = [...new Set((ids || []).map(Number).filter(n => Number.isFinite(n)))];
+  if (!uniq.length) return [];
+  const rows = await prisma.ageGroup.findMany({ where: { id: { in: uniq } }, select: { minMonths: true } });
+  if (!rows.length) return [];
+  const min = Math.min(...rows.map(r => r.minMonths));
+  const all = await prisma.ageGroup.findMany({ where: { minMonths: { gte: min } }, select: { id: true } });
+  return [...new Set(all.map(r => r.id))];
+}
+
 // GET /api/recipes?q=&category=&age=&feeding=&restriction=&status=&sort=&page=&limit=
 // category/restriction accepta slug sau lista slug-uri separate prin virgula; age/feeding id-uri
 router.get('/', async (req, res) => {
@@ -277,7 +289,7 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
     const uniqCats = [...new Set((b.categoryIds || []).map(Number))];
     const uniqRestr = [...new Set((b.restrictionIds || []).map(Number))];
     const uniqChars = [...new Set((b.characteristicIds || []).map(Number))];
-    const uniqAges = [...new Set((b.ageGroupIds || (b.ageGroupId ? [b.ageGroupId] : [])).map(Number))];
+    const uniqAges = await expandAges(b.ageGroupIds || (b.ageGroupId ? [b.ageGroupId] : []));
     const recipe = await prisma.recipe.create({
       data: {
         slug,
@@ -342,7 +354,7 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
     }
     if (b.ageGroupIds || b.ageGroupId) {
       await prisma.recipeAge.deleteMany({ where: { recipeId: id } });
-      const uniq = [...new Set((b.ageGroupIds || [b.ageGroupId]).map(Number))];
+      const uniq = await expandAges(b.ageGroupIds || [b.ageGroupId]);
       if (uniq.length) await prisma.recipeAge.createMany({ data: uniq.map(ageGroupId => ({ recipeId: id, ageGroupId })) });
     }
     if (Array.isArray(b.items)) {

@@ -740,15 +740,17 @@ const TAXES = [
   { key: 'characteristics', label: 'Caracteristici' },
   { key: 'ages', label: 'Vârste' },
   { key: 'feeding-types', label: 'Tipuri alimentare' },
-  { key: 'units', label: 'Unități măsură' }
+  { key: 'units', label: 'Unități măsură' },
+  { key: 'ingredients', label: 'Ingrediente (Produse)', base: '/ingredients' }
 ];
 
 function TaxManager({ isAdmin }: { isAdmin: boolean }) {
   const [res, setRes] = useState('categories');
   const [items, setItems] = useState<any[]>([]);
   const [modal, setModal] = useState<any>(null);
+  const base = TAXES.find(t => t.key === res)?.base || `/taxonomies/${res}`;
 
-  const load = () => api.get(`/taxonomies/${res}`).then(r => setItems(r.data));
+  const load = () => api.get(base).then(r => setItems(r.data));
   useEffect(() => { load(); setModal(null); /* eslint-disable-next-line */ }, [res]);
 
   const openAdd = () => {
@@ -774,14 +776,18 @@ function TaxManager({ isAdmin }: { isAdmin: boolean }) {
       if (!d.nameRu) d.nameRu = d.nameRo;
       if (!d.nameEn) d.nameEn = d.nameRo;
     }
-    if (modal.mode === 'add') await api.post(`/taxonomies/${res}`, d);
-    else await api.put(`/taxonomies/${res}/${d.id}`, d);
+    // ingredientele (Produse) accepta doar numele traduse (slug auto, fara icon)
+    const payload = res === 'ingredients'
+      ? { nameRo: d.nameRo, nameRu: d.nameRu, nameEn: d.nameEn }
+      : d;
+    if (modal.mode === 'add') await api.post(base, payload);
+    else await api.put(`${base}/${d.id}`, payload);
     setModal(null); load();
   };
 
   const del = async (id: number) => {
     if (!confirm('Ștergi elementul?')) return;
-    try { await api.delete(`/taxonomies/${res}/${id}`); load(); }
+    try { await api.delete(`${base}/${id}`); load(); }
     catch { alert('Nu poate fi șters (este folosit în rețete).'); }
   };
 
@@ -827,7 +833,7 @@ function TaxManager({ isAdmin }: { isAdmin: boolean }) {
                 <input placeholder="Nume RU" value={modal.data.nameRu || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, nameRu: e.target.value } })} />
                 <input placeholder="Nume EN" value={modal.data.nameEn || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, nameEn: e.target.value } })} />
                 {res === 'categories' && <input placeholder="Icon (emoji)" value={modal.data.icon || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, icon: e.target.value } })} />}
-                {modal.mode === 'add' && res !== 'ages' && <input placeholder="Slug (auto dacă e gol)" value={modal.data.slug || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, slug: e.target.value } })} />}
+                {modal.mode === 'add' && res !== 'ages' && res !== 'ingredients' && <input placeholder="Slug (auto dacă e gol)" value={modal.data.slug || ''} onChange={e => setModal({ ...modal, data: { ...modal.data, slug: e.target.value } })} />}
               </>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
