@@ -62,7 +62,7 @@ app.use('/api/push', pushRoutes);
 // SEO: scripturi custom din Admin + meta default (descriere/cuvinte cheie/OG)
 // + meta per-reteta (titlu/descriere/imagine) pentru /retete/:slug.
 const publicDir = path.join(__dirname, '..', 'public');
-const SEO_KEYS = ['seo_head_end', 'seo_body_start', 'seo_body_end', 'seo_meta_description', 'seo_meta_keywords'];
+const SEO_KEYS = ['seo_head_end', 'seo_body_start', 'seo_body_end', 'seo_meta_title', 'seo_meta_description', 'seo_meta_keywords'];
 let seoCache = { at: 0, settings: null, pages: new Map() };
 
 function esc(s) {
@@ -89,12 +89,16 @@ async function indexedHtml(reqPath) {
   const appUrl = (await getValue('APP_URL', null, 'http://localhost:4000')).replace(/\/$/, '');
 
   // meta default site
+  const siteTitle = m.seo_meta_title || 'GustBebe — rețete pentru bebeluși și copii mici';
   const siteDesc = m.seo_meta_description || 'GustBebe — rețete sănătoase pentru bebeluși și copii mici, ghid de diversificare.';
   const siteKeys = m.seo_meta_keywords || 'retete bebelusi, diversificare, mancare copii, retete copii mici';
+  html = html.replace(/<title>.*?<\/title>/, `<title>${esc(siteTitle)}</title>`);
   let head = `<meta name="description" content="${esc(siteDesc)}">\n`
     + `<meta name="keywords" content="${esc(siteKeys)}">\n`
     + `<meta property="og:type" content="website">\n`
     + `<meta property="og:site_name" content="GustBebe">\n`
+    + `<meta property="og:title" content="${esc(siteTitle)}">\n`
+    + `<meta property="og:description" content="${esc(siteDesc)}">\n`
     + `<link rel="canonical" href="${esc(appUrl + reqPath)}">\n`;
 
   // meta per-reteta pentru /retete/id-sau-slug (titlu/descriere/poza pt. share)

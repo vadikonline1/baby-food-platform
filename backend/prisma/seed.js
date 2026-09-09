@@ -20,55 +20,69 @@ async function main() {
     create: { name: 'Moderator', email: modEmail, passwordHash: modHash, role: 'MODERATOR', lang: 'ro', emailVerified: true }
   });
 
-  // varste (idempotent)
-  const ageCount = await prisma.ageGroup.count();
-  if (ageCount === 0) {
-    const ages = [
-    { minMonths: 6, maxMonths: 8, labelRo: '6–8 luni', labelRu: '6–8 месяцев', labelEn: '6–8 months' },
-    { minMonths: 8, maxMonths: 12, labelRo: '8–12 luni', labelRu: '8–12 месяцев', labelEn: '8–12 months' },
-    { minMonths: 12, maxMonths: 24, labelRo: '1–2 ani', labelRu: '1–2 года', labelEn: '1–2 years' },
-    { minMonths: 24, maxMonths: 48, labelRo: '2–4 ani', labelRu: '2–4 года', labelEn: '2–4 years' }
-  ];
-  for (const a of ages) await prisma.ageGroup.create({ data: a });
+  // varste "Potrivit de la X" (praguri, fara suprapuneri) — idempotent + migrare
+  // legaturile vechi (intervale 6-8 luni etc.) se muta pe pragul cu acelasi minMonths
+  const { AGES, FEEDINGS, CATS, RESTR, CHARS } = require('./taxonomy-data');
+  const ageIdByMin = {};
+  for (const a of AGES) {
+    let row = await prisma.ageGroup.findFirst({ where: { minMonths: a.minMonths, maxMonths: a.maxMonths } });
+    if (!row) row = await prisma.ageGroup.create({ data: a });
+    else await prisma.ageGroup.update({ where: { id: row.id }, data: { labelRo: a.labelRo, labelRu: a.labelRu, labelEn: a.labelEn } });
+    ageIdByMin[a.minMonths] = row.id;
+  }
+  const staleAges = await prisma.ageGroup.findMany({
+    where: { NOT: { id: { in: Object.values(ageIdByMin) } } },
+    include: { recipeLinks: true }
+  });
+  for (const o of staleAges) {
+    const target = ageIdByMin[o.minMonths];
+    if (target) {
+      for (const l of o.recipeLinks) {
+        await prisma.recipeAge.upsert({
+          where: { recipeId_ageGroupId: { recipeId: l.recipeId, ageGroupId: target } },
+          update: {}, create: { recipeId: l.recipeId, ageGroupId: target }
+        });
+      }
+      console.log(`[seed] varsta migrata: ${o.labelRo} -> prag ${o.minMonths} (${o.recipeLinks.length} retete)`);
+    } else {
+      console.log(`[seed] varsta veche pastrata (are retete, fara prag echivalent): ${o.labelRo}`);
+      continue;
+    }
+    await prisma.recipeAge.deleteMany({ where: { ageGroupId: o.id } });
+    await prisma.ageGroup.delete({ where: { id: o.id } });
   }
 
-  // tipuri alimentare
-  const feedings = [
-    { slug: 'diversificare', nameRo: 'Diversificare', nameRu: 'Прикорм', nameEn: 'Weaning' },
-    { slug: 'mic-dejun', nameRo: 'Mic dejun', nameRu: 'Завтрак', nameEn: 'Breakfast' },
-    { slug: 'pranz', nameRo: 'Prânz', nameRu: 'Обед', nameEn: 'Lunch' },
-    { slug: 'gustare', nameRo: 'Gustare', nameRu: 'Перекус', nameEn: 'Snack' },
-    { slug: 'cina', nameRo: 'Cină', nameRu: 'Ужин', nameEn: 'Dinner' }
-  ];
-  for (const f of feedings) await prisma.feedingType.upsert({ where: { slug: f.slug }, update: {}, create: f });
+  // helper generic: upsert canonic + sterge necanonice fara retete
+  async function syncTax(model, linkModel, linkField, canon, extraFields) {
+    const keep = new Set();
+    for (const item of canon) {
+      const row = await prisma[model].upsert({
+        where: { slug: item.slug },
+        update: Object.fromEntries(extraFields.map(k => [k, item[k]])),
+        create: item
+      });
+      keep.add(row.id);
+    }
+    const stale = await prisma[model].findMany({ where: { NOT: { id: { in: [...keep] } } } });
+    for (const s of stale) {
+      const used = await prisma[linkModel].count({ where: { [linkField]: s.id } });
+      if (used) { console.log(`[seed] ${model} pastrat (are ${used} retete): ${s.slug}`); continue; }
+      await prisma[model].delete({ where: { id: s.id } });
+      console.log(`[seed] ${model} sters (necanonic, gol): ${s.slug}`);
+    }
+  }
 
-  // categorii meniu
-  const cats = [
-    { slug: 'piureuri', nameRo: 'Piureuri', nameRu: 'Пюре', nameEn: 'Purees', icon: '🥣' },
-    { slug: 'supe', nameRo: 'Supe', nameRu: 'Супы', nameEn: 'Soups', icon: '🍲' },
-    { slug: 'fel-principal', nameRo: 'Fel principal', nameRu: 'Основное', nameEn: 'Main dish', icon: '🍽️' },
-    { slug: 'desert', nameRo: 'Deserturi', nameRu: 'Десерты', nameEn: 'Desserts', icon: '🍎' },
-    { slug: 'blw', nameRo: 'BLW / Finger food', nameRu: 'BLW / Кусочки', nameEn: 'BLW / Finger food', icon: '🥕' }
-  ];
-  for (const c of cats) await prisma.menuCategory.upsert({ where: { slug: c.slug }, update: {}, create: c });
+  // tipuri de masa — "Cand se serveste?"
+  await syncTax('feedingType', 'recipe', 'feedingTypeId', FEEDINGS, ['nameRo', 'nameRu', 'nameEn']);
+
+  // categorii meniu — "Ce fel de preparat este?"
+  await syncTax('menuCategory', 'recipeCategory', 'categoryId', CATS, ['nameRo', 'nameRu', 'nameEn', 'icon']);
 
   // restrictii
-  const restr = [
-    { slug: 'fara-gluten', nameRo: 'Fără gluten', nameRu: 'Без глютена', nameEn: 'Gluten-free' },
-    { slug: 'fara-lactoza', nameRo: 'Fără lactoză', nameRu: 'Без лактозы', nameEn: 'Lactose-free' },
-    { slug: 'fara-ou', nameRo: 'Fără ou', nameRu: 'Без яиц', nameEn: 'Egg-free' },
-    { slug: 'vegetarian', nameRo: 'Vegetarian', nameRu: 'Вегетарианское', nameEn: 'Vegetarian' }
-  ];
-  for (const r of restr) await prisma.dietaryRestriction.upsert({ where: { slug: r.slug }, update: {}, create: r });
+  await syncTax('dietaryRestriction', 'recipeRestriction', 'restrictionId', RESTR, ['nameRo', 'nameRu', 'nameEn']);
 
   // caracteristici
-  const chars = [
-    { slug: 'bogat-in-fier', nameRo: 'Bogat în fier', nameRu: 'Богато железом', nameEn: 'Iron-rich' },
-    { slug: 'fara-zahar', nameRo: 'Fără zahăr adăugat', nameRu: 'Без добавленного сахара', nameEn: 'No added sugar' },
-    { slug: 'rapid-20min', nameRo: 'Gata în 20 min', nameRu: 'Готово за 20 мин', nameEn: 'Ready in 20 min' },
-    { slug: 'congelabil', nameRo: 'Se poate congela', nameRu: 'Можно замораживать', nameEn: 'Freezable' }
-  ];
-  for (const c of chars) await prisma.characteristic.upsert({ where: { slug: c.slug }, update: {}, create: c });
+  await syncTax('characteristic', 'recipeCharacteristic', 'characteristicId', CHARS, ['nameRo', 'nameRu', 'nameEn']);
 
   // unitati de masura
   const units = [
@@ -96,7 +110,14 @@ async function main() {
     firebase_web_apikey: '', firebase_web_authdomain: '', firebase_web_projectid: '',
     firebase_web_storagebucket: '', firebase_web_senderid: '', firebase_web_appid: '', firebase_web_measurementid: '',
     seo_head_end: '', seo_body_start: '', seo_body_end: '',
+    seo_meta_title: 'GustBebe — rețete pentru bebeluși și copii mici',
     seo_meta_description: '', seo_meta_keywords: '',
+    home_hero_title_ro: 'Rețete sănătoase pentru bebelușii tăi',
+    home_hero_title_ru: 'Полезные рецепты для ваших малышей',
+    home_hero_title_en: 'Healthy recipes for your little ones',
+    home_hero_subtitle_ro: 'Descoperă rețete verificate, adaptate vârstei copilului tău: de la primele gustări la mese complete de familie.',
+    home_hero_subtitle_ru: 'Проверенные рецепты по возрасту ребёнка: от первых ложек прикорма до полноценных семейных обедов.',
+    home_hero_subtitle_en: "Discover trusted recipes matched to your child's age: from first tastes to full family meals.",
     store_android_url: '', store_ios_url: '',
     auth_google_enabled: 'false', auth_google_web_client_id: '', auth_google_ios_client_id: '', auth_google_android_client_id: '',
     auth_apple_enabled: 'false', auth_apple_service_id: '',
@@ -111,7 +132,7 @@ async function main() {
 
   // continut editabil (doar la prima initializare — dupa aceea se gestioneaza din Admin)
   // datele stau in backend (content-data.js), NU in frontend — in Docker frontend/src nu exista
-  const { GUIDE_ICONS, GUIDE, COOKIES, FAQ, FAQ_EXTRA } = require('./content-data');
+  const { GUIDE_ICONS, GUIDE, COOKIES, COOKIES_EXTRA, FAQ, FAQ_EXTRA } = require('./content-data');
   if ((await prisma.guideItem.count()) === 0) {
     let pos = 0;
     for (const [i, g] of GUIDE.entries()) {
@@ -139,6 +160,21 @@ async function main() {
     }
     console.log(`[seed] cookie sections: ${COOKIES.length}`);
   }
+  // sectiunile noi de cookies se adauga daca lipsesc (functii noi, fara duplicate)
+  for (const s of COOKIES_EXTRA) {
+    const exists = await prisma.cookieSection.findFirst({ where: { titleRo: s.h[0] } });
+    if (!exists) {
+      const maxPos = await prisma.cookieSection.aggregate({ _max: { position: true } });
+      await prisma.cookieSection.create({
+        data: {
+          titleRo: s.h[0], titleRu: s.h[1], titleEn: s.h[2],
+          bodyRo: s.p[0], bodyRu: s.p[1], bodyEn: s.p[2],
+          position: (maxPos._max.position ?? -1) + 1
+        }
+      });
+      console.log(`[seed] cookie extra: ${s.h[0]}`);
+    }
+  }
   if ((await prisma.faqItem.count()) === 0) {
     let pos = 0;
     for (const f of FAQ) {
@@ -159,11 +195,11 @@ async function main() {
       console.log(`[seed] faq extra: ${f.q[0]}`);
     }
   }
-  // banca quiz (15 intrebari) — doar la prima initializare, apoi din Admin → Continut
-  const { QUIZ: SEED_QUIZ, EXTRA_QUIZ: SEED_EXTRA } = require('../src/lib/quiz');
+  // banca quiz (50 intrebari) — la prima initializare tot, apoi se completeaza ce lipseste
+  const { QUIZ: SEED_QUIZ, EXTRA_QUIZ: SEED_EXTRA, EXTRA2_QUIZ: SEED_EXTRA2 } = require('../src/lib/quiz');
   if ((await prisma.quizQuestion.count()) === 0) {
     let pos = 0;
-    for (const q of [...SEED_QUIZ, ...SEED_EXTRA]) {
+    for (const q of [...SEED_QUIZ, ...SEED_EXTRA, ...SEED_EXTRA2]) {
       await prisma.quizQuestion.create({
         data: {
           qRo: q.q[0], qRu: q.q[1], qEn: q.q[2],
@@ -171,7 +207,23 @@ async function main() {
         }
       });
     }
-    console.log('[seed] quiz questions: 15');
+    console.log('[seed] quiz questions: 50');
+  } else {
+    let added = 0;
+    for (const q of [...SEED_QUIZ, ...SEED_EXTRA, ...SEED_EXTRA2]) {
+      const exists = await prisma.quizQuestion.findFirst({ where: { qRo: q.q[0] } });
+      if (!exists) {
+        const maxPos = await prisma.quizQuestion.aggregate({ _max: { position: true } });
+        await prisma.quizQuestion.create({
+          data: {
+            qRo: q.q[0], qRu: q.q[1], qEn: q.q[2],
+            options: JSON.stringify(q.o), correct: q.c, position: (maxPos._max.position ?? -1) + 1
+          }
+        });
+        added++;
+      }
+    }
+    if (added) console.log(`[seed] quiz questions added: ${added}`);
   }
   const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
   if (!existing) {

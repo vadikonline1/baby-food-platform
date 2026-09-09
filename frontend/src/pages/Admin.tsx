@@ -346,7 +346,7 @@ function AppSettings() {
 }
 
 function SeoManager() {
-  const [vals, setVals] = useState<Record<string, string>>({ seo_head_end: '', seo_body_start: '', seo_body_end: '', seo_meta_description: '', seo_meta_keywords: '' });
+  const [vals, setVals] = useState<Record<string, string>>({ seo_head_end: '', seo_body_start: '', seo_body_end: '', seo_meta_title: '', seo_meta_description: '', seo_meta_keywords: '' });
   const [msg, setMsg] = useState('');
   useEffect(() => {
     api.get('/settings').then(r => {
@@ -374,8 +374,19 @@ function SeoManager() {
       <section className="panel">
         <h3>Meta implicite site</h3>
         <p className="meta">Folosite pe toate paginile; la rețete, titlul/descrierea/poza se iau automat din rețetă (Open Graph pentru share).</p>
+        <input placeholder="Titlu site (implicit, ex: GustBebe — rețete pentru bebeluși)" value={vals.seo_meta_title || ''} onChange={e => setVals({ ...vals, seo_meta_title: e.target.value })} />
         <input placeholder="Meta description (implicit)" value={vals.seo_meta_description || ''} onChange={e => setVals({ ...vals, seo_meta_description: e.target.value })} />
         <input placeholder="Meta keywords, separate prin virgulă" value={vals.seo_meta_keywords || ''} onChange={e => setVals({ ...vals, seo_meta_keywords: e.target.value })} />
+      </section>
+      <section className="panel">
+        <h3>Hero pagina principală (hero-copy)</h3>
+        <p className="meta">Titlul și subtitlul din blocul verde de sus. Gol = textele implicite din traduceri.</p>
+        {['ro', 'ru', 'en'].map(l => (
+          <input key={'t' + l} placeholder={`Titlu hero (${l})`} value={vals[`home_hero_title_${l}`] || ''} onChange={e => setVals({ ...vals, [`home_hero_title_${l}`]: e.target.value })} />
+        ))}
+        {['ro', 'ru', 'en'].map(l => (
+          <textarea key={'s' + l} rows={2} placeholder={`Subtitlu hero (${l})`} value={vals[`home_hero_subtitle_${l}`] || ''} onChange={e => setVals({ ...vals, [`home_hero_subtitle_${l}`]: e.target.value })} />
+        ))}
       </section>
       {area('seo_head_end', 'Înainte de </head>', 'Meta taguri, verificare Search Console, stiluri sau scripturi care trebuie încărcate devreme.')}
       {area('seo_body_start', 'După <body> (început)', 'Tag Manager (noscript), bannere sau scripturi care pornesc odată cu pagina.')}

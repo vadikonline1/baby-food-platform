@@ -39,6 +39,9 @@ export default function Home() {
   const [pool, setPool] = useState<any[]>([]);
   const [randomPick, setRandomPick] = useState<any[]>([]);
   const [siteStats, setSiteStats] = useState<any>(null);
+  const [heroCfg, setHeroCfg] = useState<any>(null);
+  const heroTitle = heroCfg?.heroTitle?.[lang] || heroCfg?.heroTitle?.ro || t('home.heroTitle');
+  const heroSubtitle = heroCfg?.heroSubtitle?.[lang] || heroCfg?.heroSubtitle?.ro || t('home.subtitle');
   const localeGuide = (t('home.items', { returnObjects: true }) as any[]) || [];
   const [guideApi, setGuideApi] = useState<any[] | null>(null);
   const guide = guideApi && guideApi.length ? guideApi : localeGuide;
@@ -48,6 +51,7 @@ export default function Home() {
 
   useEffect(() => {
     api.get('/stats').then(r => setSiteStats(r.data)).catch(() => {});
+    api.get('/settings/config').then(r => setHeroCfg(r.data.home)).catch(() => {});
     api.get('/content/guide').then(r => setGuideApi(r.data)).catch(() => {});
     api.get('/recipes', { params: { sort: 'popular', limit: 6 } }).then(r => setPopular(r.data.items)).catch(() => {});
     api.get('/recipes', { params: { limit: 24 } }).then(r => {
@@ -61,8 +65,8 @@ export default function Home() {
       <section className="hero-emerald">
         <div className="hero-inner">
           <div className="hero-copy">
-            <h1>{t('home.heroTitle')}</h1>
-            <p className="lead">{t('home.subtitle')}</p>
+            <h1>{heroTitle}</h1>
+            <p className="lead">{heroSubtitle}</p>
             <div className="cta-row">
               <Link to="/retete" className="btn-white">{t('home.explore')}</Link>
               <a href="#ghid" className="btn-outline-light">{t('home.guideBtn')}</a>
