@@ -14,7 +14,7 @@ export default function Conversations() {
   const load = () => api.get('/contact/mine').then(r => setThreads(r.data)).catch(() => setThreads([]));
   useEffect(() => { if (user) load(); }, [user]);
 
-  if (!user) return <p>Necesită <Link to="/login">login</Link>.</p>;
+  if (!user) return <p>{t('auth.needLogin')} <Link to="/login">{t('auth.login')}</Link>.</p>;
   if (threads === null) return <p>{t('common.loading')}</p>;
   if (!threads.length) {
     return (<><h1>{t('contact.myThreads')}</h1>

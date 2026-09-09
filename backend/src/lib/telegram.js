@@ -27,24 +27,31 @@ function taxLabel(x) {
   return x.labelRo || x.nameRo || x.slug || '';
 }
 
+// hashtag Telegram: spatii -> underscore (ex: #4_luni+, #Fel_principal)
+function tagify(s) {
+  const t = String(s || '').trim().replace(/\s+/g, '_');
+  return t ? `#${t}` : '';
+}
+
 function caption(r, app) {
   const totalMin = (r.prepMinutes || 0) + (r.cookMinutes || 0);
-  const groups = [];
-  const ages = (r.ageGroups || []).map(a => taxLabel(a.ageGroup)).filter(Boolean);
-  if (ages.length) groups.push(`Vârsta: ${ages.join(', ')}`);
-  const cats = (r.categories || []).map(c => taxLabel(c.category)).filter(Boolean);
-  if (cats.length) groups.push(`Categorii: ${cats.join(', ')}`);
-  const restrs = (r.restrictions || []).map(x => taxLabel(x.restriction)).filter(Boolean);
-  if (restrs.length) groups.push(`Restricții: ${restrs.join(', ')}`);
-  const chars = (r.characteristics || []).map(x => taxLabel(x.characteristic)).filter(Boolean);
-  if (chars.length) groups.push(`Caracteristici: ${chars.join(', ')}`);
   const lines = [
     `Titlul: ${esc(r.titleRo || '')}`,
-    '',
     `Timpul: ⏱ ${totalMin} min · 🍽 ${r.servings || ''} porții`
   ];
-  if (groups.length) lines.push(`tag: ${groups.join(' · ')}`);
-  lines.push(`Link: ${recipeLink(r, app)}`);
+  const groups = [];
+  const ages = (r.ageGroups || []).map(a => tagify(taxLabel(a.ageGroup))).filter(Boolean);
+  if (ages.length) groups.push(`Vârsta: ${ages.join(', ')}`);
+  const cats = (r.categories || []).map(c => tagify(taxLabel(c.category))).filter(Boolean);
+  if (cats.length) groups.push(`Categorii: ${cats.join(', ')}`);
+  const restrs = (r.restrictions || []).map(x => tagify(taxLabel(x.restriction))).filter(Boolean);
+  if (restrs.length) groups.push(`Restricții: ${restrs.join(', ')}`);
+  const chars = (r.characteristics || []).map(x => esc(taxLabel(x.characteristic))).filter(Boolean);
+  if (chars.length) groups.push(`Caracteristici: ${chars.join(', ')}`);
+  if (groups.length) {
+    lines.push('', 'Detalii:', ...groups);
+  }
+  lines.push('', recipeLink(r, app));
   return lines.join('\n');
 }
 
@@ -105,4 +112,4 @@ function notifyAdminAsync(text) {
   );
 }
 
-module.exports = { postRecipe, postRecipeAsync, notifyAdmin, notifyAdminAsync };
+module.exports = { postRecipe, postRecipeAsync, notifyAdmin, notifyAdminAsync, caption };

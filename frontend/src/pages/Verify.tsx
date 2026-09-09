@@ -32,8 +32,8 @@ export default function Verify() {
   return (
     <div className="panel" style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center' }}>
       {state === 'loading' && <p>{t('common.loading')}</p>}
-      {state === 'ok' && (<><h2>✓ Email confirmat!</h2><p>Contul tău este activ. Te redirecționăm...</p></>)}
-      {state === 'error' && (<><h2>Link invalid sau expirat ({msg})</h2><p><Link to="/login">Înapoi la login</Link> — cere un link nou din pagina de înregistrare.</p></>)}
+      {state === 'ok' && (<><h2>{t('auth.verifyOk')}</h2><p>{t('auth.verifyOkSub')}</p></>)}
+      {state === 'error' && (<><h2>{t('auth.verifyErr')} ({msg})</h2><p><Link to="/login">{t('auth.backToLogin')}</Link> — {t('auth.newLinkNote')}</p></>)}
     </div>
   );
 }

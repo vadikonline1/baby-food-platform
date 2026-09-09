@@ -11,7 +11,7 @@ function Stars({ value, onPick, size = 30 }: { value: number; onPick?: (v: numbe
     <span className="stars" onMouseLeave={() => setHover(0)}>
       {[1, 2, 3, 4, 5].map(v => (
         <button
-          key={v} type="button" aria-label={`${v} stele`}
+          key={v} type="button" aria-label={t('recipes.stars', { v })}
           className={v <= shown ? 'lit' : ''}
           style={{ fontSize: size }}
           onMouseEnter={() => onPick && setHover(v)}
@@ -83,12 +83,12 @@ export default function RecipeDetail() {
         <span className="meta-sep" />
         <span>⏱ {(r.prepMinutes || 0) + (r.cookMinutes || 0)} min</span>
         <span>🍽 {r.servings}</span>
-        <span title="Vizionări unice">👁 {views}</span>
+        <span title={t('recipes.uniqueViews')}>👁 {views}</span>
         {user && (
           <>
             <span className="meta-sep" />
             <span className="meta-group vote-inline">
-              <span className="meta">Votează:</span>
+              <span className="meta">{t('recipes.voteCta')}</span>
               <Stars value={myVote} onPick={sendVote} size={22} />
             </span>
             <button className={`heart ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label="favorite" title={t('recipes.favorite')}>
@@ -112,12 +112,12 @@ export default function RecipeDetail() {
         )}
         {summary && (
           <section className="panel">
-            <h3>Despre</h3>
+            <h3>{t('recipes.about')}</h3>
             <p className="lead">{summary}</p>
           </section>
         )}
         <section className="panel">
-          <h3>Ingrediente</h3>
+          <h3>{t('recipes.ingredients')}</h3>
           {detailed.length ? (
             <ul className="ing-list">
               {detailed.map((d: any) => (
@@ -133,7 +133,7 @@ export default function RecipeDetail() {
           )}
         </section>
         <section className="panel">
-          <h3>Preparare</h3>
+          <h3>{t('recipes.prep')}</h3>
           {stepsList.length > 1 ? (
             <ol className="steps-list">
               {stepsList.map((s, i) => <li key={i}>{s}</li>)}

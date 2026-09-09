@@ -48,7 +48,7 @@ export default function App() {
             <option value="ru">Ru</option>
             <option value="en">En</option>
           </select>
-          {canAdmin && <NavLink className="link" to="/admin/retete/noua" onClick={close}>＋ Rețetă</NavLink>}
+          {canAdmin && <NavLink className="link" to="/admin/retete/noua" onClick={close}>{t('nav.newRecipe')}</NavLink>}
           {canAdmin && <NavLink className="link" to="/admin" onClick={close}>🛠 {t('nav.admin')}</NavLink>}
           {user?.role === 'ADMIN' && <NotifBell />}
           {user ? (<><NavLink className="link" to="/profil" onClick={close}>{t('nav.profile')} ({user.name})</NavLink><button className="btn secondary small" onClick={() => { logout(); close(); nav('/'); }}>{t('nav.logout')}</button></>) :

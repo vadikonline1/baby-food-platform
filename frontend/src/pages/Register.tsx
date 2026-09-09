@@ -18,7 +18,7 @@ export default function Register() {
       if (data?.token) { window.location.href = '/'; return; }
       setDone(data);
     } catch (e: any) {
-      setErr(e.response?.data?.error === 'email_taken' ? 'Email deja folosit.' : 'Eroare la înregistrare.');
+      setErr(e.response?.data?.error === 'email_taken' ? t('auth.emailTaken') : t('auth.registerErr'));
     }
   };
   const resend = async () => {
@@ -29,11 +29,11 @@ export default function Register() {
   if (done) {
     return (
       <div className="panel" style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center' }}>
-        <h2>📧 Verifică emailul</h2>
-        <p>Contul a fost creat. L-am trimis un link de confirmare pe <b>{email}</b> (valabil 24h). Contul se activează doar după confirmare.</p>
-        <button className="btn secondary" onClick={resend}>Retrimite emailul</button>
-        {done.resent && <p className="meta">✓ Trimis din nou.</p>}
-        <p><Link to="/login">Mergi la login</Link></p>
+        <h2>{t('auth.checkEmail')}</h2>
+        <p>{t('auth.accountCreated', { email })}</p>
+        <button className="btn secondary" onClick={resend}>{t('auth.resendEmail')}</button>
+        {done.resent && <p className="meta">{t('auth.resentOk')}</p>}
+        <p><Link to="/login">{t('auth.goLogin')}</Link></p>
       </div>
     );
   }

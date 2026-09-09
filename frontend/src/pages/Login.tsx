@@ -16,19 +16,19 @@ export default function Login() {
     e.preventDefault(); setErr(''); setNeedVerify(false);
     try { await login(email, password); nav('/'); }
     catch (e: any) {
-      if (e.response?.data?.error === 'email_not_verified') { setNeedVerify(true); setErr('Contul nu e confirmat. Verifică emailul.'); }
-      else setErr('Login invalid');
+      if (e.response?.data?.error === 'email_not_verified') { setNeedVerify(true); setErr(t('auth.unverified')); }
+      else setErr(t('auth.invalidLogin'));
     }
   };
   const resend = async () => {
     await api.post('/auth/resend', { email });
-    setErr('✓ Link nou trimis pe email.');
+    setErr(t('auth.linkResent'));
   };
   return (<form className="auth" onSubmit={go}><h2>{t('auth.login')}</h2>
     <input placeholder={t('auth.email')} value={email} onChange={e => setEmail(e.target.value)} />
     <input placeholder={t('auth.password')} type="password" value={password} onChange={e => setPassword(e.target.value)} />
     {err && <span style={{ color: 'red' }}>{err}</span>}
-    {needVerify && <button type="button" className="btn secondary" onClick={resend}>Retrimite confirmarea</button>}
+    {needVerify && <button type="button" className="btn secondary" onClick={resend}>{t('auth.resendConfirm')}</button>}
     <button className="btn">{t('auth.submit')}</button>
     <span>{t('auth.noAccount')} <Link to="/register">{t('auth.register')}</Link></span></form>);
 }

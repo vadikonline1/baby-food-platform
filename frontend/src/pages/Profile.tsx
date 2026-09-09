@@ -41,7 +41,7 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, areq?.status]);
 
-  if (!user) return <p>Necesită <Link to="/login">login</Link>.</p>;
+  if (!user) return <p>{t('auth.needLogin')} <Link to="/login">{t('auth.login')}</Link>.</p>;
 
   const sendAuthorRequest = async (e: any) => {
     e.preventDefault(); setArMsg('');
@@ -49,18 +49,18 @@ export default function Profile() {
       const { data } = await api.post('/author-requests', { motivation, experience, quizId: quiz?.id, answers: qans });
       setAreq(data);
       if (data.autoApproved) {
-        setArMsg('✓ Felicitări! Ai răspuns corect — ești Autor acum.');
+        setArMsg(t('profile.arAutoOk'));
         await refresh();
       } else {
-        setArMsg('✓ Cererea a fost trimisă. Adminul o va analiza.');
+        setArMsg(t('profile.arSent'));
       }
     } catch (err: any) {
       const code = err.response?.data?.error;
-      if (code === 'motivation_min_20') setArMsg(`Motivația e prea scurtă (ai ${motivation.trim().length}, minim 20 caractere).`);
-      else if (code === 'experience_min_10') setArMsg(`Experiența e prea scurtă (ai ${experience.trim().length}, minim 10 caractere).`);
-      else if (code === 'already_pending') setArMsg('Ai deja o cerere în așteptare.');
-      else if (code === 'already_privileged') setArMsg('Ai deja drepturi de publicare — reîncarcă pagina.');
-      else setArMsg('Eroare la trimitere, încearcă din nou.');
+      if (code === 'motivation_min_20') setArMsg(t('profile.arMotivationShort', { n: motivation.trim().length }));
+      else if (code === 'experience_min_10') setArMsg(t('profile.arExperienceShort', { n: experience.trim().length }));
+      else if (code === 'already_pending') setArMsg(t('profile.arPending'));
+      else if (code === 'already_privileged') setArMsg(t('profile.arPrivileged'));
+      else setArMsg(t('profile.arErr'));
     }
   };
 
@@ -69,7 +69,7 @@ export default function Profile() {
     try {
       await api.patch('/auth/me', { name });
       await refresh(); setMsg('✓');
-    } catch { setMsg('Eroare la salvare.'); }
+    } catch { setMsg(t('profile.saveErr')); }
   };
   const removeFav = async (recipeId: number) => {
     await api.delete(`/recipes/${recipeId}/favorite`);
@@ -77,34 +77,34 @@ export default function Profile() {
   };
   const savePw = async (e: any) => {
     e.preventDefault(); setPwMsg('');
-    if (npw.length < 6) { setPwMsg('Parola nouă trebuie să aibă minim 6 caractere.'); return; }
+    if (npw.length < 6) { setPwMsg(t('profile.pwShort')); return; }
     try {
       await api.patch('/auth/me/password', { currentPassword: cur, newPassword: npw });
-      setCur(''); setNpw(''); setPwMsg('✓ Parola a fost schimbată.');
+      setCur(''); setNpw(''); setPwMsg(t('profile.pwOk'));
     } catch (err: any) {
-      setPwMsg(err.response?.data?.error === 'wrong_current_password' ? 'Parola curentă e greșită.' : 'Eroare la schimbare.');
+      setPwMsg(err.response?.data?.error === 'wrong_current_password' ? t('profile.pwWrong') : t('profile.pwErr'));
     }
   };
 
   return (
     <>
-      <h1>Profil — {user.name}</h1>
-      <p className="meta">{user.email} · rol: <b>{roleLabel(user.role)}</b> · <Link to="/conversatii">💬 Convorbirile mele</Link></p>
+      <h1>{t('profile.title')} — {user.name}</h1>
+      <p className="meta">{user.email} · {t('profile.role')}: <b>{roleLabel(user.role)}</b> · <Link to="/conversatii">{t('profile.myConvs')}</Link></p>
       {user.role === 'USER' && (
         <section className="panel" style={{ marginBottom: 18 }}>
-          <h3>✍️ Devino Autor</h3>
-          {areq?.status === 'PENDING' && <p className="notice">Cererea ta este în analiză la administrator.</p>}
-          {areq?.status === 'APPROVED' && <p className="notice">Felicitări! Ești Autor — poți adăuga rețete din panoul de administrare.</p>}
+          <h3>{t('profile.becomeAuthor')}</h3>
+          {areq?.status === 'PENDING' && <p className="notice">{t('profile.pendingNotice')}</p>}
+          {areq?.status === 'APPROVED' && <p className="notice">{t('profile.approvedNotice')}</p>}
           {(!areq || areq.status === 'REJECTED') && (
             <form onSubmit={sendAuthorRequest} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {areq?.status === 'REJECTED' && <p className="meta">Cererea anterioară a fost respinsă — poți încerca din nou cu răspunsuri mai complete.</p>}
-              <label>De ce vrei să publici rețete? ({motivation.trim().length}/20 minim)
-                <textarea rows={3} value={motivation} onChange={e => setMotivation(e.target.value)} placeholder="Ex: gătesc zilnic pentru cei doi copii ai mei..." /></label>
-              <label>Ce experiență ai cu alimentația copiilor? ({experience.trim().length}/10 minim)
-                <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder="Ex: 2 ani de diversificare..." /></label>
+              {areq?.status === 'REJECTED' && <p className="meta">{t('profile.rejectedRetry')}</p>}
+              <label>{t('profile.motivation', { n: motivation.trim().length })}
+                <textarea rows={3} value={motivation} onChange={e => setMotivation(e.target.value)} placeholder={t('profile.motivationPh')} /></label>
+              <label>{t('profile.experience', { n: experience.trim().length })}
+                <textarea rows={2} value={experience} onChange={e => setExperience(e.target.value)} placeholder={t('profile.experiencePh')} /></label>
               {!!quiz?.questions?.length && (
                 <div className="quiz-block">
-                  <h4>Mini-test (5 întrebări): răspunde corect la toate și devii Autor pe loc (altfel decide adminul)</h4>
+                  <h4>{t('profile.quizTitle')}</h4>
                   {quiz.questions.map((qq: any, i: number) => (
                     <div key={qq.qid} className="quiz-q">
                       <p><strong>{i + 1}. {qq.q}</strong></p>
@@ -121,7 +121,7 @@ export default function Profile() {
                   ))}
                 </div>
               )}
-              <div><button className="btn small">Trimite cererea</button></div>
+              <div><button className="btn small">{t('profile.submitRequest')}</button></div>
               {arMsg && <p className="meta">{arMsg}</p>}
             </form>
           )}
@@ -129,24 +129,24 @@ export default function Profile() {
       )}
       <div className="dash-cols">
         <section className="panel">
-          <h3>Datele mele</h3>
+          <h3>{t('profile.myData')}</h3>
           <form onSubmit={saveName} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <label>Nume<input value={name} onChange={e => setName(e.target.value)} /></label>
-            <label>Email (nu poate fi schimbat)<input value={user.email} disabled style={{ opacity: 0.6 }} /></label>
-            <div><button className="btn small">Salvează {msg}</button></div>
+            <label>{t('profile.name')}<input value={name} onChange={e => setName(e.target.value)} /></label>
+            <label>{t('profile.emailLocked')}<input value={user.email} disabled style={{ opacity: 0.6 }} /></label>
+            <div><button className="btn small">{t('profile.save')} {msg}</button></div>
           </form>
         </section>
         <section className="panel">
-          <h3>Schimbă parola</h3>
+          <h3>{t('profile.changePw')}</h3>
           <form onSubmit={savePw} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <label>Parola curentă<input type="password" value={cur} onChange={e => setCur(e.target.value)} /></label>
-            <label>Parola nouă (min 6)<input type="password" value={npw} onChange={e => setNpw(e.target.value)} /></label>
-            <div><button className="btn small">Schimbă parola</button></div>
+            <label>{t('profile.curPw')}<input type="password" value={cur} onChange={e => setCur(e.target.value)} /></label>
+            <label>{t('profile.newPw')}<input type="password" value={npw} onChange={e => setNpw(e.target.value)} /></label>
+            <div><button className="btn small">{t('profile.changePw')}</button></div>
             {pwMsg && <p className="meta">{pwMsg}</p>}
           </form>
         </section>
       </div>
-      <h2>Favorite ❤</h2>
+      <h2>{t('profile.favorites')}</h2>
       <div className="grid">{favs.map((r: any) => (
         <div className="card" key={r.id}>
           {r.imageUrl ? <img src={imgUrl(r.imageUrl)} alt="" loading="lazy" /> : <div className="card-ph">🥣</div>}
@@ -154,8 +154,8 @@ export default function Profile() {
             <strong>{localized(r, 'title', i18n.language)}</strong>
             <span className="meta">⭐ {Number(r.avgRating || 0).toFixed(1)} · 👁 {r.viewsCount || 0}</span>
             <div className="row">
-              <Link className="btn secondary small" to={recipeUrl(r)}>Vezi</Link>
-              <button className="btn danger small" onClick={() => removeFav(r.id)}>✕ Favorit</button>
+              <Link className="btn secondary small" to={recipeUrl(r)}>{t('profile.view')}</Link>
+              <button className="btn danger small" onClick={() => removeFav(r.id)}>{t('profile.unfav')}</button>
             </div>
           </div>
         </div>
