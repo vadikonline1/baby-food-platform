@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, localized, deviceId, imgUrl } from '../api';
-import { bannerUnitId } from '../ads';
+import { BannerAdBlock } from '../ads';
 import { useAuth } from '../store';
 import { Stars } from '../ui';
 import { useLang, t } from '../lang';
@@ -18,7 +17,6 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
   const [r, setR] = useState<any>(initial);
   const [myVote, setMyVote] = useState(initial?.myRating || 0);
   const [fav, setFav] = useState(Boolean(initial?.isFavorite));
-  const unit = bannerUnitId();
 
   useEffect(() => {
     setR(initial);
@@ -98,11 +96,7 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
       {steps.map((x, i) => <Text key={i} style={s.li}>{i + 1}. {x}</Text>)}
       <Text style={s.h2}>{t('vote', lang)}{myVote ? ` (${myVote}/5)` : ''}</Text>
       <Stars value={myVote} onPick={vote} />
-      {!!unit && (
-        <View style={{ alignItems: 'center', marginVertical: 20 }}>
-          <BannerAd unitId={unit} size={BannerAdSize.BANNER} />
-        </View>
-      )}
+      <BannerAdBlock />
       <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
         <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
       </TouchableOpacity>

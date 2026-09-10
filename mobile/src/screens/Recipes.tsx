@@ -6,6 +6,7 @@ import { RecipeCard, FilterModal, EMPTY_FILTERS, Filters } from '../ui';
 import { useLang, t } from '../lang';
 import { useTheme } from '../theme';
 import { SupportBlock } from '../support';
+import { BannerAdBlock } from '../ads';
 
 export default function RecipesScreen() {
   const nav = useNavigation<any>();
@@ -93,7 +94,7 @@ export default function RecipesScreen() {
         data={items}
         numColumns={2}
         keyExtractor={(i) => String(i.id)}
-        ListHeaderComponent={<SupportBlock />}
+        ListHeaderComponent={<><SupportBlock /><BannerAdBlock /></>}
         ListEmptyComponent={
           loadErr ? (
             <View style={s.errBox}>
