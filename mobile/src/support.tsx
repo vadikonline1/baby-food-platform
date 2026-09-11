@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, Platform, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { RewardedInterstitialAd, RewardedAd, TestIds } from 'react-native-google-mobile-ads';
@@ -34,12 +34,14 @@ export function SupportBlock() {
   const { lang } = useLang();
   const { c } = useTheme();
   const s = sx(c);
-  // re-citeste configul la fiecare afisare (daca a ajuns mai tarziu, butoanele apar fara restart)
-  const [, bump] = useReducer((x: number) => x + 1, 0);
-  useFocusEffect(useCallback(() => {
-    loadConfig().catch(() => {}).finally(() => bump());
-  }, []));
-  const cfg = getConfig();
+  // config in state propriu (nu doar cache global): butoanele apar garantat
+  // imediat ce config-ul ajunge, chiar daca la pornire a picat reteaua
+  const [cfg, setCfg] = useState<any>(() => getConfig());
+  const refresh = useCallback(() => {
+    loadConfig().then(setCfg).catch(() => setCfg(getConfig()));
+  }, []);
+  useFocusEffect(refresh);
+  useEffect(() => { refresh(); }, [refresh]);
   const support = cfg?.support?.enabled ? cfg.support : null;
   const tgUrl = cfg?.telegram?.channelUrl;
   if (!support && !tgUrl) return null;

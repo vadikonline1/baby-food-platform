@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import HeroArt from '../components/HeroArt';
-import SupportSection from '../components/SupportSection';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -39,10 +38,14 @@ export default function Home() {
   const [popular, setPopular] = useState<any[]>([]);
   const [pool, setPool] = useState<any[]>([]);
   const [randomPick, setRandomPick] = useState<any[]>([]);
-  const [siteStats, setSiteStats] = useState<any>(null);
   const [heroCfg, setHeroCfg] = useState<any>(null);
+  const [appCfg, setAppCfg] = useState<any>(null);
   const heroTitle = heroCfg?.heroTitle?.[lang] || heroCfg?.heroTitle?.ro || t('home.heroTitle');
   const heroSubtitle = heroCfg?.heroSubtitle?.[lang] || heroCfg?.heroSubtitle?.ro || t('home.subtitle');
+  const support = appCfg?.support?.enabled ? appCfg.support : null;
+  const tgUrl = appCfg?.telegram?.channelUrl || '';
+  const supportTitle = support?.title?.[lang] || support?.title?.ro || '';
+  const supportText = support?.text?.[lang] || support?.text?.ro || '';
   const localeGuide = (t('home.items', { returnObjects: true }) as any[]) || [];
   const [guideApi, setGuideApi] = useState<any[] | null>(null);
   const guide = guideApi && guideApi.length ? guideApi : localeGuide;
@@ -51,8 +54,7 @@ export default function Home() {
   const guideBody = (g: any) => g.bodyRo !== undefined ? localized(g, 'body', lang) : g.a;
 
   useEffect(() => {
-    api.get('/stats').then(r => setSiteStats(r.data)).catch(() => {});
-    api.get('/settings/config').then(r => setHeroCfg(r.data.home)).catch(() => {});
+    api.get('/settings/config').then(r => { setHeroCfg(r.data.home); setAppCfg(r.data); }).catch(() => {});
     api.get('/content/guide').then(r => setGuideApi(r.data)).catch(() => {});
     api.get('/recipes', { params: { sort: 'popular', limit: 6 } }).then(r => setPopular(r.data.items)).catch(() => {});
     api.get('/recipes', { params: { limit: 24 } }).then(r => {
@@ -77,11 +79,11 @@ export default function Home() {
                 <Link to="/profil" className="btn-outline-light">{t('home.viewProfile')}</Link>
               )}
             </div>
-            {siteStats && (
+            {(support || tgUrl) && (
               <div className="hero-card inline">
-                <div><strong>{siteStats.recipes}</strong><span>{t('home.statsRecipes')}</span></div>
-                <div><strong>{siteStats.categories}</strong><span>{t('home.statsCategories')}</span></div>
-                <div><strong>{siteStats.ratings}</strong><span>{t('home.statsVotes')}</span></div>
+                {!!supportTitle && <strong style={{ width: '100%' }}>{supportTitle}</strong>}
+                {!!supportText && <span>{supportText}</span>}
+                {!!tgUrl && <a href={tgUrl} target="_blank" rel="noreferrer" className="btn-outline-light">📢 Telegram</a>}
               </div>
             )}
           </div>
@@ -90,8 +92,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <SupportSection />
 
       <section className="home-section">
         <div className="section-head">
