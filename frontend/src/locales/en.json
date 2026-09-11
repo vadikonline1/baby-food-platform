@@ -345,5 +345,9 @@
     "published": "Recipe published.",
     "saveFailed": "save failed",
     "forbidden": "Forbidden — Moderator/Admin only."
+  },
+  "support": {
+    "title": "Support the project 🎁",
+    "joinTelegram": "Join us on Telegram"
   }
 }

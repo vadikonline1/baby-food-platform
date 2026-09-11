@@ -345,5 +345,9 @@
     "published": "Rețeta a fost publicată.",
     "saveFailed": "salvare eșuată",
     "forbidden": "Acces interzis — doar Moderator/Admin."
+  },
+  "support": {
+    "title": "Susține proiectul 🎁",
+    "joinTelegram": "Abonează-te pe Telegram"
   }
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import HeroArt from '../components/HeroArt';
+import SupportSection from '../components/SupportSection';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -89,6 +90,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <SupportSection />
 
       <section className="home-section">
         <div className="section-head">
