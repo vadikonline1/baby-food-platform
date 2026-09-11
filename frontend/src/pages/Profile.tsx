@@ -4,7 +4,6 @@ import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { roleLabel } from '../lib/roles';
 import { useTranslation } from 'react-i18next';
-import SupportSection from '../components/SupportSection';
 
 export default function Profile() {
   const { user, refresh } = useAuth();
@@ -161,7 +160,6 @@ export default function Profile() {
           </div>
         </div>
       ))}</div>
-      <div style={{ marginTop: 18 }}><SupportSection /></div>
     </>
   );
 }

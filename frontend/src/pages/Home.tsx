@@ -39,13 +39,9 @@ export default function Home() {
   const [pool, setPool] = useState<any[]>([]);
   const [randomPick, setRandomPick] = useState<any[]>([]);
   const [heroCfg, setHeroCfg] = useState<any>(null);
-  const [appCfg, setAppCfg] = useState<any>(null);
+  const [tgUrl, setTgUrl] = useState('');
   const heroTitle = heroCfg?.heroTitle?.[lang] || heroCfg?.heroTitle?.ro || t('home.heroTitle');
   const heroSubtitle = heroCfg?.heroSubtitle?.[lang] || heroCfg?.heroSubtitle?.ro || t('home.subtitle');
-  const support = appCfg?.support?.enabled ? appCfg.support : null;
-  const tgUrl = appCfg?.telegram?.channelUrl || '';
-  const supportTitle = support?.title?.[lang] || support?.title?.ro || '';
-  const supportText = support?.text?.[lang] || support?.text?.ro || '';
   const localeGuide = (t('home.items', { returnObjects: true }) as any[]) || [];
   const [guideApi, setGuideApi] = useState<any[] | null>(null);
   const guide = guideApi && guideApi.length ? guideApi : localeGuide;
@@ -54,7 +50,7 @@ export default function Home() {
   const guideBody = (g: any) => g.bodyRo !== undefined ? localized(g, 'body', lang) : g.a;
 
   useEffect(() => {
-    api.get('/settings/config').then(r => { setHeroCfg(r.data.home); setAppCfg(r.data); }).catch(() => {});
+    api.get('/settings/config').then(r => { setHeroCfg(r.data.home); setTgUrl(r.data.telegram?.channelUrl || ''); }).catch(() => {});
     api.get('/content/guide').then(r => setGuideApi(r.data)).catch(() => {});
     api.get('/recipes', { params: { sort: 'popular', limit: 6 } }).then(r => setPopular(r.data.items)).catch(() => {});
     api.get('/recipes', { params: { limit: 24 } }).then(r => {
@@ -73,21 +69,15 @@ export default function Home() {
             <div className="cta-row">
               <Link to="/retete" className="btn-white">{t('home.explore')}</Link>
               <a href="#ghid" className="btn-outline-light">{t('home.guideBtn')}</a>
+              {!!tgUrl && <a href={tgUrl} target="_blank" rel="noreferrer" className="btn-outline-light">Telegram</a>}
               {!user ? (
                 <Link to="/register" className="btn-outline-light">{t('home.registerFree')}</Link>
               ) : (
                 <Link to="/profil" className="btn-outline-light">{t('home.viewProfile')}</Link>
               )}
-            </div>
-            {(support || tgUrl) && (
-              <div className="hero-card inline">
-                {!!supportTitle && <strong style={{ width: '100%' }}>{supportTitle}</strong>}
-                {!!supportText && <span>{supportText}</span>}
-                {!!tgUrl && <a href={tgUrl} target="_blank" rel="noreferrer" className="btn-outline-light">📢 Telegram</a>}
-              </div>
-            )}
           </div>
-          <div className="hero-side">
+        </div>
+        <div className="hero-side">
             <HeroArt />
           </div>
         </div>
