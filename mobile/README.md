@@ -10,8 +10,9 @@
 - **Meniu:** Rețete (carduri + filtru + căutare), Categorii, Plan (ghid + populare),
   Random Rețeta, Profil (push on/off, login opțional, editare nume/parolă, favorite, susținere).
 - **Fără cont obligatoriu:** votul merge ca guest (`deviceId`), favoritele guest în cache local.
-- **Reclame:** Banner **doar la finalul rețetei** (unit din remote config);
-  butonul „Susține proiectul” → Intercalat cu recompensă, fallback Cu recompensă.
+- **Reclame:** Banner pe Home (deasupra listei) + la finalul rețetei (unit din remote config,
+  fallback automat de test ca să fie mereu prezent); butonul „Susține proiectul” → Intercalat
+  cu recompensă, fallback Cu recompensă.
   ATENȚIE: App ID-urile AdMob sunt **build-time** (`app.json` plugin) — pune ID-urile
   reale înainte de buildul de producție (momentan `ca-app-pub-XXXX~XXXX`).
 - **Push:** token Expo înregistrat pe backend (`/push/tokens`); comutator în Profil.
@@ -29,6 +30,33 @@ npx expo start        # + Expo Go, sau:
 npm run android / npm run ios
 npm run typecheck
 ```
+
+## Test iOS pe Mac (Simulator)
+
+Build-ul CI produce `gustbebe-ios-simulator.zip` în Release-uri. Este un build
+**doar pentru iOS Simulator** — nu-l deschide cu dublu-click (macOS îl refuză).
+Rulează-l așa:
+
+```bash
+# 1. prima dată, instalează runtime-ul iOS pentru Simulator (download mare ~8 GB)
+xcodebuild -downloadPlatform iOS
+
+# 2. dezarhivează zip-ul descărcat din Release:
+unzip gustbebe-ios-simulator.zip        # → GustBebe.app
+
+# 3. bootează un dispozitiv și deschide Simulator:
+xcrun simctl boot "iPhone 17"
+open -a Simulator
+xcrun simctl bootstatus "iPhone 17" -b
+
+# 4. instalează și lansează aplicația:
+xcrun simctl install booted GustBebe.app
+xcrun simctl launch booted md.vadikonline1.gustbebe
+```
+
+> La fiecare versiune nouă: reia doar pașii 2–4 (zacul se dezarhivează peste
+> `GustBebe.app` existent). Pe iPhone fizic e nevoie de semnare Apple (EAS),
+> build-ul de Simulator nu poate fi instalat pe dispozitiv real.
 
 ## Build producție (EAS)
 
