@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
@@ -38,6 +38,7 @@ export default function RecipeDetail() {
   const [fav, setFav] = useState(false);
   const [views, setViews] = useState(0);
   const [related, setRelated] = useState<any[]>([]);
+  const [stores, setStores] = useState<{ android: string; ios: string }>({ android: '', ios: '' });
   const lang = i18n.language;
 
   useEffect(() => {
@@ -56,6 +57,10 @@ export default function RecipeDetail() {
       api.post(`/recipes/${data.id}/view`).then(v => setViews(v.data.views)).catch(() => {});
     });
   }, [slug]);
+  useEffect(() => {
+    // linkurile magazinelor (Play Store / App Store) le setăm din Admin → Setări → Magazine
+    api.get('/settings/config').then(r => setStores(r.data?.stores || { android: '', ios: '' })).catch(() => {});
+  }, []);
   if (!r) return <p>{t('common.loading')}</p>;
 
   const sendVote = async (v: number) => {
@@ -76,12 +81,28 @@ export default function RecipeDetail() {
   const stepsList = String(localized(r, 'steps', lang) || '').split('\n').map(s => s.trim()).filter(Boolean);
   const detailed = r.ingredientsDetailed || [];
 
+  // Încearcă să deschidă aplicația; dacă nu e instalată, după ~1.5s trimite la magazinul corespunzător.
+  const openApp = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const ua = navigator.userAgent || '';
+    const isAndroid = /android/i.test(ua);
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    const store = isAndroid
+      ? (stores.android || 'https://play.google.com/store/apps/details?id=md.vadikonline1.gustbebe')
+      : ios ? stores.ios : '';
+    try { window.location.href = `gustbebe://retete/${r.id}-${r.slug}`; } catch {}
+    setTimeout(() => {
+      // dacă aplicația a pornit, pagina sa și-a pierdut focusul → nu redirecționăm
+      if (document.visibilityState !== 'hidden' && store) window.location.href = store;
+    }, 1500);
+  };
+
   return (
     <article className="detail">
       <h1>{localized(r, 'title', lang)}</h1>
 
       {isTouchDevice && (
-        <a className="btn app-open" href={`gustbebe://retete/${r.id}-${r.slug}`}>
+        <a className="btn app-open" href={`gustbebe://retete/${r.id}-${r.slug}`} onClick={openApp}>
           📲 {t('app.openInApp')}
         </a>
       )}
