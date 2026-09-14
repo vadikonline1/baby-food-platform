@@ -273,10 +273,17 @@ jobs:
         id: version
         run: echo "app_version=$(node -p "require('./mobile/app.json').expo.version")" >> "$GITHUB_OUTPUT"
 
-      - name: Download artifacts
+      - name: Download APK artifacts
         uses: actions/download-artifact@v5
         with:
-          path: artifacts
+          name: android
+          path: artifacts/android
+
+      - name: Download iOS artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: ios
+          path: artifacts/ios
 
       - name: List artifacts
         run: find artifacts -maxdepth 2 -type f -exec ls -la {} \;
