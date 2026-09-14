@@ -82,6 +82,7 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: 
 /* ---- buttons ---- */
 .btn { background: var(--primary); color: #fff; border: 1px solid var(--primary); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14.5px; text-decoration: none; display: inline-block; }
 .btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn.app-open { display: block; width: 100%; text-align: center; margin: 12px 0 4px; font-size: 16px; }
 .btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
 .btn.secondary:hover { background: var(--primary-soft); border-color: var(--line-strong); }
 .btn.danger { background: #fff; color: var(--danger); border: 1px solid #f0c9c9; }

@@ -344,10 +344,15 @@
     "sentForReview": "Recipe sent to the administrator for review.",
     "published": "Recipe published.",
     "saveFailed": "save failed",
-    "forbidden": "Forbidden — Moderator/Admin only."
+    "forbidden": "Forbidden — Moderator/Admin only.",
+    "coverUploadErr": "Image upload failed.",
+    "removeCover": "Remove image"
   },
   "support": {
     "title": "Support the project 🎁",
     "joinTelegram": "Join us on Telegram"
+  },
+  "app": {
+    "openInApp": "Open in the GustBebe app"
   }
 }

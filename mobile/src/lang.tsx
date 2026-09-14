@@ -37,6 +37,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   vote: { ro: 'Votează', ru: 'Оценить', en: 'Rate' },
   save: { ro: 'Salvează', ru: 'Сохранить', en: 'Save' },
   saved: { ro: 'Salvat', ru: 'Сохранено', en: 'Saved' },
+  share: { ro: 'Distribuie', ru: 'Поделиться', en: 'Share' },
   search: { ro: 'Caută rețetă...', ru: 'Поиск рецепта...', en: 'Search recipe...' },
   filters: { ro: 'Filtre', ru: 'Фильтры', en: 'Filters' },
   apply: { ro: 'Aplică', ru: 'Применить', en: 'Apply' },

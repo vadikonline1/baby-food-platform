@@ -344,10 +344,15 @@
     "sentForReview": "Rețeta a fost trimisă spre validare către administrator.",
     "published": "Rețeta a fost publicată.",
     "saveFailed": "salvare eșuată",
-    "forbidden": "Acces interzis — doar Moderator/Admin."
+    "forbidden": "Acces interzis — doar Moderator/Admin.",
+    "coverUploadErr": "Eroare la încărcarea imaginii.",
+    "removeCover": "Șterge imaginea"
   },
   "support": {
     "title": "Susține proiectul 🎁",
     "joinTelegram": "Abonează-te pe Telegram"
+  },
+  "app": {
+    "openInApp": "Deschide în aplicația GustBebe"
   }
 }

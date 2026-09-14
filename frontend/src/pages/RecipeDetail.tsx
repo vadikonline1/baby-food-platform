@@ -4,6 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { api, localized, imgUrl, recipeUrl } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
+// dispozitiv tactil/mobil → afișăm butonul de deschidere în aplicația GustBebe
+const isTouchDevice =
+  typeof navigator !== 'undefined' &&
+  (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0);
+
 function Stars({ value, onPick, size = 30 }: { value: number; onPick?: (v: number) => void; size?: number }) {
   const { t } = useTranslation();
   const [hover, setHover] = useState(0);
@@ -74,6 +79,12 @@ export default function RecipeDetail() {
   return (
     <article className="detail">
       <h1>{localized(r, 'title', lang)}</h1>
+
+      {isTouchDevice && (
+        <a className="btn app-open" href={`gustbebe://retete/${r.id}-${r.slug}`}>
+          📲 {t('app.openInApp')}
+        </a>
+      )}
 
       <div className="detail-meta">
         <span className="meta-group">
