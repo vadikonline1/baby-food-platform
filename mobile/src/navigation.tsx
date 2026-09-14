@@ -3,7 +3,6 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
-import * as Linking from 'expo-linking';
 import HomeScreen from './screens/Home';
 import RecipeDetail from './screens/RecipeDetail';
 import RandomScreen from './screens/Random';
@@ -11,26 +10,10 @@ import ProfileScreen from './screens/Profile';
 import FavoritesScreen from './screens/Favorites';
 import { useLang, t } from './lang';
 import { useTheme } from './theme';
-import { getApiBase } from './api';
+import { apiOrigin } from './api';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-// Deep links: gustbebe://retete/{id}-{slug} (din butonul „Deschide în aplicație”
-// de pe web / canalul Telegram). Prefixul https îl lasă să răspundă și la URL-ul
-// clasic de site dacă OS-ul direcționează link-ul către aplicație.
-const linking = {
-  prefixes: [
-    'gustbebe://',
-    Linking.createURL('/'),
-    getApiBase() ? `${getApiBase().replace(/\/api\/?$/, '')}/` : '',
-  ].filter(Boolean) as string[],
-  config: {
-    screens: {
-      Detail: 'retete/:idAndSlug',
-    },
-  },
-};
 
 const icons: Record<string, string> = {
   'Acasa': '🏠',
@@ -72,6 +55,18 @@ function Tabs() {
 export default function Navigation() {
   const { lang } = useLang();
   const { c, isDark } = useTheme();
+  // Deep links: gustbebe://retete/{id}-{slug} (butonul „Deschide în aplicație”
+  // de pe web / canalul Telegram). Prefixul https răspunde și la URL-ul clasic de
+  // site dacă OS-ul direcționează link-ul către aplicație.
+  const origin = apiOrigin();
+  const linking = {
+    prefixes: ['gustbebe://', origin ? `${origin}/` : ''].filter(Boolean) as string[],
+    config: {
+      screens: {
+        Detail: 'retete/:idAndSlug',
+      },
+    },
+  };
   return (
     <NavigationContainer theme={(isDark ? DarkTheme : DefaultTheme) as any} linking={linking as any}>
       <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: c.primary }, headerTintColor: c.onPrimary }}>
