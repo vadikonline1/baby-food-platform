@@ -35,10 +35,14 @@ jobs:
 
       - name: Backend smoke
         working-directory: backend
+        env:
+          DATABASE_URL: "file:/tmp/ci.db"
+          PORT: "4001"
+          JWT_SECRET: "ci-secret-min-32-caractere-123456789"
+          APP_URL: "http://localhost:4001"
         run: |
           npm ci
           npx prisma generate
-          export DATABASE_URL="file:/tmp/ci.db" PORT=4001 JWT_SECRET=ci-secret-min-32-caractere-123456789 APP_URL=http://localhost:4001
           node --check src/index.js
           node --check src/resolve-dns.js
           npx prisma db push
