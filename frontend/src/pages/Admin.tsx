@@ -167,9 +167,10 @@ export default function Admin() {
             ))}
           </div>
           <Pager page={rPage} total={rTotal} onPage={p => loadRecipes(p)} />
-          <table className="admin"><thead><tr><th>Titlu</th><th>Status</th><th>⭐</th><th></th></tr></thead>
+          <table className="admin"><thead><tr><th>ID</th><th>Titlu</th><th>Status</th><th>⭐</th><th></th></tr></thead>
             <tbody>{recipes.map(r => (
               <tr key={r.id}>
+                <td className="meta">{r.id}</td>
                 <td>{r.titleRo}<br /><span className="meta">{r.author?.name}</span></td>
                 <td><span className={`pill ${r.status === 'DRAFT' ? 'warn' : 'ok'}`}>{r.status}</span></td>
                 <td>{Number(r.avgRating).toFixed(1)} ({r.ratingsCount})</td>

@@ -108,6 +108,12 @@ export default function RecipeDetail() {
             </button>
           </>
         )}
+        {user && (user.role === 'ADMIN' || user.id === r.authorId) && (
+          <>
+            <span className="meta-sep" />
+            <Link className="btn secondary small edit-meta" to={`/admin/retete/${r.id}/editeaza`}>✏️ {t('common.edit')}</Link>
+          </>
+        )}
       </div>
 
       <div className="detail-tags">

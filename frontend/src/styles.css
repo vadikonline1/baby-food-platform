@@ -242,6 +242,7 @@ pre { font-family: inherit; }
 
 /* ---- recipe detail ---- */
 .detail-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 14px; margin: 10px 0; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; box-shadow: var(--shadow); width: fit-content; max-width: 100%; }
+.detail-meta .btn.small.edit-meta { padding: 3px 12px; font-size: 13px; }
 .meta-group { display: inline-flex; align-items: center; gap: 6px; }
 .meta-sep { width: 1px; height: 20px; background: var(--line-strong); }
 .vote-inline .stars button { padding: 0 1px; }
