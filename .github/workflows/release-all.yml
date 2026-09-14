@@ -41,7 +41,7 @@ jobs:
           JWT_SECRET: "ci-secret-min-32-caractere-123456789"
           APP_URL: "http://localhost:4001"
         run: |
-          npm ci
+          for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
           npx prisma generate
           node --check src/index.js
           node --check src/resolve-dns.js
@@ -56,7 +56,7 @@ jobs:
       - name: Frontend build
         working-directory: frontend
         run: |
-          npm ci
+          for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
           npm run build
         env:
           VITE_API_URL: "/api"
@@ -118,7 +118,7 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: npm ci
+        run: for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
 
       - name: Typecheck
         run: npx tsc --noEmit
@@ -194,7 +194,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm ci
+        run: for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
 
       - name: Typecheck
         run: npx tsc --noEmit

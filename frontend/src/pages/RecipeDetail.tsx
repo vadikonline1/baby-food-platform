@@ -87,12 +87,11 @@ export default function RecipeDetail() {
     const ua = navigator.userAgent || '';
     const isAndroid = /android/i.test(ua);
     const ios = /iphone|ipad|ipod/i.test(ua);
-    const store = isAndroid
-      ? (stores.android || 'https://play.google.com/store/apps/details?id=md.vadikonline1.gustbebe')
-      : ios ? stores.ios : '';
+    // doar URL-ul configurat din Admin → Magazine aplicații (dacă există)
+    const store = isAndroid ? stores.android : ios ? stores.ios : '';
     try { window.location.href = `gustbebe://retete/${r.id}-${r.slug}`; } catch {}
     setTimeout(() => {
-      // dacă aplicația a pornit, pagina sa și-a pierdut focusul → nu redirecționăm
+      // dacă aplicația a pornit, pagina și-a pierdut focusul → nu redirecționăm
       if (document.visibilityState !== 'hidden' && store) window.location.href = store;
     }, 1500);
   };
