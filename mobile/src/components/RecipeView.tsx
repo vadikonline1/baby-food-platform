@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Share } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, localized, deviceId, imgUrl, apiOrigin } from '../api';
 import { BannerAdBlock } from '../ads';
@@ -76,6 +78,29 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
   const det = r.ingredientsDetailed || [];
   const img = imgUrl(r.imageUrl);
 
+  const escHtml = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const exportPdf = async () => {
+    try {
+      const html = `<html><head><meta charset="utf-8" />
+        <style>body{font-family:sans-serif;color:#1e2f2b;padding:24px}h1{font-size:24px}h2{font-size:18px;margin-top:18px;color:#0d6488}.meta{color:#5f7a70}li{margin-bottom:6px}img{max-width:100%;border-radius:12px}</style>
+        </head><body>
+        <h1>${escHtml(localized(r, 'title', lang))}</h1>
+        <p class="meta">⭐ ${Number(r.avgRating || 0).toFixed(1)} (${r.ratingsCount || 0}) · ⏱ ${(r.prepMinutes || 0) + (r.cookMinutes || 0)} min · 🍽 ${r.servings || ''}</p>
+        ${img ? `<img src="${img}" />` : ''}
+        ${localized(r, 'summary', lang) ? `<p>${escHtml(localized(r, 'summary', lang))}</p>` : ''}
+        <h2>${escHtml(t('ingredients', lang))}</h2>
+        ${det.length
+          ? `<ul>${det.map((d: any) => `<li><b>${escHtml(localized(d.ingredient, 'name', lang))}</b>${[d.quantity, d.unit].filter(Boolean).length ? ' — ' + escHtml([d.quantity, d.unit].filter(Boolean).join(' ')) : ''}</li>`).join('')}</ul>`
+          : `<p>${escHtml(localized(r, 'ingredients', lang))}</p>`}
+        <h2>${escHtml(t('prep', lang))}</h2>
+        <ol>${steps.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ol>
+        <p class="meta">GustBebe</p>
+        </body></html>`;
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
+    } catch {}
+  };
+
   return (
     <ScrollView style={s.wrap} contentContainerStyle={{ paddingBottom: 96 }}>
       {img ? (
@@ -107,6 +132,9 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
       <View style={s.actionRow}>
         <TouchableOpacity style={s.shareBtn} onPress={share}>
           <Text style={s.shareBtnText}>↗ {t('share', lang)}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.shareBtn} onPress={exportPdf}>
+          <Text style={s.shareBtnText}>🖨 PDF</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
           <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>

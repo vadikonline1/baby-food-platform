@@ -140,6 +140,7 @@ export default function RecipeDetail() {
         {(r.ageGroups || []).map((a: any) => <span key={a.ageGroupId} className="badge">{localized(a.ageGroup, 'label', lang)}</span>)}
         {r.feedingType && <span className="badge orange">{localized(r.feedingType, 'name', lang)}</span>}
         {(r.categories || []).map((c: any) => <span key={c.categoryId ?? c.category?.id} className="badge gray">{localized(c.category, 'name', lang)}</span>)}
+        <button className="btn secondary small" onClick={() => window.print()} style={{ marginLeft: 'auto' }}>🖨 {t('recipes.exportPdf')}</button>
       </div>
 
       {!user && (

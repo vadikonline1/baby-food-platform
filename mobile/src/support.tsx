@@ -44,7 +44,12 @@ export function SupportBlock() {
   useEffect(() => { refresh(); }, [refresh]);
   const support = cfg?.support?.enabled ? cfg.support : null;
   const tgUrl = cfg?.telegram?.channelUrl;
-  if (!support && !tgUrl) return null;
+  const donations = [
+    cfg?.donations?.bmc ? { label: '☕ Buy Me a Coffee', url: cfg.donations.bmc, bg: '#FFDD00', fg: '#000000' } : null,
+    cfg?.donations?.kofi ? { label: '🎨 Ko-fi', url: cfg.donations.kofi, bg: '#FF5E5B', fg: '#ffffff' } : null,
+    cfg?.donations?.mia ? { label: '💳 MIA', url: cfg.donations.mia, bg: c.pine, fg: '#ffffff' } : null
+  ].filter(Boolean) as { label: string; url: string; bg: string; fg: string }[];
+  if (!support && !tgUrl && !donations.length) return null;
 
   const title = support?.title?.[lang] || support?.title?.ro || t('supportFallback', lang);
   const text = support?.text?.[lang] || support?.text?.ro;
@@ -64,6 +69,19 @@ export function SupportBlock() {
           </TouchableOpacity>
         )}
       </View>
+      {!!donations.length && (
+        <View style={s.row}>
+          {donations.map((d) => (
+            <TouchableOpacity
+              key={d.label}
+              style={[s.btn, s.flex, { backgroundColor: d.bg }]}
+              onPress={() => Linking.openURL(d.url).catch(() => {})}
+            >
+              <Text style={[s.btnT, { color: d.fg }]}>{d.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

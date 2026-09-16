@@ -363,3 +363,13 @@ pre { font-family: inherit; }
   .hero-emerald { margin: -16px -14px 10px; }
   .nav { padding: 10px 12px; }
 }
+
+/* ---- print: export PDF reteta (doar continutul) ---- */
+@media print {
+  .nav, .footer, .cookie-banner, .cta-row, .vote-inline, .heart,
+  .btn, .link-more, .hero-side { display: none !important; }
+  body { background: #fff; }
+  .container { max-width: 100%; padding: 0; }
+  .detail-cover { max-height: 260px; }
+  .card, .panel, .guide-card, .faq-item { box-shadow: none; break-inside: avoid; }
+}

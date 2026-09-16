@@ -13,17 +13,14 @@
       "resizeMode": "contain",
       "backgroundColor": "#1486b7"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "md.vadikonline1.gustbebe"
     },
-
     "android": {
       "package": "md.vadikonline1.gustbebe",
       "googleServicesFile": "./google-services.json"
     },
-
     "plugins": [
       "./plugins/withAbiSplits",
       [
@@ -54,9 +51,9 @@
           "androidAppId": "ca-app-pub-9949545458988251~5938810628",
           "iosAppId": "ca-app-pub-9949545458988251~5938810628"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
-
     "extra": {
       "eas": {
         "projectId": "3f0b4b3e-8ea9-4671-9ffe-5ef549ad3f84"
@@ -64,11 +61,9 @@
       "apiDnsKey": "md.vadikonline1.gustbebe",
       "dnsSource": "https://raw.githubusercontent.com/vadikonline1/pi.hole/refs/heads/main/hosts_app_dns"
     },
-
     "updates": {
       "url": "https://u.expo.dev/3f0b4b3e-8ea9-4671-9ffe-5ef549ad3f84"
     },
-
     "runtimeVersion": {
       "policy": "appVersion"
     }

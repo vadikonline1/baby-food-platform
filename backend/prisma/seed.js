@@ -150,6 +150,7 @@ async function main() {
     smtp_host: '', smtp_port: '587', smtp_secure: 'false', smtp_user: '', smtp_pass: '', smtp_from: 'GustBebe <no-reply@gustbebe.md>',
     telegram_bot_token: '', telegram_channel_id: '', telegram_channel_admin: '',
     telegram_public_url: '',
+    donate_bmc_url: '', donate_kofi_url: '', donate_mia_url: '',
     app_ads_txt: 'google.com, pub-9949545458988251, DIRECT, f08c47fec0942fa0'
   };
   for (const [key, value] of Object.entries(defaults)) {

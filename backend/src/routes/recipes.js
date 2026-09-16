@@ -318,20 +318,16 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
       if (!title || !steps) {
         throw new Error(`randul ${i + 1}: completeaza titlul (titleRo/titlu) si pasii (stepsRo/pasi)`);
       }
-      // potrivire STRICT dupa ID (coloana obligatorie)
+      // potrivire dupa ID; titlul decide actualizare vs copie
       const rid = Number(b.id);
-      const existing = Number.isFinite(rid) && rid > 0
+      const byId = Number.isFinite(rid) && rid > 0
         ? await prisma.recipe.findUnique({ where: { id: rid } })
         : null;
-      if (!existing) {
-        out.skipped.push({
-          index: i, title,
-          reason: !Number.isFinite(rid) || rid <= 0
-            ? 'fara ID — rand ignorat (pune ID-ul din export ca sa actualizezi)'
-            : `ID ${rid} inexistent — rand ignorat`
-        });
-        continue;
-      }
+      const byTitle = await prisma.recipe.findFirst({ where: { titleRo: title } });
+      const target = byId && (byId.titleRo || '').trim() === title ? { recipe: byId, mode: 'update' }
+        : byId ? { recipe: byId, mode: 'copy', copyOf: byId.id }
+        : byTitle ? { recipe: byTitle, mode: 'copy', copyOf: byTitle.id }
+        : { recipe: null, mode: 'create' };
       const links = [];
       for (const it of (b.items || [])) {
         const iid = await ingIdByName(it.product || it.nameRo);
@@ -378,30 +374,34 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
         if (ageIds.length) await prisma.recipeAge.createMany({ data: ageIds.map((ageGroupId) => ({ recipeId, ageGroupId })) });
         if (links.length) await prisma.recipeIngredient.createMany({ data: links.map((l) => ({ ...l, recipeId })) });
       }
-      if ((existing.titleRo || '').trim() === title) {
+      if (target.mode === 'update') {
         // ID + titlu coincid -> ACTUALIZARE (statusul se schimba doar daca vine valid in CSV)
         await prisma.recipe.update({
-          where: { id: existing.id },
+          where: { id: target.recipe.id },
           data: { ...data, ...(validStatus ? { status: validStatus } : {}) }
         });
-        await relLinks(existing.id);
-        await refreshCover(existing.id);
-        await ensureCover(existing.id);
+        await relLinks(target.recipe.id);
+        await refreshCover(target.recipe.id);
+        await ensureCover(target.recipe.id);
         out.updated++;
       } else {
-        // ID exista dar titlul difera -> COPIE noua, mereu DRAFT, cu (copy ID n) in titlu
-        const copyTitle = `${title} (copy ID ${existing.id})`;
+        // ID inexistent/gol sau titlu diferit -> ADAUGARE; copiile dupa titlu duplicat merg DRAFT cu (copy ID n)
+        const isCopy = target.mode === 'copy';
+        const copyTitle = isCopy ? `${title} (copy ID ${target.copyOf})` : title;
         const created = await prisma.recipe.create({
           data: {
-            ...data, titleRo: copyTitle, titleRu: copyTitle, titleEn: copyTitle,
+            ...data,
+            titleRo: copyTitle, titleRu: isCopy ? copyTitle : (b.titleRu || title), titleEn: isCopy ? copyTitle : (b.titleEn || title),
             slug: slugify(copyTitle) + '-' + Date.now().toString(36),
-            status: 'DRAFT', authorId: req.user.id
+            status: isCopy ? 'DRAFT' : (validStatus || 'DRAFT'),
+            authorId: req.user.id
           }
         });
         await relLinks(created.id);
         await refreshCover(created.id);
         await ensureCover(created.id);
-        out.copied++;
+        if (isCopy) out.copied++;
+        else out.created++;
       }
     } catch (e) { out.failed.push({ index: i, title: b.titleRo || '', error: e.message }); }
   }

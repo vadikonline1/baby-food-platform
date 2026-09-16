@@ -33,6 +33,7 @@ const PUBLIC_KEYS = [
   'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid',
   'store_android_url', 'store_ios_url',
   'telegram_public_url',
+  'donate_bmc_url', 'donate_kofi_url', 'donate_mia_url',
   'home_hero_title_ro', 'home_hero_title_ru', 'home_hero_title_en',
   'home_hero_subtitle_ro', 'home_hero_subtitle_ru', 'home_hero_subtitle_en',
   'auth_google_enabled', 'auth_google_web_client_id', 'auth_google_ios_client_id', 'auth_google_android_client_id',
@@ -110,6 +111,11 @@ router.get('/config', async (req, res) => {
     },
     telegram: {
       channelUrl: m.telegram_public_url || ''
+    },
+    donations: {
+      bmc: m.donate_bmc_url || '',
+      kofi: m.donate_kofi_url || '',
+      mia: m.donate_mia_url || ''
     },
     home: {
       heroTitle: { ro: m.home_hero_title_ro || '', ru: m.home_hero_title_ru || '', en: m.home_hero_title_en || '' },

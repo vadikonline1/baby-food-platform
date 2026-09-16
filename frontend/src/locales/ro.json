@@ -127,7 +127,8 @@
     "about": "Despre",
     "ingredients": "Ingrediente",
     "prep": "Preparare",
-    "stars": "{{v}} stele"
+    "stars": "{{v}} stele",
+    "exportPdf": "Export PDF"
   },
   "filters": {
     "title": "Filtre",

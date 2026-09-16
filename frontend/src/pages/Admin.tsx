@@ -113,7 +113,7 @@ export default function Admin() {
       const { data } = await api.post('/recipes/import', { csv });
       const fails = (data.failed || []).slice(0, 3).map((x: any) => x.title || ('#' + x.index)).join('; ');
       const skips = (data.skipped || []).slice(0, 3).map((x: any) => `${x.title || ('#' + x.index)} (${x.reason})`).join('; ');
-      setImportMsg(`✓ Import: ${data.updated || 0} actualizate, ${data.copied || 0} copii draft${data.skipped?.length ? `, ${data.skipped.length} ignorate (${skips})` : ''}${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
+      setImportMsg(`✓ Import: ${data.created || 0} noi, ${data.updated || 0} actualizate, ${data.copied || 0} copii draft${data.skipped?.length ? `, ${data.skipped.length} ignorate (${skips})` : ''}${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
       loadRecipes(1, rStatus);
     } catch (err: any) {
       setImportMsg('Eroare import: ' + (err.response?.data?.error || 'fișier invalid'));
@@ -208,7 +208,7 @@ export default function Admin() {
                   <input type="file" accept=".csv,text/csv" hidden onChange={importRecipes} />
                 </label>
               </div>
-              <p className="meta">Potrivire strictă după <code>id</code>: ID + titlu egale → actualizează; ID existent + titlu diferit → copie nouă DRAFT „(copy ID n)”; fără ID sau ID inexistent → ignorat. Minim obligatoriu: <code>titlu</code> + <code>pasi</code>. Vârsta = minimul (ex: 8), ingredientele „produs | cantitate | unitate”, listele cu `|`.</p>
+              <p className="meta">Reguli: ID + titlu egale → actualizează; ID gol/inexistent → rețetă nouă (titlu duplicat → copie DRAFT „(copy ID n)”); ID existent + titlu diferit → copie DRAFT. Minim obligatoriu: <code>titlu</code> + <code>pasi</code>. Vârsta = minimul (ex: 8), ingredientele „produs | cantitate | unitate”, listele cu `|`.</p>
               {importMsg && <p className="notice">{importMsg}</p>}
             </>
           )}
@@ -390,6 +390,9 @@ function AppSettings() {
           {field('support_text_ru', 'Text RU')}
           {field('support_text_en', 'Text EN')}
           {field('telegram_public_url', 'Link canal Telegram (buton Abonare în aplicații)', 'https://t.me/...')}
+          {field('donate_bmc_url', 'Donație Buy Me a Coffee (URL, gol = ascuns)', 'https://buymeacoffee.com/...')}
+          {field('donate_kofi_url', 'Donație Ko-fi (URL, gol = ascuns)', 'https://ko-fi.com/...')}
+          {field('donate_mia_url', 'Donație MIA (URL, gol = ascuns)', 'https://...')}
         </div>
       </section>
       {msg && <p className="notice">{msg}</p>}

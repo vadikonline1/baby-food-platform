@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './lib/auth-context';
+import { api } from './lib/api';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import RecipeDetail from './pages/RecipeDetail';
@@ -20,6 +21,25 @@ import Conversations from './pages/Conversations';
 import Faq from './pages/Faq';
 import NotifBell from './components/NotifBell';
 import StoreBadges from './components/StoreBadges';
+
+// Butoane donații în footer (doar cele completate în Admin → Setări aplicație).
+function DonateRow() {
+  const [d, setD] = useState<any>(null);
+  useEffect(() => {
+    api.get('/settings/config').then(r => setD(r.data.donations)).catch(() => {});
+  }, []);
+  const btns = [
+    d?.bmc ? { label: '☕ Buy Me a Coffee', url: d.bmc } : null,
+    d?.kofi ? { label: '🎨 Ko-fi', url: d.kofi } : null,
+    d?.mia ? { label: '💳 MIA', url: d.mia } : null
+  ].filter(Boolean) as { label: string; url: string }[];
+  if (!btns.length) return null;
+  return (
+    <div className="store-badges">
+      {btns.map(b => <a key={b.label} className="btn secondary small" href={b.url} target="_blank" rel="noreferrer">{b.label}</a>)}
+    </div>
+  );
+}
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -77,6 +97,7 @@ export default function App() {
       </div>
       <footer className="footer">
         <StoreBadges />
+        <DonateRow />
         <nav>
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/retete">{t('nav.recipes')}</Link>

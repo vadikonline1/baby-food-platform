@@ -127,7 +127,8 @@
     "about": "About",
     "ingredients": "Ingredients",
     "prep": "Preparation",
-    "stars": "{{v}} stars"
+    "stars": "{{v}} stars",
+    "exportPdf": "Export PDF"
   },
   "filters": {
     "title": "Filters",
