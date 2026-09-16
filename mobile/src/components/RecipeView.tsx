@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api, localized, deviceId, imgUrl } from '../api';
+import { api, localized, deviceId, imgUrl, apiOrigin } from '../api';
 import { BannerAdBlock } from '../ads';
 import { useAuth } from '../store';
 import { Stars } from '../ui';
@@ -64,6 +64,13 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
     } catch {}
   };
 
+  // Distribuie link-ul web al rețetei (același link care se dă și pe Telegram)
+  const share = () => {
+    if (!r) return;
+    const url = `${apiOrigin()}/retete/${r.id}-${r.slug}`;
+    Share.share({ message: `${localized(r, 'title', lang)}\n${url}`, url }).catch(() => {});
+  };
+
   if (!r) return <View style={s.wrap}><Text>{t('loading', lang)}</Text></View>;
   const steps: string[] = String(localized(r, 'steps', lang) || '').split('\n').map((x) => x.trim()).filter(Boolean);
   const det = r.ingredientsDetailed || [];
@@ -97,9 +104,14 @@ export default function RecipeView({ recipe: initial }: { recipe: any }) {
       <Text style={s.h2}>{t('vote', lang)}{myVote ? ` (${myVote}/5)` : ''}</Text>
       <Stars value={myVote} onPick={vote} />
       <BannerAdBlock />
-      <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
-        <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
-      </TouchableOpacity>
+      <View style={s.actionRow}>
+        <TouchableOpacity style={s.shareBtn} onPress={share}>
+          <Text style={s.shareBtnText}>↗ {t('share', lang)}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.saveBtn, fav && s.saveBtnOn]} onPress={toggleFav}>
+          <Text style={[s.saveBtnText, fav && s.saveBtnTextOn]}>{fav ? `♥ ${t('saved', lang)}` : `♡ ${t('save', lang)}`}</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -125,8 +137,14 @@ const sx = (c: any) => ({
   sum: { fontSize: 15, marginBottom: 8, color: c.ink },
   h2: { fontSize: 18, fontWeight: '700' as const, marginTop: 14, marginBottom: 6, color: c.ink },
   li: { fontSize: 14, marginBottom: 5, color: c.ink },
-  saveBtn: { marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, backgroundColor: c.heart },
+  saveBtn: { marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, backgroundColor: c.heart, flex: 1 },
   saveBtnOn: { backgroundColor: c.saveOn },
   saveBtnText: { fontSize: 17, fontWeight: '700' as const, color: '#fff' },
   saveBtnTextOn: { color: '#fff' },
+  actionRow: { flexDirection: 'row' as const, gap: 10 },
+  shareBtn: {
+    marginTop: 18, padding: 14, borderRadius: 12, alignItems: 'center' as const, justifyContent: 'center' as const,
+    borderWidth: 1.5, borderColor: c.primary, flex: 1,
+  },
+  shareBtnText: { fontSize: 17, fontWeight: '700' as const, color: c.primary },
 });

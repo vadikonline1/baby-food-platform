@@ -94,8 +94,12 @@ export default function RecipeForm() {
     if (!f) return;
     const fd = new FormData();
     fd.append('image', f);
-    const { data } = await api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    setImageUrl(data.url);
+    try {
+      const { data } = await api.post('/upload', fd);
+      setImageUrl(data.url);
+    } catch {
+      setMsg(t('form.coverUploadErr'));
+    }
   };
 
   const setStep = (l: Lang, i: number, v: string) =>
@@ -124,7 +128,7 @@ export default function RecipeForm() {
       ageGroupIds: ageIds, feedingTypeId: feedId || undefined,
       categoryIds: catIds, restrictionIds: restrIds, characteristicIds: charIds,
       prepMinutes: Number(prep) || 10, cookMinutes: Number(cook) || 15, servings: Number(servings) || 2,
-      imageUrl: imageUrl || undefined
+      imageUrl: imageUrl ? imageUrl : null
     };
     try {
       if (editMode) {
@@ -217,7 +221,12 @@ export default function RecipeForm() {
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
             <section className="panel">
               <h3>{t('form.cover')}</h3>
-              {imageUrl && <img src={imgUrl(imageUrl)} alt="" className="cover-preview" />}
+              {imageUrl && (
+                <>
+                  <img src={imgUrl(imageUrl)} alt="" className="cover-preview" />
+                  <button type="button" className="btn danger small" onClick={() => setImageUrl('')}>{t('form.removeCover')}</button>
+                </>
+              )}
               <input type="file" accept="image/*" onChange={e => uploadCover(e.target.files?.[0])} />
             </section>
 

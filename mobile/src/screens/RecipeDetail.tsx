@@ -6,15 +6,18 @@ import { useTheme } from '../theme';
 import RecipeView from '../components/RecipeView';
 
 export default function RecipeDetail({ route }: any) {
-  const { id } = route.params;
+  // direct (carduri): { id, slug }; deep link web/Telegram: { idAndSlug: "12-piure-de-morcov" }
+  const deep = route.params?.idAndSlug != null ? String(route.params.idAndSlug) : null;
+  const id = deep ? parseInt(deep, 10) : route.params.id;
+  const slug = route.params.slug || (deep ? deep.replace(/^\d+-?/, '') : '');
   const { lang } = useLang();
   const { c } = useTheme();
   const [r, setR] = useState<any>(null);
 
   useEffect(() => {
-    api.get(`/recipes/${id}-${route.params.slug || ''}`).then((res) => setR(res.data)).catch(() => {});
+    api.get(`/recipes/${id}-${slug}`).then((res) => setR(res.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, slug]);
 
   if (!r) return <View style={{ flex: 1, backgroundColor: c.bg, padding: 16 }}><Text style={{ color: c.ink }}>{t('loading', lang)}</Text></View>;
   return <RecipeView recipe={r} />;

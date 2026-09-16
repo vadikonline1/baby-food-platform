@@ -10,6 +10,7 @@ import ProfileScreen from './screens/Profile';
 import FavoritesScreen from './screens/Favorites';
 import { useLang, t } from './lang';
 import { useTheme } from './theme';
+import { apiOrigin } from './api';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -54,8 +55,20 @@ function Tabs() {
 export default function Navigation() {
   const { lang } = useLang();
   const { c, isDark } = useTheme();
+  // Deep links: gustbebe://retete/{id}-{slug} (butonul „Deschide în aplicație”
+  // de pe web / canalul Telegram). Prefixul https răspunde și la URL-ul clasic de
+  // site dacă OS-ul direcționează link-ul către aplicație.
+  const origin = apiOrigin();
+  const linking = {
+    prefixes: ['gustbebe://', origin ? `${origin}/` : ''].filter(Boolean) as string[],
+    config: {
+      screens: {
+        Detail: 'retete/:idAndSlug',
+      },
+    },
+  };
   return (
-    <NavigationContainer theme={(isDark ? DarkTheme : DefaultTheme) as any}>
+    <NavigationContainer theme={(isDark ? DarkTheme : DefaultTheme) as any} linking={linking as any}>
       <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: c.primary }, headerTintColor: c.onPrimary }}>
         <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name="Detail" component={RecipeDetail} options={{ title: t('detailTitle', lang) }} />

@@ -1,0 +1,310 @@
+name: release-all
+
+# Workflow unic: la fiecare push pe `main` facem tot release-ul odata —
+# verificarea web (backend + frontend), imaginea Docker (GHCR) si aplicatia
+# mobila (Android APK + iOS Simulator), publicate impreuna intr-un singur
+# Release GitHub (tag `apk-main-<sha>`, feed-ul de actualizari in-app).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-all
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/vadikonline1/baby-food-platform
+
+jobs:
+  # 1) Verificare rapida web: sintaxa backend + smoke API + build frontend
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Backend smoke
+        working-directory: backend
+        env:
+          DATABASE_URL: "file:/tmp/ci.db"
+          PORT: "4001"
+          JWT_SECRET: "ci-secret-min-32-caractere-123456789"
+          APP_URL: "http://localhost:4001"
+        run: |
+          for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
+          npx prisma generate
+          node --check src/index.js
+          node --check src/resolve-dns.js
+          npx prisma db push
+          node prisma/seed.js
+          node src/index.js &
+          sleep 6
+          curl -fsS http://localhost:4001/api/health
+          curl -fsS http://localhost:4001/api/settings/config
+          curl -fsS "http://localhost:4001/api/recipes?limit=3"
+
+      - name: Frontend build
+        working-directory: frontend
+        run: |
+          for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
+          npm run build
+        env:
+          VITE_API_URL: "/api"
+
+  # 2) Imaginea Docker publicata in GHCR (serverul face doar pull + up -d)
+  docker:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 3) Android APK (expo prebuild + Gradle, fara credite EAS)
+  android:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Get app version
+        id: version
+        run: echo "app_version=$(node -p "require('./app.json').expo.version")" >> "$GITHUB_OUTPUT"
+
+      - name: Copy google-services.json (FCM push)
+        run: cp ../google-services.json ./google-services.json
+
+      - name: Embed build SHA (in-app update feed)
+        run: |
+          node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.extra.build_sha='${{ github.sha }}';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
+          echo "embedded build_sha=${{ github.sha }}"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate native android project (expo prebuild)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Pin Kotlin Gradle Plugin to 2.3.0
+        # play-services-ads >= 25.3 (folosit de react-native-google-mobile-ads 16.5)
+        # e compilat cu Kotlin 2.3.0 -> compilatorul trebuie sa fie >= 2.3.0.
+        run: |
+          sed -i.bak "s/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0')/" android/build.gradle
+          if ! grep -q "kotlin-gradle-plugin:2.3.0" android/build.gradle; then
+            echo "::error::Nu am gasit linia kotlin-gradle-plugin in android/build.gradle"
+            exit 1
+          fi
+          rm -f android/build.gradle.bak
+
+      - name: Configure Gradle heap + local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          if [ -f android/gradle.properties ]; then
+            printf '\norg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m\norg.gradle.daemon=false\n' >> android/gradle.properties
+          fi
+
+      - name: Build release APK
+        # -Pexpo.inlineModules.watchedDirectories='[]' ocoleste un bug
+        # expo-modules-autolinking@57 (vezi istoricul workflow-ului).
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon -Pexpo.inlineModules.watchedDirectories='[]'
+          cd ..
+
+      - name: Upload APK (artifact)
+        uses: actions/upload-artifact@v5
+        with:
+          name: android
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  # 4) iOS pentru Simulator (nesemnat, xcodebuild)
+  ios:
+    needs: check
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: for i in 1 2 3; do npm ci && break; echo "npm ci retry $i"; sleep 15; done
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Get app version
+        id: version
+        run: echo "app_version=$(node -p "require('./app.json').expo.version")" >> "$GITHUB_OUTPUT"
+
+      - name: Generate native ios project (expo prebuild)
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods --no-document || true
+          cd ios
+          if [ -f Podfile ]; then pod install; fi
+          cd ..
+
+      - name: Build iOS app (simulator, unsigned)
+        run: |
+          cd ios
+          WS=$(find . -maxdepth 1 -type d -name '*.xcworkspace' | head -1)
+          if [ -z "$WS" ]; then WS=$(ls -1d *.xcworkspace 2>/dev/null | head -1); fi
+          echo "workspace=${WS:-<none>}"
+          # Schema = numele workspace-ului (GustBebe), nu EASClient.
+          APP_NAME=$(basename "$WS" .xcworkspace)
+          LIST=$(xcodebuild -list -workspace "$WS" 2>/dev/null | sed -n '/Schemes:/,$p' | tail -n +2)
+          if echo "$LIST" | grep -q "^[[:space:]]*${APP_NAME}[[:space:]]*$"; then
+            SCHEME="$APP_NAME"
+          else
+            SCHEME=$(echo "$LIST" | grep -v '^\s*$' | grep -iv 'pod' | grep -iv 'EASClient' | head -1 | xargs)
+          fi
+          echo "scheme=${SCHEME:-<none>}"
+          if [ -z "$SCHEME" ]; then echo "::error::Could not detect an Xcode scheme under ios/"; exit 1; fi
+          xcodebuild -workspace "$WS" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          cd ..
+
+      - name: Zip iOS app for Release asset
+        run: |
+          cd ios/build/Build/Products/Release-iphonesimulator
+          APP=$(find . -maxdepth 1 -name '*.app' | head -1)
+          echo "app=${APP:-<none>}"
+          if [ -z "$APP" ]; then echo "::error::No .app found for zip"; exit 1; fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$GITHUB_WORKSPACE/mobile/gustbebe-ios-simulator.zip"
+          ls -la "$GITHUB_WORKSPACE/mobile/gustbebe-ios-simulator.zip"
+
+      - name: Upload iOS app (artifact)
+        uses: actions/upload-artifact@v5
+        with:
+          name: ios
+          path: mobile/gustbebe-ios-simulator.zip
+          if-no-files-found: error
+
+  # 5) Publicare intr-un SINGUR Release, cu toate asset-urile impreuna
+  release:
+    needs: [android, ios, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Get app version
+        id: version
+        run: echo "app_version=$(node -p "require('./mobile/app.json').expo.version")" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: android
+          path: artifacts/android
+
+      - name: Download iOS artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: ios
+          path: artifacts/ios
+
+      - name: List artifacts
+        run: find artifacts -maxdepth 2 -type f -exec ls -la {} \;
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: apk-main-${{ github.sha }}
+          name: Release ${{ github.ref_name }} (${{ github.sha }})
+          body: |
+            Release unic pe commit: Web + Docker + Android + iOS.
+
+            **Android (telefoane):** `app-arm64-v8a-release.apk` (modern) sau `app-armeabi-v7a-release.apk` (vechi, 32-bit).
+            **iOS:** `gustbebe-ios-simulator.zip` — doar pentru Simulator (nesemnat); pe iPhone fizic e nevoie de certificat Apple (EAS Submit).
+            **Web/Docker (server):** `ghcr.io/vadikonline1/baby-food-platform` (tag-urile `:latest` și `:sha-${{ github.sha }}`) — pe server: `docker compose pull && docker compose up -d`.
+
+            **Versiune aplicație:** ${{ steps.version.outputs.app_version }}
+            **Actualizări in-app:** aplicația verifică singură tag-urile `apk-main-*`.
+          files: |
+            artifacts/android/*.apk
+            artifacts/ios/gustbebe-ios-simulator.zip
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
