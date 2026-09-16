@@ -6,7 +6,8 @@ import { api } from './api';
 export type RemoteConfig = {
   admob: { android: any; ios: any };
   support: { enabled: boolean; title: any; text: any };
-  telegram?: { channelUrl?: string };
+  telegram?: { channelUrl?: string; botUsername?: string };
+  donations?: { bmc?: string; kofi?: string; mia?: string };
   auth: any;
   firebase: any;
 };

@@ -8,6 +8,7 @@ const { postRecipe, postRecipeAsync, notifyAdminAsync } = require('../lib/telegr
 const coverLib = require('../lib/cover');
 const csvLib = require('../lib/csv');
 const { notify } = require('./notifications');
+const { notifyUser, notifyAdmins } = require('./notifications');
 const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
 const router = express.Router();
@@ -204,8 +205,12 @@ router.get('/random', async (req, res) => {
 });
 
 // GET by id pentru editare — MOD doar propriile retete (inainte de /:slug)
+// include si istoria respingerilor (vizibila autorului + adminului)
 router.get('/by-id/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, res) => {
-  const recipe = await prisma.recipe.findUnique({ where: { id: Number(req.params.id) }, include: recipeInclude });
+  const recipe = await prisma.recipe.findUnique({
+    where: { id: Number(req.params.id) },
+    include: { ...recipeInclude, rejections: { orderBy: { createdAt: 'desc' } } }
+  });
   if (!recipe) return res.status(404).json({ error: 'not_found' });
   if (req.user.role === 'MODERATOR' && recipe.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
   res.json(recipe);
@@ -529,6 +534,12 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
       const author = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
       await notify('recipe_pending', `Rețetă de validat: ${recipe.titleRo}`, `Autor: ${author?.name || ''}`, `/admin/retete/${recipe.id}/editeaza`);
       notifyAdminAsync(`📝 <b>Rețetă nouă de validat</b>\n${recipe.titleRo}\nAutor: ${author?.name || ''}`);
+      // email catre admini (profil) + Telegram DM (chat_id din profil)
+      notifyAdmins(
+        `Rețetă nouă de validat: ${recipe.titleRo}`,
+        `<p>O rețetă nouă așteaptă validarea: <b>${recipe.titleRo}</b></p><p>Autor: ${author?.name || ''}</p>`,
+        `📝 Rețetă nouă de validat: ${recipe.titleRo} (autor: ${author?.name || ''})`
+      );
     }
     res.status(201).json(recipe);
   } catch (e) {
@@ -598,18 +609,42 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
   }
 });
 
-// aprobare / respingere in draft — ADMIN only
+// aprobare / respingere in draft — ADMIN only (respingerea cere motiv + ramane in istorie)
 router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res) => {
-  const { status } = req.body || {};
+  const { status, reason } = req.body || {};
   if (!['DRAFT', 'PUBLISHED'].includes(status)) return res.status(400).json({ error: 'invalid_status' });
-  const recipe = await prisma.recipe.update({ where: { id: Number(req.params.id) }, data: { status }, include: recipeInclude });
+  const id = Number(req.params.id);
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const recipe = await prisma.recipe.update({ where: { id }, data: { status }, include: recipeInclude });
   if (status === 'PUBLISHED') {
-    const cover = await refreshCover(Number(req.params.id));
+    // aprobare: se sterge istoria respingerilor (nu ocupa memorie)
+    await prisma.recipeRejection.deleteMany({ where: { recipeId: id } }).catch(() => {});
+    const cover = await refreshCover(id);
     if (cover) recipe.imageUrl = cover;
-    const defCover = await ensureCover(Number(req.params.id));
+    const defCover = await ensureCover(id);
     if (defCover) recipe.imageUrl = defCover;
     postRecipeAsync(recipe);
     pushNewRecipeAsync(recipe);
+    if (recipe.authorId) {
+      notifyUser(
+        recipe.authorId,
+        `Rețeta aprobată: ${recipe.titleRo}`,
+        `<p>Rețeta <b>${esc(recipe.titleRo)}</b> a fost publicată. Felicitări!</p>`,
+        `✅ Rețeta a fost publicată: ${recipe.titleRo}`
+      );
+    }
+  } else if (status === 'DRAFT' && reason && String(reason).trim()) {
+    await prisma.recipeRejection.create({
+      data: { recipeId: id, reason: String(reason).slice(0, 500), createdById: req.user.id }
+    });
+    if (recipe.authorId) {
+      notifyUser(
+        recipe.authorId,
+        `Rețeta respinsă: ${recipe.titleRo}`,
+        `<p>Rețeta <b>${esc(recipe.titleRo)}</b> a fost respinsă.</p><p>Motiv: ${esc(reason)}</p><p>Corecteaz-o și va fi reanalizată.</p>`,
+        `❌ Rețetă respinsă: ${recipe.titleRo}\nMotiv: ${String(reason).slice(0, 300)}`
+      );
+    }
   }
   res.json(recipe);
 });

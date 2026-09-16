@@ -11,6 +11,32 @@ async function notify(type, title, body, link) {
   } catch (e) { console.error('[notify]', e.message); }
 }
 
+// notificare catre un utilizator: email (din profil, daca SMTP e configurat)
+// + Telegram DM (daca botul e configurat si userul are chat_id in profil)
+async function notifyUser(userId, subject, html, tgText) {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: Number(userId) } });
+    if (!u) return;
+    const { sendMail } = require('../lib/mail');
+    await sendMail(u.email, subject, html).catch((e) => console.error('[notify] mail:', e.message));
+    if (u.telegramChatId) {
+      const { sendDirect } = require('../lib/telegram');
+      await sendDirect(u.telegramChatId, tgText || subject).catch(() => {});
+    }
+  } catch (e) { console.error('[notify] user:', e.message); }
+}
+
+// notificare catre toti ADMINII (email din profil + Telegram DM din profil)
+async function notifyAdmins(subject, html, tgText) {
+  try {
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
+    for (const a of admins) {
+      // eslint-disable-next-line no-await-in-loop
+      await notifyUser(a.id, subject, html, tgText);
+    }
+  } catch (e) { console.error('[notify] admins:', e.message); }
+}
+
 // GET /api/notifications?unread=1 — ADMIN
 router.get('/', authRequired, roleRequired('ADMIN'), async (req, res) => {
   const { unread, limit = '20' } = req.query;
@@ -36,3 +62,5 @@ router.patch('/:id/read', authRequired, roleRequired('ADMIN'), async (req, res) 
 
 module.exports = router;
 module.exports.notify = notify;
+module.exports.notifyUser = notifyUser;
+module.exports.notifyAdmins = notifyAdmins;

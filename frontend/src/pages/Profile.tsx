@@ -11,6 +11,8 @@ export default function Profile() {
   const [favs, setFavs] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [msg, setMsg] = useState('');
+  const [tgId, setTgId] = useState('');
+  const [botName, setBotName] = useState('');
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
   const [pwMsg, setPwMsg] = useState('');
@@ -25,10 +27,12 @@ export default function Profile() {
   useEffect(() => {
     api.get('/users/me/favorites').then(r => setFavs(r.data)).catch(() => {});
     api.get('/author-requests/mine').then(r => setAreq(r.data)).catch(() => {});
+    api.get('/settings/config').then(r => setBotName(r.data.telegram?.botUsername || '')).catch(() => {});
     refresh();
   }, []);
   useEffect(() => {
     if (user) setName(user.name);
+    if (user) setTgId(user.telegramChatId || '');
     // test nou (5 intrebari random) la fiecare incercare noua sau re-examinare
     if (user?.role === 'USER' && (!areq || areq.status === 'REJECTED')) {
       api.get(`/author-requests/quiz?lang=${i18n.language}`).then(r => { setQuiz(r.data); setQans({}); }).catch(() => {});
@@ -67,7 +71,7 @@ export default function Profile() {
   const saveName = async (e: any) => {
     e.preventDefault(); setMsg('');
     try {
-      await api.patch('/auth/me', { name });
+      await api.patch('/auth/me', { name, telegramChatId: tgId.trim() || '' });
       await refresh(); setMsg('✓');
     } catch { setMsg(t('profile.saveErr')); }
   };
@@ -133,6 +137,9 @@ export default function Profile() {
           <form onSubmit={saveName} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label>{t('profile.name')}<input value={name} onChange={e => setName(e.target.value)} /></label>
             <label>{t('profile.emailLocked')}<input value={user.email} disabled style={{ opacity: 0.6 }} /></label>
+            <label>{t('profile.tgChatId')}<input value={tgId} onChange={e => setTgId(e.target.value)} inputMode="numeric" placeholder="123456789" /></label>
+            <p className="meta">{t('profile.tgHint')}</p>
+            {!!botName && <p className="meta">{t('profile.tgNote')} <a href={`https://t.me/${botName}`} target="_blank" rel="noreferrer">https://t.me/{botName}</a></p>}
             <div><button className="btn small">{t('profile.save')} {msg}</button></div>
           </form>
         </section>

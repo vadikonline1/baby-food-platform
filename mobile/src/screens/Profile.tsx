@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api } from '../api';
 import { useAuth } from '../store';
@@ -26,12 +26,23 @@ export default function ProfileScreen() {
   const [err, setErr] = useState('');
   const [cur, setCur] = useState('');
   const [npw, setNpw] = useState('');
+  const [tgId, setTgId] = useState('');
+  const [botName, setBotName] = useState('');
   const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {
     isPushEnabled().then(setPush);
+    api.get('/settings/config').then((r) => setBotName(r.data.telegram?.botUsername || '')).catch(() => {});
     if (Platform.OS === 'android') checkForUpdate(true).then(setHasUpdate).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      if (!name) setName(user.name || '');
+      setTgId((user as any).telegramChatId || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const togglePush = async (v: boolean) => {
     setPush(v);
@@ -53,7 +64,7 @@ export default function ProfileScreen() {
   };
 
   const saveName = async () => {
-    try { await api.patch('/auth/me', { name }); await refresh(); Alert.alert('OK', t('okSaved', lang)); }
+    try { await api.patch('/auth/me', { name, telegramChatId: tgId.trim() }); await refresh(); Alert.alert('OK', t('okSaved', lang)); }
     catch { Alert.alert(t('details', lang), t('errSave', lang)); }
   };
   const savePw = async () => {
@@ -98,6 +109,11 @@ export default function ProfileScreen() {
           <Text style={s.m}>{user.email}</Text>
           <TextInput style={s.in} placeholder={t('newName', lang)} value={name} onChangeText={setName} />
           <TouchableOpacity style={s.btn} onPress={saveName}><Text style={s.btnT}>{t('saveName', lang)}</Text></TouchableOpacity>
+          <TextInput style={s.in} placeholder={t('tgChatId', lang)} value={tgId} onChangeText={setTgId} keyboardType="numeric" />
+          <Text style={s.m}>{t('tgHint', lang)}</Text>
+          {!!botName && (
+            <Text style={s.m}>{t('tgNote', lang)} <Text style={{ fontWeight: '700', color: c.primary }} onPress={() => Linking.openURL(`https://t.me/${botName}`)}>https://t.me/{botName}</Text></Text>
+          )}
           <TextInput style={s.in} placeholder={t('curPass', lang)} value={cur} onChangeText={setCur} secureTextEntry />
           <TextInput style={s.in} placeholder={t('newPass', lang)} value={npw} onChangeText={setNpw} secureTextEntry />
           <TouchableOpacity style={s.btn} onPress={savePw}><Text style={s.btnT}>{t('changePass', lang)}</Text></TouchableOpacity>

@@ -158,12 +158,12 @@ export default function RecipeDetail() {
           </section>
         )}
         {summary && (
-          <section className="panel">
+          <section className="panel sum-panel">
             <h3>{t('recipes.about')}</h3>
             <p className="lead">{summary}</p>
           </section>
         )}
-        <section className="panel">
+        <section className="panel ing-panel">
           <h3>{t('recipes.ingredients')}</h3>
           {detailed.length ? (
             <ul className="ing-list">
@@ -179,7 +179,7 @@ export default function RecipeDetail() {
             <pre className="pre">{localized(r, 'ingredients', lang)}</pre>
           )}
         </section>
-        <section className="panel">
+        <section className="panel steps-panel">
           <h3>{t('recipes.prep')}</h3>
           {stepsList.length > 1 ? (
             <ol className="steps-list">

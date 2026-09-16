@@ -372,4 +372,15 @@ pre { font-family: inherit; }
   .container { max-width: 100%; padding: 0; }
   .detail-cover { max-height: 260px; }
   .card, .panel, .guide-card, .faq-item { box-shadow: none; break-inside: avoid; }
+  /* layout PDF: poza dreapta + descriere stanga; ingrediente alaturi de pasi */
+  article.detail h1 { text-align: center; }
+  article.detail .detail-meta { justify-content: center; }
+  article.detail .detail-grid { display: block; }
+  article.detail .photo-panel { float: right; width: 40%; margin: 0 0 10px 14px; }
+  article.detail .sum-panel { overflow: hidden; }
+  article.detail .detail-grid > .sum-panel:first-child .lead { text-align: center; }
+  article.detail .ing-panel, article.detail .steps-panel {
+    display: inline-block; width: 48%; vertical-align: top;
+  }
+  article.detail .ing-panel { margin-right: 3%; }
 }

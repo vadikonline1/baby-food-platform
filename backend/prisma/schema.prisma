@@ -17,6 +17,7 @@ model User {
   role         String   @default("USER")
   lang         String   @default("ro")
   avatarUrl    String?
+  telegramChatId String?
   emailVerified Boolean  @default(false)
   verifyToken   String?  @unique
   verifyExpires DateTime?
@@ -115,6 +116,7 @@ model Recipe {
   guestVotes      GuestVote[]
   views           RecipeView[]
   favoritedBy     Favorite[]
+  rejections     RecipeRejection[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -275,6 +277,17 @@ model RecipeView {
   identHash String
   createdAt DateTime @default(now())
   @@unique([recipeId, day, identHash])
+}
+
+// Istoric respingeri la aprobare: motivul ramane pana la publicare,
+// dupa aprobare se sterge (nu ocupa memorie)
+model RecipeRejection {
+  id          Int      @id @default(autoincrement())
+  recipeId    Int
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  reason      String
+  createdById Int?
+  createdAt   DateTime @default(now())
 }
 
 // Banca de intrebari pentru testul de Autor (gestionata din Admin → Continut)

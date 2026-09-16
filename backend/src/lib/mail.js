@@ -21,8 +21,7 @@ async function transporter() {
   });
 }
 
-async function sendVerifyEmail(to, name, verifyUrl) {
-  const from = await getValue('SMTP_FROM', null, 'GustBebe <no-reply@gustbebe.md>');
+async function sendVerifyEmail(to, name, verifyUrl) {  const from = await getValue('SMTP_FROM', null, 'GustBebe <no-reply@gustbebe.md>');
   if (!(await smtpConfigured())) {
     console.log(`[mail/dev] link verificare pentru ${to}: ${verifyUrl}`);
     return { dev: true, verifyUrl };
@@ -36,4 +35,16 @@ async function sendVerifyEmail(to, name, verifyUrl) {
   return { dev: false };
 }
 
-module.exports = { sendVerifyEmail, smtpConfigured };
+// email generic (notificari): silentios daca SMTP lipseste
+async function sendMail(to, subject, html) {
+  if (!to) return { skipped: true };
+  const from = await getValue('SMTP_FROM', null, 'GustBebe <no-reply@gustbebe.md>');
+  if (!(await smtpConfigured())) {
+    console.log(`[mail/dev] catre ${to}: ${subject}`);
+    return { dev: true };
+  }
+  await (await transporter()).sendMail({ from, to, subject, html });
+  return { dev: false };
+}
+
+module.exports = { sendVerifyEmail, sendMail, smtpConfigured };

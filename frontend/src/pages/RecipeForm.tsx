@@ -43,6 +43,7 @@ export default function RecipeForm() {
   const [servings, setServings] = useState('2');
   const [imageUrl, setImageUrl] = useState('');
   const [msg, setMsg] = useState('');
+  const [rejections, setRejections] = useState<any[]>([]);
 
   useEffect(() => {
     api.get('/taxonomies/ages').then(r => setAges(r.data)).catch(() => {});
@@ -69,6 +70,7 @@ export default function RecipeForm() {
         setCharIds((r.characteristics || []).map((c: any) => c.characteristicId ?? c.characteristic?.id));
         setPrep(String(r.prepMinutes)); setCook(String(r.cookMinutes)); setServings(String(r.servings));
         setImageUrl(r.imageUrl || '');
+        setRejections(r.rejections || []);
       }).catch(() => setMsg(t('form.loadErr')));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,6 +169,16 @@ export default function RecipeForm() {
     <>
       <p><Link to="/admin">{t('form.backToPanel')}</Link></p>
       <h1>{editMode ? t('form.editRecipe') : t('form.addRecipe')}</h1>
+      {!!rejections.length && (
+        <div className="notice" style={{ borderColor: '#f0c9c9', background: '#fef2f2', marginBottom: 16 }}>
+          <strong>{t('form.rejectedNotice')}</strong>
+          <ul className="dash-list" style={{ marginTop: 8 }}>
+            {rejections.map((x: any) => (
+              <li key={x.id}>{t('form.rejectedReason')}: {x.reason} <span className="meta">· {new Date(x.createdAt).toLocaleString()}</span></li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="langtabs">
         {(['ro', 'ru', 'en'] as Lang[]).map(l => (

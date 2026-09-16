@@ -112,4 +112,17 @@ function notifyAdminAsync(text) {
   );
 }
 
-module.exports = { postRecipe, postRecipeAsync, notifyAdmin, notifyAdminAsync, caption };
+// mesaj direct catre un chat (DM): necesita bot configurat + chat_id din profil
+async function sendDirect(chatId, text) {
+  if (!chatId) return { skipped: true };
+  const { token } = await cfg();
+  if (!token) return { skipped: true };
+  try {
+    return await tg(token, 'sendMessage', { chat_id: String(chatId), text, parse_mode: 'HTML', disable_web_page_preview: true });
+  } catch (e) {
+    console.error('[telegram] direct failed:', e.message);
+    return { failed: true };
+  }
+}
+
+module.exports = { postRecipe, postRecipeAsync, notifyAdmin, notifyAdminAsync, caption, sendDirect };

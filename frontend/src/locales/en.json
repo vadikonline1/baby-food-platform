@@ -296,7 +296,10 @@
     "arExperienceShort": "Experience too short (you have {{n}}, minimum 10 characters).",
     "arPending": "You already have a pending request.",
     "arPrivileged": "You already have publishing rights — reload the page.",
-    "arErr": "Submission error, try again."
+    "arErr": "Submission error, try again.",
+    "tgChatId": "Telegram chat ID",
+    "tgHint": "Get Telegram notifications (approved/rejected recipes) if the bot is configured.",
+    "tgNote": "Get your telegram ID from our bot:"
   },
   "form": {
     "backToPanel": "← Back to panel",
@@ -350,7 +353,9 @@
     "removeCover": "Remove image",
     "saveAsDraft": "Save as draft",
     "publish": "Publish",
-    "incompletePublish": "Recipe is incomplete for publishing (title, steps, ingredient, age, category, photo) — saved as draft."
+    "incompletePublish": "Recipe is incomplete for publishing (title, steps, ingredient, age, category, photo) — saved as draft.",
+    "rejectedNotice": "Recipe was rejected — fix it per the reason, then save again.",
+    "rejectedReason": "Reason"
   },
   "support": {
     "title": "Support the project 🎁",

@@ -17,6 +17,7 @@ const SERVER_KEYS = [
   { db: 'smtp_pass', env: 'SMTP_PASS' },
   { db: 'smtp_from', env: 'SMTP_FROM' },
   { db: 'telegram_bot_token', env: 'TELEGRAM_BOT_TOKEN' },
+  { db: 'telegram_bot_username', env: 'TELEGRAM_BOT_USERNAME' },
   { db: 'telegram_channel_id', env: 'TELEGRAM_CHANNEL_ID' },
   { db: 'telegram_topic_id', env: 'TELEGRAM_TOPIC_ID' },
   { db: 'telegram_channel_admin', env: 'TELEGRAM_CHANNEL_ADMIN' }
@@ -33,6 +34,7 @@ const PUBLIC_KEYS = [
   'firebase_web_storagebucket', 'firebase_web_senderid', 'firebase_web_appid', 'firebase_web_measurementid',
   'store_android_url', 'store_ios_url',
   'telegram_public_url',
+  'telegram_bot_username',
   'donate_bmc_url', 'donate_kofi_url', 'donate_mia_url',
   'home_hero_title_ro', 'home_hero_title_ru', 'home_hero_title_en',
   'home_hero_subtitle_ro', 'home_hero_subtitle_ru', 'home_hero_subtitle_en',
@@ -110,7 +112,8 @@ router.get('/config', async (req, res) => {
       ios: m.store_ios_url || ''
     },
     telegram: {
-      channelUrl: m.telegram_public_url || ''
+      channelUrl: m.telegram_public_url || '',
+      botUsername: (m.telegram_bot_username || '').replace(/^@/, '')
     },
     donations: {
       bmc: m.donate_bmc_url || '',

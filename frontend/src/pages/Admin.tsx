@@ -73,6 +73,13 @@ export default function Admin() {
     setRecipes(recipes.map(r => (r.id === id ? { ...r, status: 'PUBLISHED' } : r)));
     api.get('/users/stats/overview').then(r => setStats(r.data)).catch(() => {});
   };
+  const rejectRecipe = async (id: number, title: string) => {
+    const reason = prompt(`Motivul respingerii rețetei „${title}”? (autorul îl vede și poate corecta)`);
+    if (!reason || !reason.trim()) return;
+    await api.patch(`/recipes/${id}/status`, { status: 'DRAFT', reason: reason.trim() });
+    alert('✓ Respinsă cu motiv — autorul a fost notificat.');
+    loadRecipes();
+  };
   const delRecipe = async (id: number) => {
     if (!confirm('Ștergi rețeta?')) return;
     await api.delete(`/recipes/${id}`);
@@ -222,6 +229,7 @@ export default function Admin() {
                 <td><div className="row-btns">
                   <Link className="btn secondary small" to={`/admin/retete/${r.id}/editeaza`}>{t('common.edit')}</Link>
                   {user.role === 'ADMIN' && r.status === 'DRAFT' && <button className="btn small" onClick={() => approve(r.id)}>Aprobă</button>}
+                  {user.role === 'ADMIN' && r.status === 'DRAFT' && <button className="btn danger small" onClick={() => rejectRecipe(r.id, r.titleRo)}>Respinge</button>}
                   {user.role === 'ADMIN' && r.status === 'PUBLISHED' && <button className="btn secondary small" onClick={() => sendTelegram(r.id)}>✈ Telegram</button>}
                   {user.role === 'ADMIN' && <button className="btn danger small" onClick={() => delRecipe(r.id)}>{t('common.delete')}</button>}
                 </div></td></tr>
@@ -308,6 +316,7 @@ function AppSettings() {
           <label>SMTP_PASS {src('smtp_pass')}<input type="password" value={vals.smtp_pass || ''} onChange={e => set('smtp_pass', e.target.value)} /></label>
           <label>SMTP_FROM {src('smtp_from')}<input value={vals.smtp_from || ''} onChange={e => set('smtp_from', e.target.value)} /></label>
           <label>TELEGRAM_BOT_TOKEN {src('telegram_bot_token')}<input type="password" value={vals.telegram_bot_token || ''} onChange={e => set('telegram_bot_token', e.target.value)} /></label>
+          <label>TELEGRAM_BOT_USERNAME (numele botului, fără @ — pentru linkul t.me din profil) {src('telegram_bot_username')}<input value={vals.telegram_bot_username || ''} placeholder="GustBebeBot" onChange={e => set('telegram_bot_username', e.target.value)} /></label>
           <label>TELEGRAM_CHANNEL_ID (canal publicare, @nume sau -100...) {src('telegram_channel_id')}<input value={vals.telegram_channel_id || ''} placeholder="@gustbebe" onChange={e => set('telegram_channel_id', e.target.value)} /></label>
           <label>TELEGRAM_TOPIC_ID (ID topic/thread din canal, opțional — dacă se publică într-un topic) {src('telegram_topic_id')}<input value={vals.telegram_topic_id || ''} placeholder="ex: 474" onChange={e => set('telegram_topic_id', e.target.value)} /></label>
           <label>TELEGRAM_CHANNEL_ADMIN (mesaje directe admin: cereri autor, rețete noi, contact) {src('telegram_channel_admin')}<input value={vals.telegram_channel_admin || ''} placeholder="@admin sau -100123456" onChange={e => set('telegram_channel_admin', e.target.value)} /></label>

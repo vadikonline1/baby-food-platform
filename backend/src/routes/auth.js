@@ -85,23 +85,28 @@ router.post('/login', async (req, res) => {
 router.get('/me', authRequired, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { id: true, name: true, email: true, role: true, lang: true, avatarUrl: true, emailVerified: true, createdAt: true }
+    select: { id: true, name: true, email: true, role: true, lang: true, avatarUrl: true, telegramChatId: true, emailVerified: true, createdAt: true }
   });
   res.json(user);
 });
 
 // date profil (emailul NU se poate schimba)
 router.patch('/me', authRequired, async (req, res) => {
-  const { name, lang, avatarUrl } = req.body || {};
+  const { name, lang, avatarUrl, telegramChatId } = req.body || {};
   if (req.body?.email) return res.status(400).json({ error: 'email_immutable' });
+  const chatId = telegramChatId === '' || telegramChatId === null || telegramChatId === undefined
+    ? undefined
+    : String(telegramChatId).replace(/[^0-9]/g, '').slice(0, 20) || undefined;
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: {
       ...(name ? { name: String(name).slice(0, 80) } : {}),
       ...(lang && ['ro', 'ru', 'en'].includes(lang) ? { lang } : {}),
-      ...(avatarUrl !== undefined ? { avatarUrl } : {})
+      ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+      ...(chatId !== undefined ? { telegramChatId: chatId } : {}),
+      ...(req.body?.telegramChatId === '' ? { telegramChatId: null } : {})
     },
-    select: { id: true, name: true, email: true, role: true, lang: true, avatarUrl: true }
+    select: { id: true, name: true, email: true, role: true, lang: true, avatarUrl: true, telegramChatId: true }
   });
   res.json(user);
 });
