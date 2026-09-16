@@ -136,7 +136,13 @@ jobs:
           echo "embedded build_sha=${{ github.sha }}"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        # android-actions/setup-android@v3 pica: cere pachetul 'tools' (scos de Google).
+        # Runner-ul ubuntu are deja SDK preinstalat — acceptam doar licentele.
+        run: |
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --list_installed | tail -5
 
       - name: Generate native android project (expo prebuild)
         run: npx expo prebuild --platform android --no-install
