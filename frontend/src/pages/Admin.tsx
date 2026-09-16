@@ -98,7 +98,9 @@ export default function Admin() {
       a.download = `retete-export-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch { alert('Export eșuat.'); }
+    } catch (e: any) {
+      alert('Export eșuat (' + (e.response?.status || 'rețea') + '): ' + (e.response?.data?.error || e.message || ''));
+    }
   };
   // import meniu CSV (doar RO) — coloane: slug,titleRo,summaryRo,ingredientsRo,items,stepsRo,prepMinutes,cookMinutes,servings,difficulty,imageUrl,status,ageMin,feedingType,categories,restrictions,characteristics
   // items: cate un rand "produs | cantitate | unitate | notita"; listele cu `|`; varsta = minimul (ex: 8)
