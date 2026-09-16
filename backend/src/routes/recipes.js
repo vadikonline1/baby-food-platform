@@ -264,7 +264,13 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
   let raw = Array.isArray(req.body) ? req.body : req.body?.items;
   if (typeof req.body?.csv === 'string' && req.body.csv.trim()) {
     try {
-      raw = csvLib.parse(req.body.csv).map((row) => ({
+      const parsed = csvLib.parse(req.body.csv);
+      const rows = csvLib.normalizeRows(parsed);
+      const hasTitle = rows.some((r) => String(r.titleRo || '').trim());
+      if (!rows.length || !hasTitle) {
+        return res.status(400).json({ error: 'csv_no_title_column' });
+      }
+      raw = rows.map((row) => ({
         slug: (row.slug || '').trim(),
         titleRo: (row.titleRo || '').trim(), summaryRo: (row.summaryRo || '').trim(),
         ingredientsRo: (row.ingredientsRo || '').trim(),
@@ -306,7 +312,9 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
   for (let i = 0; i < raw.length; i++) {
     const b = raw[i] || {};
     try {
-      if (!b.titleRo || !b.stepsRo) throw new Error('titleRo_stepsRo_required');
+      if (!String(b.titleRo || '').trim() || !String(b.stepsRo || '').trim()) {
+        throw new Error(`randul ${i + 1}: completeaza titlul (titleRo/titlu) si pasii (stepsRo/pasi)`);
+      }
       const links = [];
       for (const it of (b.items || [])) {
         const iid = await ingIdByName(it.product || it.nameRo);

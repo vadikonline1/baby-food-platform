@@ -205,6 +205,7 @@ export default function Admin() {
                   <input type="file" accept=".csv,text/csv" hidden onChange={importRecipes} />
                 </label>
               </div>
+              <p className="meta">Minim obligatoriu: <code>titlu</code> + <code>pasi</code> (merge și cu `,` în loc de `;`). Opțional: rezumat, ingrediente (`produs | cantitate | unitate | notiță`, câte unul pe rând), timpi, porții, vârstă minimă (ex: 8), tip masă, categorii/restricții/caracteristici (sluguri cu `|`), poză, status. Coloanele pot fi și în română: titlu, pasi, ingrediente, varsta, categorii…</p>
               {importMsg && <p className="notice">{importMsg}</p>}
             </>
           )}

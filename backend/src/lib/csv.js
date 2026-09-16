@@ -1,6 +1,8 @@
 // CSV pentru Export/Import meniu (doar RO) — usor de editat in Excel:
 // delimitator `;` (standard RO), ghilimele duble, BOM UTF-8 pentru diacritice/chirlice.
-const DELIM = ';';
+// La import delimitatorul se detecteaza automat (; sau , sau tab), iar headerele
+// accepta si denumiri RO (titlu, pasi, ...), ca sa fie usor de completat manual.
+const DELIMS = [';', ',', '\t'];
 
 function escCell(v) {
   const s = v === null || v === undefined ? '' : String(v);
@@ -17,8 +19,10 @@ function stringify(rows, headers) {
 }
 
 const BOM = '\uFEFF';
-function parse(text) {
+function parse(text, delim) {
   const src = String(text || '').replace(new RegExp('^' + BOM), '');
+  const firstLine = src.split(/\r?\n/)[0] || '';
+  const d = delim || detectDelim(firstLine);
   const rows = [];
   let row = [], cur = '', inQ = false;
   const pushCell = () => { row.push(cur); cur = ''; };
@@ -35,7 +39,7 @@ function parse(text) {
         else inQ = false;
       } else cur += ch;
     } else if (ch === '"') inQ = true;
-    else if (ch === DELIM) pushCell();
+    else if (ch === d) pushCell();
     else if (ch === '\r') { /* asteapta \n */ }
     else if (ch === '\n') { pushCell(); pushRow(); }
     else cur += ch;
@@ -43,9 +47,57 @@ function parse(text) {
   pushCell(); pushRow();
   if (!rows.length) return [];
   const headers = rows[0].map((h) => String(h).trim());
-  return rows.slice(1).map((r) => {
+  return { headers, rows: rows.slice(1).map((r) => {
     const o = {};
     headers.forEach((h, k) => { o[h] = r[k] !== undefined ? r[k] : ''; });
+    return o;
+  }) };
+}
+
+// detecteaza delimitatorul din prima linie (ignora ce e intre ghilimele)
+function detectDelim(line) {
+  const bare = String(line || '').replace(/"[^"]*"/g, '');
+  let best = ';', bestN = -1;
+  for (const d of DELIMS) {
+    const n = bare.split(d).length - 1;
+    if (n > bestN) { bestN = n; best = d; }
+  }
+  return bestN > 0 ? best : ';';
+}
+
+// normalizeaza headerele: lowercase + aliasuri RO -> chei canonice
+const HEADER_ALIASES = {
+  slug: ['slug'],
+  titleRo: ['titlero', 'titlu', 'titlul', 'denumire', 'nume', 'name', 'reteta', 'rețeta'],
+  summaryRo: ['summaryro', 'descriere', 'rezumat', 'sumar'],
+  ingredientsRo: ['ingredientsro', 'ingrediente', 'ingrediente_text'],
+  items: ['items', 'ingrediente_structurate', 'produse', 'lista_ingrediente'],
+  stepsRo: ['stepsro', 'pasi', 'pași', 'preparare', 'mod_preparare', 'instructiuni', 'instrucțiuni'],
+  prepMinutes: ['prepminutes', 'pregatire', 'prep', 'timp_pregatire'],
+  cookMinutes: ['cookminutes', 'gatire', 'gătire', 'cook', 'timp_gatire'],
+  servings: ['servings', 'portii', 'porții', 'portie'],
+  difficulty: ['difficulty', 'dificultate', 'greutate'],
+  imageUrl: ['imageurl', 'poza', 'imagine', 'cover', 'foto'],
+  status: ['status', 'stare'],
+  ageMin: ['agemin', 'varsta', 'vârsta', 'age', 'luni'],
+  feedingType: ['feedingtype', 'tip_masa', 'masa', 'tip'],
+  categories: ['categories', 'categorii', 'categorie'],
+  restrictions: ['restrictions', 'restrictii', 'restricții'],
+  characteristics: ['characteristics', 'caracteristici', 'trasaturi', 'trasături']
+};
+
+function normalizeRows(parsed) {
+  const canonByNorm = {};
+  for (const [canon, aliases] of Object.entries(HEADER_ALIASES)) {
+    for (const a of aliases) canonByNorm[a] = canon;
+  }
+  const norm = (h) => String(h || '').trim().toLowerCase().replace(/[\s_]+/g, '');
+  return parsed.rows.map((r) => {
+    const o = {};
+    for (const h of parsed.headers) {
+      const c = canonByNorm[norm(h)];
+      if (c && o[c] === undefined) o[c] = r[h];
+    }
     return o;
   });
 }
@@ -71,4 +123,4 @@ function itemsCell(items) {
   }).filter(Boolean).join('\n');
 }
 
-module.exports = { stringify, parse, splitList, parseItems, itemsCell };
+module.exports = { stringify, parse, detectDelim, normalizeRows, splitList, parseItems, itemsCell };
