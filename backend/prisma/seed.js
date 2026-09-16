@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const { prisma } = require('../src/lib/db');
 
 async function main() {
@@ -250,8 +251,7 @@ async function main() {
     }
     if (added) console.log(`[seed] quiz questions added: ${added}`);
   }
-  const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });
-  if (!existing) {
+  const existing = await prisma.recipe.findUnique({ where: { slug: 'piure-de-morcov-diversificare' } });  if (!existing) {
     const age = await prisma.ageGroup.findFirst();
     const feed = await prisma.feedingType.findFirst({ where: { slug: 'diversificare' } });
     const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
@@ -271,6 +271,26 @@ async function main() {
         categories: cat ? { create: [{ categoryId: cat.id }] } : undefined
       }
     });
+  }
+  // coperte default pentru retetele fara poza (o singura data fiecare)
+  {
+    const bare = await prisma.recipe.findMany({
+      where: { OR: [{ imageUrl: null }, { imageUrl: '' }] },
+      select: { id: true }
+    });
+    if (bare.length) {
+      const cover = require('../src/lib/cover');
+      const dir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
+      let n = 0;
+      for (const r of bare) {
+        const url = cover.ensureDefaultCover(dir, r.id);
+        if (url) {
+          await prisma.recipe.update({ where: { id: r.id }, data: { imageUrl: url } });
+          n++;
+        }
+      }
+      if (n) console.log(`[seed] coperte default: ${n}`);
+    }
   }
   console.log(`Seed OK: ${adminEmail} (+ moderator ${modEmail})`);
 }

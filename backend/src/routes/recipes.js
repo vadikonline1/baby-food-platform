@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { postRecipe, postRecipeAsync, notifyAdminAsync } = require('../lib/telegram');
+const coverLib = require('../lib/cover');
 const { notify } = require('./notifications');
 const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
@@ -72,6 +73,15 @@ async function refreshCover(id) {
   const recipe = await prisma.recipe.findUnique({ where: { id } });
   if (!recipe) return null;
   const url = adoptCover(recipe);
+  if (url) await prisma.recipe.update({ where: { id }, data: { imageUrl: url } });
+  return url;
+}
+
+// coperta default generata (daca reteta a ramas fara poza)
+async function ensureCover(id) {
+  const recipe = await prisma.recipe.findUnique({ where: { id } });
+  if (!recipe || recipe.imageUrl) return recipe?.imageUrl || null;
+  const url = cover.ensureDefaultCover(UPLOAD_DIR, id);
   if (url) await prisma.recipe.update({ where: { id }, data: { imageUrl: url } });
   return url;
 }
@@ -200,6 +210,121 @@ router.get('/by-id/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async
   res.json(recipe);
 });
 
+// GET export meniu complet (doar RO) — ADMIN (inainte de /:slug!)
+router.get('/export', authRequired, roleRequired('ADMIN'), async (req, res) => {
+  const items = await prisma.recipe.findMany({ include: recipeInclude, orderBy: { id: 'asc' } });
+  res.json(items.map((r) => ({
+    slug: r.slug,
+    titleRo: r.titleRo, summaryRo: r.summaryRo, ingredientsRo: r.ingredientsRo,
+    items: (r.ingredientsDetailed || []).map((d) => ({
+      product: d.ingredient?.nameRo || '', quantity: d.quantity ?? null, unit: d.unit || '', note: d.noteRo || ''
+    })),
+    stepsRo: r.stepsRo,
+    prepMinutes: r.prepMinutes, cookMinutes: r.cookMinutes, servings: r.servings, difficulty: r.difficulty,
+    imageUrl: r.imageUrl, status: r.status,
+    ageMinMonths: (r.ageGroups || []).map((a) => a.ageGroup?.minMonths).filter((n) => Number.isFinite(n)),
+    feedingType: r.feedingType?.slug || null,
+    categories: (r.categories || []).map((c) => c.category?.slug).filter(Boolean),
+    restrictions: (r.restrictions || []).map((c) => c.restriction?.slug).filter(Boolean),
+    characteristics: (r.characteristics || []).map((c) => c.characteristic?.slug).filter(Boolean)
+  })));
+});
+
+// POST import meniu (doar RO) — ADMIN; ingredientele lipsa se creeaza dupa nume
+router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => {
+  const raw = Array.isArray(req.body) ? req.body : req.body?.items;
+  if (!Array.isArray(raw)) return res.status(400).json({ error: 'items_required' });
+  if (raw.length > 500) return res.status(400).json({ error: 'too_many' });
+  const catMap = Object.fromEntries((await prisma.menuCategory.findMany()).map((c) => [c.slug, c.id]));
+  const restrMap = Object.fromEntries((await prisma.dietaryRestriction.findMany()).map((c) => [c.slug, c.id]));
+  const charMap = Object.fromEntries((await prisma.characteristic.findMany()).map((c) => [c.slug, c.id]));
+  const feedMap = Object.fromEntries((await prisma.feedingType.findMany()).map((c) => [c.slug, c.id]));
+  const ageMap = Object.fromEntries((await prisma.ageGroup.findMany()).map((c) => [c.minMonths, c.id]));
+  const ingCache = new Map();
+  async function ingIdByName(nameRo) {
+    const n = String(nameRo || '').trim();
+    if (!n) return null;
+    if (ingCache.has(n)) return ingCache.get(n);
+    let ing = await prisma.ingredient.findFirst({ where: { nameRo: n } });
+    if (!ing) {
+      ing = await prisma.ingredient.create({
+        data: { slug: slugify(n) + '-' + Date.now().toString(36), nameRo: n, nameRu: n, nameEn: n }
+      });
+    }
+    ingCache.set(n, ing.id);
+    return ing.id;
+  }
+  const out = { created: 0, updated: 0, failed: [] };
+  for (let i = 0; i < raw.length; i++) {
+    const b = raw[i] || {};
+    try {
+      if (!b.titleRo || !b.stepsRo) throw new Error('titleRo_stepsRo_required');
+      const links = [];
+      for (const it of (b.items || [])) {
+        const iid = await ingIdByName(it.product || it.nameRo);
+        if (!iid) continue;
+        const qty = it.quantity !== undefined && it.quantity !== '' && it.quantity !== null ? Number(it.quantity) : null;
+        links.push({
+          ingredientId: iid, quantity: Number.isFinite(qty) ? qty : null, unit: it.unit || null,
+          noteRo: it.note || it.noteRo || null, noteRu: it.note || it.noteRo || null, noteEn: it.note || it.noteRo || null,
+          position: links.length
+        });
+      }
+      const ingredientsRo = b.ingredientsRo || (b.items || [])
+        .map((it) => String(it.product || it.nameRo || '').trim())
+        .filter(Boolean)
+        .map((p, k) => {
+          const it = (b.items || [])[k] || {};
+          const q = it.quantity !== undefined && it.quantity !== '' && it.quantity !== null ? ` — ${it.quantity} ${(it.unit || '').trim()}`.trim() : '';
+          return `${p}${q}`;
+        }).join('\n');
+      const ageIds = await expandAges((b.ageMinMonths || []).map((m) => ageMap[Number(m)]).filter(Boolean));
+      const data = {
+        titleRo: b.titleRo, titleRu: b.titleRu || b.titleRo, titleEn: b.titleEn || b.titleRo,
+        summaryRo: b.summaryRo || null, summaryRu: b.summaryRo || null, summaryEn: b.summaryRo || null,
+        ingredientsRo, ingredientsRu: ingredientsRo, ingredientsEn: ingredientsRo,
+        stepsRo: asText(b.stepsRo), stepsRu: asText(b.stepsRo), stepsEn: asText(b.stepsRo),
+        prepMinutes: Number(b.prepMinutes) || 15, cookMinutes: Number(b.cookMinutes) || 15,
+        servings: Number(b.servings) || 2, difficulty: b.difficulty || 'usor',
+        imageUrl: b.imageUrl || null,
+        status: ['DRAFT', 'PUBLISHED'].includes(b.status) ? b.status : 'DRAFT',
+        feedingTypeId: (b.feedingType && feedMap[b.feedingType]) || null
+      };
+      const slug = (b.slug && String(b.slug).trim()) || (slugify(b.titleRo) + '-' + Date.now().toString(36));
+      const existing = await prisma.recipe.findUnique({ where: { slug } });
+      async function relLinks(recipeId) {
+        await prisma.recipeCategory.deleteMany({ where: { recipeId } });
+        await prisma.recipeRestriction.deleteMany({ where: { recipeId } });
+        await prisma.recipeCharacteristic.deleteMany({ where: { recipeId } });
+        await prisma.recipeAge.deleteMany({ where: { recipeId } });
+        await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
+        const cats = [...new Set((b.categories || []).map((s) => catMap[s]).filter(Boolean))];
+        if (cats.length) await prisma.recipeCategory.createMany({ data: cats.map((categoryId) => ({ recipeId, categoryId })) });
+        const restrs = [...new Set((b.restrictions || []).map((s) => restrMap[s]).filter(Boolean))];
+        if (restrs.length) await prisma.recipeRestriction.createMany({ data: restrs.map((restrictionId) => ({ recipeId, restrictionId })) });
+        const chars = [...new Set((b.characteristics || []).map((s) => charMap[s]).filter(Boolean))];
+        if (chars.length) await prisma.recipeCharacteristic.createMany({ data: chars.map((characteristicId) => ({ recipeId, characteristicId })) });
+        if (ageIds.length) await prisma.recipeAge.createMany({ data: ageIds.map((ageGroupId) => ({ recipeId, ageGroupId })) });
+        if (links.length) await prisma.recipeIngredient.createMany({ data: links.map((l) => ({ ...l, recipeId })) });
+      }
+      if (existing) {
+        await prisma.recipe.update({ where: { id: existing.id }, data });
+        await relLinks(existing.id);
+        await refreshCover(existing.id);
+        await ensureCover(existing.id);
+        out.updated++;
+      } else {
+        const created = await prisma.recipe.create({ data: { ...data, slug, authorId: req.user.id } });
+        await relLinks(created.id);
+        await refreshCover(created.id);
+        await ensureCover(created.id);
+        out.created++;
+      }
+    } catch (e) { out.failed.push({ index: i, title: b.titleRo || '', error: e.message }); }
+  }
+  res.json(out);
+});
+
 // GET public dupa slug de forma "id-titlu" (ex: /retete/12-piure-de-morcov) sau slug clasic
 router.get('/:slug', async (req, res) => {
   let recipe = null;
@@ -313,6 +438,8 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
     if (recipe.status === 'PUBLISHED') {
       const cover = await refreshCover(recipe.id);
       if (cover) recipe.imageUrl = cover;
+      const defCover = await ensureCover(recipe.id);
+      if (defCover) recipe.imageUrl = defCover;
       postRecipeAsync(recipe);
       pushNewRecipeAsync(recipe);
     } else {
@@ -336,6 +463,7 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
     if (own.authorId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
   }
   try {
+    const before = await prisma.recipe.findUnique({ where: { id }, select: { imageUrl: true } });
     // reset relatii daca vin ids (deduplicare in JS — SQLite nu suporta skipDuplicates)
     if (b.categoryIds) {
       await prisma.recipeCategory.deleteMany({ where: { recipeId: id } });
@@ -375,6 +503,12 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
       const cover = await refreshCover(id);
       if (cover) recipe.imageUrl = cover;
     }
+    // coperta default veche se sterge cand vine poza reala
+    if (before?.imageUrl && before.imageUrl.endsWith('-coperta.png') && recipe.imageUrl && before.imageUrl !== recipe.imageUrl) {
+      coverLib.removeFile(UPLOAD_DIR, before.imageUrl);
+    }
+    const defCover = await ensureCover(id);
+    if (defCover) recipe.imageUrl = defCover;
     res.json(recipe);
   } catch (e) {
     res.status(400).json({ error: 'update_failed', message: e.message });
@@ -389,6 +523,8 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
   if (status === 'PUBLISHED') {
     const cover = await refreshCover(Number(req.params.id));
     if (cover) recipe.imageUrl = cover;
+    const defCover = await ensureCover(Number(req.params.id));
+    if (defCover) recipe.imageUrl = defCover;
     postRecipeAsync(recipe);
     pushNewRecipeAsync(recipe);
   }

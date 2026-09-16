@@ -32,6 +32,7 @@ export default function Admin() {
   const [rTotal, setRTotal] = useState(0);
   const [rPage, setRPage] = useState(1);
   const [rStatus, setRStatus] = useState('all');
+  const [importMsg, setImportMsg] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -77,8 +78,7 @@ export default function Admin() {
     await api.delete(`/recipes/${id}`);
     loadRecipes();
   };
-  const sendTelegram = async (id: number) => {
-    try {
+  const sendTelegram = async (id: number) => {    try {
       await api.post(`/recipes/${id}/telegram`);
       alert('✓ Publicat pe Telegram.');
     } catch (e: any) {
@@ -167,6 +167,17 @@ export default function Admin() {
             ))}
           </div>
           <Pager page={rPage} total={rTotal} onPage={p => loadRecipes(p)} />
+          {user.role === 'ADMIN' && (
+            <>
+              <div className="row-btns" style={{ margin: '12px 0' }}>
+                <button className="btn secondary small" onClick={exportRecipes}>⬇ Export JSON (RO)</button>
+                <label className="btn secondary small" style={{ cursor: 'pointer' }}>⬆ Import JSON
+                  <input type="file" accept=".json,application/json" hidden onChange={importRecipes} />
+                </label>
+              </div>
+              {importMsg && <p className="notice">{importMsg}</p>}
+            </>
+          )}
           <table className="admin"><thead><tr><th>Titlu</th><th>Status</th><th>⭐</th><th></th></tr></thead>
             <tbody>{recipes.map(r => (
               <tr key={r.id}>
@@ -448,7 +459,37 @@ function AuthorsManager() {
                     {qa.map((a: any, j: number) => {
                       const q = bankQ(a.qid);
                       const ok = a.picked === a.correct;
-                      return (
+  // export meniu complet (JSON, doar RO) — descarca fisier
+  const exportRecipes = async () => {
+    try {
+      const r = await api.get('/recipes/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([r.data], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `retete-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert('Export eșuat.'); }
+  };
+  // import meniu (JSON, doar RO) — ingredientele lipsa se creeaza dupa nume
+  const importRecipes = async (e: any) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImportMsg('');
+    try {
+      const parsed = JSON.parse(await f.text());
+      const items = Array.isArray(parsed) ? parsed : parsed.items;
+      const { data } = await api.post('/recipes/import', { items });
+      const fails = (data.failed || []).slice(0, 3).map((x: any) => x.title || ('#' + x.index)).join('; ');
+      setImportMsg(`✓ Import: ${data.created} create, ${data.updated} actualizate${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
+      loadRecipes(1, rStatus);
+    } catch (err: any) {
+      setImportMsg('Eroare import: ' + (err.response?.data?.error || 'fișier invalid'));
+    }
+    e.target.value = '';
+  };
+
+  return (
                         <li key={j}>
                           {ok ? '✅' : '❌'} <strong>{q ? q.q[L] : `Întrebarea #${a.qid}`}</strong>
                           <br /><span className="meta">A răspuns: {q && q.o[a.picked] ? q.o[a.picked][L] : '—'} · Corect: {q ? q.o[a.correct][L] : a.correct}</span>
