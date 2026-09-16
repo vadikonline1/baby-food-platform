@@ -11,9 +11,9 @@ function escCell(v) {
 }
 
 function stringify(rows, headers) {
-  const lines = [headers.map(escCell).join(DELIM)];
+  const lines = [headers.map(escCell).join(';')];
   for (const r of rows) {
-    lines.push(headers.map((h) => escCell(r[h])).join(DELIM));
+    lines.push(headers.map((h) => escCell(r[h])).join(';'));
   }
   return '\uFEFF' + lines.join('\r\n') + '\r\n';
 }
