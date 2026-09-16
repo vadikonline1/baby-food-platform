@@ -6,6 +6,7 @@ const { prisma } = require('../lib/db');
 const { authRequired, roleRequired } = require('../middleware/auth');
 const { postRecipe, postRecipeAsync, notifyAdminAsync } = require('../lib/telegram');
 const coverLib = require('../lib/cover');
+const csvLib = require('../lib/csv');
 const { notify } = require('./notifications');
 const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
@@ -230,9 +231,56 @@ router.get('/export', authRequired, roleRequired('ADMIN'), async (req, res) => {
   })));
 });
 
-// POST import meniu (doar RO) — ADMIN; ingredientele lipsa se creeaza dupa nume
+// GET export meniu CSV (doar RO, Excel-friendly) — ADMIN (inainte de /:slug!)
+router.get('/export.csv', authRequired, roleRequired('ADMIN'), async (req, res) => {
+  const items = await prisma.recipe.findMany({ include: recipeInclude, orderBy: { id: 'asc' } });
+  const headers = ['slug', 'titleRo', 'summaryRo', 'ingredientsRo', 'items', 'stepsRo',
+    'prepMinutes', 'cookMinutes', 'servings', 'difficulty', 'imageUrl', 'status',
+    'ageMin', 'feedingType', 'categories', 'restrictions', 'characteristics'];
+  const rows = items.map((r) => {
+    const mins = (r.ageGroups || []).map((a) => a.ageGroup?.minMonths).filter((n) => Number.isFinite(n));
+    return {
+      slug: r.slug,
+      titleRo: r.titleRo, summaryRo: r.summaryRo || '', ingredientsRo: r.ingredientsRo || '',
+      items: csvLib.itemsCell((r.ingredientsDetailed || []).map((d) => ({
+        product: d.ingredient?.nameRo || '', quantity: d.quantity ?? '', unit: d.unit || '', note: d.noteRo || ''
+      }))),
+      stepsRo: r.stepsRo || '',
+      prepMinutes: r.prepMinutes, cookMinutes: r.cookMinutes, servings: r.servings,
+      difficulty: r.difficulty || '', imageUrl: r.imageUrl || '', status: r.status,
+      ageMin: mins.length ? Math.min(...mins) : '',
+      feedingType: r.feedingType?.slug || '',
+      categories: (r.categories || []).map((c) => c.category?.slug).filter(Boolean).join('|'),
+      restrictions: (r.restrictions || []).map((c) => c.restriction?.slug).filter(Boolean).join('|'),
+      characteristics: (r.characteristics || []).map((c) => c.characteristic?.slug).filter(Boolean).join('|')
+    };
+  });
+  res.type('text/csv; charset=utf-8').send(csvLib.stringify(rows, headers));
+});
+
+// POST import meniu (doar RO) — ADMIN; accepta { items: [...] } sau { csv: "..." }.
+// Ingredientele lipsa se creeaza dupa nume; varstele se extind automat in sus.
 router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => {
-  const raw = Array.isArray(req.body) ? req.body : req.body?.items;
+  let raw = Array.isArray(req.body) ? req.body : req.body?.items;
+  if (typeof req.body?.csv === 'string' && req.body.csv.trim()) {
+    try {
+      raw = csvLib.parse(req.body.csv).map((row) => ({
+        slug: (row.slug || '').trim(),
+        titleRo: (row.titleRo || '').trim(), summaryRo: (row.summaryRo || '').trim(),
+        ingredientsRo: (row.ingredientsRo || '').trim(),
+        items: csvLib.parseItems(row.items),
+        stepsRo: (row.stepsRo || '').trim(),
+        prepMinutes: row.prepMinutes, cookMinutes: row.cookMinutes, servings: row.servings,
+        difficulty: (row.difficulty || '').trim(), imageUrl: (row.imageUrl || '').trim(),
+        status: (row.status || '').trim(),
+        ageMinMonths: row.ageMin !== '' && row.ageMin !== undefined ? [Number(row.ageMin)] : [],
+        feedingType: (row.feedingType || '').trim(),
+        categories: csvLib.splitList(row.categories),
+        restrictions: csvLib.splitList(row.restrictions),
+        characteristics: csvLib.splitList(row.characteristics)
+      }));
+    } catch (e) { return res.status(400).json({ error: 'csv_invalid', message: e.message }); }
+  }
   if (!Array.isArray(raw)) return res.status(400).json({ error: 'items_required' });
   if (raw.length > 500) return res.status(400).json({ error: 'too_many' });
   const catMap = Object.fromEntries((await prisma.menuCategory.findMany()).map((c) => [c.slug, c.id]));
