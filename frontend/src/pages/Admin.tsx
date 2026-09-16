@@ -112,7 +112,8 @@ export default function Admin() {
       const csv = await f.text();
       const { data } = await api.post('/recipes/import', { csv });
       const fails = (data.failed || []).slice(0, 3).map((x: any) => x.title || ('#' + x.index)).join('; ');
-      setImportMsg(`✓ Import: ${data.created} create, ${data.updated} actualizate${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
+      const skips = (data.skipped || []).slice(0, 3).map((x: any) => `${x.title || ('#' + x.index)} (${x.reason})`).join('; ');
+      setImportMsg(`✓ Import: ${data.updated || 0} actualizate, ${data.copied || 0} copii draft${data.skipped?.length ? `, ${data.skipped.length} ignorate (${skips})` : ''}${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
       loadRecipes(1, rStatus);
     } catch (err: any) {
       setImportMsg('Eroare import: ' + (err.response?.data?.error || 'fișier invalid'));
@@ -207,7 +208,7 @@ export default function Admin() {
                   <input type="file" accept=".csv,text/csv" hidden onChange={importRecipes} />
                 </label>
               </div>
-              <p className="meta">Minim obligatoriu: <code>titlu</code> + <code>pasi</code> (merge și cu `,` în loc de `;`). Opțional: rezumat, ingrediente (`produs | cantitate | unitate | notiță`, câte unul pe rând), timpi, porții, vârstă minimă (ex: 8), tip masă, categorii/restricții/caracteristici (sluguri cu `|`), poză, status. Coloanele pot fi și în română: titlu, pasi, ingrediente, varsta, categorii…</p>
+              <p className="meta">Potrivire strictă după <code>id</code>: ID + titlu egale → actualizează; ID existent + titlu diferit → copie nouă DRAFT „(copy ID n)”; fără ID sau ID inexistent → ignorat. Minim obligatoriu: <code>titlu</code> + <code>pasi</code>. Vârsta = minimul (ex: 8), ingredientele „produs | cantitate | unitate”, listele cu `|`.</p>
               {importMsg && <p className="notice">{importMsg}</p>}
             </>
           )}

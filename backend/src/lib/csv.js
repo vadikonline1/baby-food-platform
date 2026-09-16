@@ -67,6 +67,7 @@ function detectDelim(line) {
 
 // normalizeaza headerele: lowercase + aliasuri RO -> chei canonice
 const HEADER_ALIASES = {
+  id: ['id', 'ID', 'nr', 'nr_crt', 'numar'],
   slug: ['slug'],
   titleRo: ['titlero', 'titlu', 'titlul', 'denumire', 'nume', 'name', 'reteta', 'rețeta'],
   summaryRo: ['summaryro', 'descriere', 'rezumat', 'sumar'],

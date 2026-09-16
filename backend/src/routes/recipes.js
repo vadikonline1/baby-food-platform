@@ -232,16 +232,17 @@ router.get('/export', authRequired, roleRequired('ADMIN'), async (req, res) => {
 });
 
 // GET export meniu CSV (doar RO, Excel-friendly) — ADMIN (inainte de /:slug!)
+// Coloana ID (obligatorie la import pentru potrivire); fara slug, fara ingredientsRo (doar items).
 router.get('/export.csv', authRequired, roleRequired('ADMIN'), async (req, res) => {
   const items = await prisma.recipe.findMany({ include: recipeInclude, orderBy: { id: 'asc' } });
-  const headers = ['slug', 'titleRo', 'summaryRo', 'ingredientsRo', 'items', 'stepsRo',
+  const headers = ['id', 'titleRo', 'summaryRo', 'items', 'stepsRo',
     'prepMinutes', 'cookMinutes', 'servings', 'difficulty', 'imageUrl', 'status',
     'ageMin', 'feedingType', 'categories', 'restrictions', 'characteristics'];
   const rows = items.map((r) => {
     const mins = (r.ageGroups || []).map((a) => a.ageGroup?.minMonths).filter((n) => Number.isFinite(n));
     return {
-      slug: r.slug,
-      titleRo: r.titleRo, summaryRo: r.summaryRo || '', ingredientsRo: r.ingredientsRo || '',
+      id: r.id,
+      titleRo: r.titleRo, summaryRo: r.summaryRo || '',
       items: csvLib.itemsCell((r.ingredientsDetailed || []).map((d) => ({
         product: d.ingredient?.nameRo || '', quantity: d.quantity ?? '', unit: d.unit || '', note: d.noteRo || ''
       }))),
@@ -271,7 +272,7 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
         return res.status(400).json({ error: 'csv_no_title_column' });
       }
       raw = rows.map((row) => ({
-        slug: (row.slug || '').trim(),
+        id: row.id !== '' && row.id !== undefined ? Number(row.id) : null,
         titleRo: (row.titleRo || '').trim(), summaryRo: (row.summaryRo || '').trim(),
         ingredientsRo: (row.ingredientsRo || '').trim(),
         items: csvLib.parseItems(row.items),
@@ -308,12 +309,28 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
     ingCache.set(n, ing.id);
     return ing.id;
   }
-  const out = { created: 0, updated: 0, failed: [] };
+  const out = { created: 0, updated: 0, copied: 0, skipped: [], failed: [] };
   for (let i = 0; i < raw.length; i++) {
     const b = raw[i] || {};
     try {
-      if (!String(b.titleRo || '').trim() || !String(b.stepsRo || '').trim()) {
+      const title = String(b.titleRo || '').trim();
+      const steps = String(b.stepsRo || '').trim();
+      if (!title || !steps) {
         throw new Error(`randul ${i + 1}: completeaza titlul (titleRo/titlu) si pasii (stepsRo/pasi)`);
+      }
+      // potrivire STRICT dupa ID (coloana obligatorie)
+      const rid = Number(b.id);
+      const existing = Number.isFinite(rid) && rid > 0
+        ? await prisma.recipe.findUnique({ where: { id: rid } })
+        : null;
+      if (!existing) {
+        out.skipped.push({
+          index: i, title,
+          reason: !Number.isFinite(rid) || rid <= 0
+            ? 'fara ID — rand ignorat (pune ID-ul din export ca sa actualizezi)'
+            : `ID ${rid} inexistent — rand ignorat`
+        });
+        continue;
       }
       const links = [];
       for (const it of (b.items || [])) {
@@ -335,19 +352,17 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
           return `${p}${q}`;
         }).join('\n');
       const ageIds = await expandAges((b.ageMinMonths || []).map((m) => ageMap[Number(m)]).filter(Boolean));
+      const validStatus = ['DRAFT', 'PUBLISHED'].includes(b.status) ? b.status : null;
       const data = {
-        titleRo: b.titleRo, titleRu: b.titleRu || b.titleRo, titleEn: b.titleEn || b.titleRo,
+        titleRo: title, titleRu: b.titleRu || title, titleEn: b.titleEn || title,
         summaryRo: b.summaryRo || null, summaryRu: b.summaryRo || null, summaryEn: b.summaryRo || null,
         ingredientsRo, ingredientsRu: ingredientsRo, ingredientsEn: ingredientsRo,
-        stepsRo: asText(b.stepsRo), stepsRu: asText(b.stepsRo), stepsEn: asText(b.stepsRo),
+        stepsRo: asText(steps), stepsRu: asText(steps), stepsEn: asText(steps),
         prepMinutes: Number(b.prepMinutes) || 15, cookMinutes: Number(b.cookMinutes) || 15,
         servings: Number(b.servings) || 2, difficulty: b.difficulty || 'usor',
         imageUrl: b.imageUrl || null,
-        status: ['DRAFT', 'PUBLISHED'].includes(b.status) ? b.status : 'DRAFT',
         feedingTypeId: (b.feedingType && feedMap[b.feedingType]) || null
       };
-      const slug = (b.slug && String(b.slug).trim()) || (slugify(b.titleRo) + '-' + Date.now().toString(36));
-      const existing = await prisma.recipe.findUnique({ where: { slug } });
       async function relLinks(recipeId) {
         await prisma.recipeCategory.deleteMany({ where: { recipeId } });
         await prisma.recipeRestriction.deleteMany({ where: { recipeId } });
@@ -363,18 +378,30 @@ router.post('/import', authRequired, roleRequired('ADMIN'), async (req, res) => 
         if (ageIds.length) await prisma.recipeAge.createMany({ data: ageIds.map((ageGroupId) => ({ recipeId, ageGroupId })) });
         if (links.length) await prisma.recipeIngredient.createMany({ data: links.map((l) => ({ ...l, recipeId })) });
       }
-      if (existing) {
-        await prisma.recipe.update({ where: { id: existing.id }, data });
+      if ((existing.titleRo || '').trim() === title) {
+        // ID + titlu coincid -> ACTUALIZARE (statusul se schimba doar daca vine valid in CSV)
+        await prisma.recipe.update({
+          where: { id: existing.id },
+          data: { ...data, ...(validStatus ? { status: validStatus } : {}) }
+        });
         await relLinks(existing.id);
         await refreshCover(existing.id);
         await ensureCover(existing.id);
         out.updated++;
       } else {
-        const created = await prisma.recipe.create({ data: { ...data, slug, authorId: req.user.id } });
+        // ID exista dar titlul difera -> COPIE noua, mereu DRAFT, cu (copy ID n) in titlu
+        const copyTitle = `${title} (copy ID ${existing.id})`;
+        const created = await prisma.recipe.create({
+          data: {
+            ...data, titleRo: copyTitle, titleRu: copyTitle, titleEn: copyTitle,
+            slug: slugify(copyTitle) + '-' + Date.now().toString(36),
+            status: 'DRAFT', authorId: req.user.id
+          }
+        });
         await relLinks(created.id);
         await refreshCover(created.id);
         await ensureCover(created.id);
-        out.created++;
+        out.copied++;
       }
     } catch (e) { out.failed.push({ index: i, title: b.titleRo || '', error: e.message }); }
   }

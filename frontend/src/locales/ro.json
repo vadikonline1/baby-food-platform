@@ -346,7 +346,10 @@
     "saveFailed": "salvare eșuată",
     "forbidden": "Acces interzis — doar Moderator/Admin.",
     "coverUploadErr": "Eroare la încărcarea imaginii.",
-    "removeCover": "Șterge imaginea"
+    "removeCover": "Șterge imaginea",
+    "saveAsDraft": "Salvează ca draft",
+    "publish": "Publică",
+    "incompletePublish": "Rețeta e incompletă pentru publicare (titlu, pași, ingredient, vârstă, categorie, poză) — a fost salvată ca draft."
   },
   "support": {
     "title": "Susține proiectul 🎁",

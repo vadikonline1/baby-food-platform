@@ -107,9 +107,24 @@ export default function RecipeForm() {
 
   const totalTime = (Number(prep) || 0) + (Number(cook) || 0);
 
-  const submit = async (e: any) => {
+  const submit = async (e: any, asPublish = false) => {
     e.preventDefault();
     setMsg('');
+    // Publica: doar admin la editare; la adaugare decide backend-ul dupa rol.
+    // Daca e incompleta pentru publicare -> se salveaza ca draft.
+    const wantPublish = asPublish && (!editMode || user?.role === 'ADMIN');
+    let status: string | undefined;
+    let fellBack = false;
+    if (wantPublish) {
+      const complete = Boolean(
+        title.ro.trim() &&
+        steps.ro.map(s => s.trim()).filter(Boolean).length &&
+        rows.filter(r => r.ingredientId).length &&
+        ageIds.length && catIds.length && imageUrl
+      );
+      if (complete) status = 'PUBLISHED';
+      else { fellBack = true; status = editMode ? undefined : 'DRAFT'; }
+    } else if (!editMode) status = 'DRAFT';
     if (!title.ro.trim()) { setMsg(t('form.titleRequired')); return; }
     const stepsRo = steps.ro.map(s => s.trim()).filter(Boolean);
     if (!stepsRo.length) { setMsg(t('form.stepsRequired')); return; }
@@ -128,16 +143,20 @@ export default function RecipeForm() {
       ageGroupIds: ageIds, feedingTypeId: feedId || undefined,
       categoryIds: catIds, restrictionIds: restrIds, characteristicIds: charIds,
       prepMinutes: Number(prep) || 10, cookMinutes: Number(cook) || 15, servings: Number(servings) || 2,
-      imageUrl: imageUrl ? imageUrl : null
+      imageUrl: imageUrl ? imageUrl : null,
+      ...(status ? { status } : {})
     };
     try {
       if (editMode) {
-        await api.put(`/recipes/${id}`, payload);
-        setMsg(t('form.updated'));
+        const { data } = await api.put(`/recipes/${id}`, payload);
+        if (fellBack) setMsg(t('form.incompletePublish'));
+        else if (status === 'PUBLISHED' && data.status === 'PUBLISHED') setMsg(t('form.published'));
+        else setMsg(t('form.updated'));
       } else {
         const { data } = await api.post('/recipes', payload);
-        setMsg(data.status === 'DRAFT' ? t('form.sentForReview') : t('form.published'));
-        setTimeout(() => nav('/admin'), 1200);
+        if (fellBack) setMsg(t('form.incompletePublish'));
+        else setMsg(data.status === 'DRAFT' ? t('form.sentForReview') : t('form.published'));
+        if (!fellBack) setTimeout(() => nav('/admin'), 1200);
       }
     } catch (err: any) {
       setMsg('Eroare: ' + (err.response?.data?.message || err.response?.data?.error || t('form.saveFailed')));
@@ -157,7 +176,7 @@ export default function RecipeForm() {
         ))}
       </div>
 
-      <form onSubmit={submit}>
+      <form onSubmit={(e) => submit(e, false)}>
         <div className="form-grid">
           {/* ===== coloana principala: ce se traduce ===== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
@@ -257,40 +276,55 @@ export default function RecipeForm() {
 
             <section className="panel">
               <h3>{t('form.classification')}</h3>
-              <h4>{t('form.menuCats')}</h4>
-              <div className="check-list">
-                {cats.map(c => (
-                  <label key={c.id} className="fcheck">
-                    <input type="checkbox" checked={catIds.includes(c.id)} onChange={() => toggleCheck(catIds, c.id, setCatIds)} />
-                    <span>{c.icon} {localized(c, 'name', uilang)}</span>
+              <details>
+                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 13, padding: '6px 0' }}>
+                  {t('form.menuCats')} ({catIds.length})
+                </summary>
+                <div className="check-list">
+                  {cats.map(c => (
+                    <label key={c.id} className="fcheck">
+                      <input type="checkbox" checked={catIds.includes(c.id)} onChange={() => toggleCheck(catIds, c.id, setCatIds)} />
+                      <span>{c.icon} {localized(c, 'name', uilang)}</span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+              <details>
+                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 13, padding: '6px 0' }}>
+                  {t('form.restrictions')} ({restrIds.length})
+                </summary>
+                <div className="check-list">
+                  {restrs.map(c => (
+                    <label key={c.id} className="fcheck">
+                      <input type="checkbox" checked={restrIds.includes(c.id)} onChange={() => toggleCheck(restrIds, c.id, setRestrIds)} />
+                      <span>{localized(c, 'name', uilang)}</span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+              <details>
+                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 13, padding: '6px 0' }}>
+                  {t('form.characteristics')} ({charIds.length})
+                </summary>
+                <div className="check-list">
+                  {chars.map(c => (
+                    <label key={c.id} className="fcheck">
+                      <input type="checkbox" checked={charIds.includes(c.id)} onChange={() => toggleCheck(charIds, c.id, setCharIds)} />
+                      <span>{localized(c, 'name', uilang)}</span>
                   </label>
                 ))}
               </div>
-              <h4>{t('form.restrictions')}</h4>
-              <div className="check-list">
-                {restrs.map(c => (
-                  <label key={c.id} className="fcheck">
-                    <input type="checkbox" checked={restrIds.includes(c.id)} onChange={() => toggleCheck(restrIds, c.id, setRestrIds)} />
-                    <span>{localized(c, 'name', uilang)}</span>
-                  </label>
-                ))}
-              </div>
-              <h4>{t('form.characteristics')}</h4>
-              <div className="check-list">
-                {chars.map(c => (
-                  <label key={c.id} className="fcheck">
-                    <input type="checkbox" checked={charIds.includes(c.id)} onChange={() => toggleCheck(charIds, c.id, setCharIds)} />
-                    <span>{localized(c, 'name', uilang)}</span>
-                  </label>
-                ))}
-              </div>
+              </details>
             </section>
           </aside>
         </div>
 
         {msg && <p className="notice" style={{ marginTop: 16 }}>{msg}</p>}
-        <div style={{ marginTop: 16 }}>
-          <button className="btn">{editMode ? t('form.saveChanges') : t('form.addRecipe')}</button>
+        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn secondary">{editMode ? t('form.saveChanges') : t('form.saveAsDraft')}</button>
+          {(!editMode || user?.role === 'ADMIN') && (
+            <button type="button" className="btn" onClick={(e) => submit(e, true)}>{t('form.publish')}</button>
+          )}
         </div>
       </form>
     </>
