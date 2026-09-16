@@ -88,6 +88,36 @@ export default function Admin() {
     }
   };
 
+  // export meniu complet (JSON, doar RO) — descarca fisier
+  const exportRecipes = async () => {
+    try {
+      const r = await api.get('/recipes/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([r.data], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `retete-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert('Export eșuat.'); }
+  };
+  // import meniu (JSON, doar RO) — ingredientele lipsa se creeaza dupa nume
+  const importRecipes = async (e: any) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImportMsg('');
+    try {
+      const parsed = JSON.parse(await f.text());
+      const items = Array.isArray(parsed) ? parsed : parsed.items;
+      const { data } = await api.post('/recipes/import', { items });
+      const fails = (data.failed || []).slice(0, 3).map((x: any) => x.title || ('#' + x.index)).join('; ');
+      setImportMsg(`✓ Import: ${data.created} create, ${data.updated} actualizate${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
+      loadRecipes(1, rStatus);
+    } catch (err: any) {
+      setImportMsg('Eroare import: ' + (err.response?.data?.error || 'fișier invalid'));
+    }
+    e.target.value = '';
+  };
+
   return (
     <>
       <div className="page-head">
@@ -460,35 +490,6 @@ function AuthorsManager() {
                     {qa.map((a: any, j: number) => {
                       const q = bankQ(a.qid);
                       const ok = a.picked === a.correct;
-  // export meniu complet (JSON, doar RO) — descarca fisier
-  const exportRecipes = async () => {
-    try {
-      const r = await api.get('/recipes/export', { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([r.data], { type: 'application/json' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `retete-export-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch { alert('Export eșuat.'); }
-  };
-  // import meniu (JSON, doar RO) — ingredientele lipsa se creeaza dupa nume
-  const importRecipes = async (e: any) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setImportMsg('');
-    try {
-      const parsed = JSON.parse(await f.text());
-      const items = Array.isArray(parsed) ? parsed : parsed.items;
-      const { data } = await api.post('/recipes/import', { items });
-      const fails = (data.failed || []).slice(0, 3).map((x: any) => x.title || ('#' + x.index)).join('; ');
-      setImportMsg(`✓ Import: ${data.created} create, ${data.updated} actualizate${data.failed?.length ? `, ${data.failed.length} eșuate (${fails})` : ''}.`);
-      loadRecipes(1, rStatus);
-    } catch (err: any) {
-      setImportMsg('Eroare import: ' + (err.response?.data?.error || 'fișier invalid'));
-    }
-    e.target.value = '';
-  };
 
   return (
                         <li key={j}>
