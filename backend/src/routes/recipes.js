@@ -9,7 +9,7 @@ const coverLib = require('../lib/cover');
 const csvLib = require('../lib/csv');
 const { notify } = require('./notifications');
 const { notifyUser, notifyAdmins } = require('./notifications');
-const { getValue } = require('./lib/settings');
+const { getValue } = require('../lib/settings');
 const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
 const router = express.Router();
