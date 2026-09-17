@@ -588,12 +588,19 @@ router.put('/:id', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req,
       if (r.links.length) await prisma.recipeIngredient.createMany({ data: r.links.map(l => ({ ...l, recipeId: id })) });
       b.ingredientsRo = r.textRo; b.ingredientsRu = r.textRu; b.ingredientsEn = r.textEn;
     }
-    const { categoryIds, restrictionIds, characteristicIds, ageGroupIds, ageGroupId, items, slug, ...scalar } = b;
+    const { categoryIds, restrictionIds, characteristicIds, ageGroupIds, ageGroupId, items, slug } = b;
+    // whitelist coloane scalare — orice altceva din body (ex: notify) se ignora, nu ajunge in Prisma
+    const scalar = {};
+    for (const k of ['titleRo', 'titleRu', 'titleEn', 'summaryRo', 'summaryRu', 'summaryEn',
+      'ingredientsRo', 'ingredientsRu', 'ingredientsEn', 'stepsRo', 'stepsRu', 'stepsEn',
+      'prepMinutes', 'cookMinutes', 'servings', 'difficulty', 'imageUrl', 'feedingTypeId', 'status']) {
+      if (b[k] !== undefined) scalar[k] = b[k];
+    }
     if (scalar.stepsRo !== undefined) scalar.stepsRo = asText(scalar.stepsRo);
     if (scalar.stepsRu !== undefined) scalar.stepsRu = asText(scalar.stepsRu);
     if (scalar.stepsEn !== undefined) scalar.stepsEn = asText(scalar.stepsEn);
     if (scalar.feedingTypeId !== undefined) scalar.feedingTypeId = scalar.feedingTypeId ? Number(scalar.feedingTypeId) : null;
-    // statusul se schimba doar via /status (ADMIN) — ignoram aici daca vine de la moderator
+    // statusul se schimba via Publica (doar ADMIN) — ignoram aici daca vine de la moderator
     if (req.user.role !== 'ADMIN') delete scalar.status;
     const recipe = await prisma.recipe.update({ where: { id }, data: scalar, include: recipeInclude });
     if (b.imageUrl || b.titleRo) {
