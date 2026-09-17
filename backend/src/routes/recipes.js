@@ -9,6 +9,7 @@ const coverLib = require('../lib/cover');
 const csvLib = require('../lib/csv');
 const { notify } = require('./notifications');
 const { notifyUser, notifyAdmins } = require('./notifications');
+const { getValue } = require('./lib/settings');
 const { resolveTokens, sendExpoPush, sendFcmPush } = require('./push');
 
 const router = express.Router();
@@ -639,11 +640,13 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
       pushNewRecipeAsync(recipe);
     }
     if (recipe.authorId) {
+      const appUrl = (await getValue('APP_URL', null, 'http://localhost:4000')).replace(/\/$/, '');
+      const link = `${appUrl}/retete/${recipe.id}-${recipe.slug}`;
       notifyUser(
         recipe.authorId,
         `Rețeta aprobată: ${recipe.titleRo}`,
-        `<p>Rețeta <b>${esc(recipe.titleRo)}</b> a fost publicată. Felicitări!</p>`,
-        `✅ Rețeta a fost publicată: ${recipe.titleRo}`
+        `<p>Rețeta <b>${esc(recipe.titleRo)}</b> a fost publicată. Felicitări!</p><p><a href="${link}">${link}</a></p>`,
+        `✅ Rețeta a fost publicată: ${recipe.titleRo}\n${link}`
       );
     }
   } else if (status === 'DRAFT' && reason && String(reason).trim()) {
