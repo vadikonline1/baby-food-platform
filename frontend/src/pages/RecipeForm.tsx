@@ -116,16 +116,17 @@ export default function RecipeForm() {
     // Daca e incompleta pentru publicare -> se salveaza ca draft.
     const wantPublish = asPublish && (!editMode || user?.role === 'ADMIN');
     let status: string | undefined;
-    let fellBack = false;
+    let fellBack = '';
     if (wantPublish) {
-      const complete = Boolean(
-        title.ro.trim() &&
-        steps.ro.map(s => s.trim()).filter(Boolean).length &&
-        rows.filter(r => r.ingredientId).length &&
-        ageIds.length && catIds.length && imageUrl
-      );
-      if (complete) status = 'PUBLISHED';
-      else { fellBack = true; status = editMode ? undefined : 'DRAFT'; }
+      const missing: string[] = [];
+      if (!title.ro.trim()) missing.push(t('form.reqTitle'));
+      if (!steps.ro.map(s => s.trim()).filter(Boolean).length) missing.push(t('form.reqSteps'));
+      if (!rows.filter(r => r.ingredientId).length) missing.push(t('form.reqIngredient'));
+      if (!ageIds.length) missing.push(t('form.reqAge'));
+      if (!catIds.length) missing.push(t('form.reqCategory'));
+      if (!imageUrl) missing.push(t('form.reqCover'));
+      if (!missing.length) status = 'PUBLISHED';
+      else { fellBack = t('form.incompletePublish', { items: missing.join(', ') }); status = editMode ? undefined : 'DRAFT'; }
     } else if (!editMode) status = 'DRAFT';
     if (!title.ro.trim()) { setMsg(t('form.titleRequired')); return; }
     const stepsRo = steps.ro.map(s => s.trim()).filter(Boolean);
@@ -151,12 +152,12 @@ export default function RecipeForm() {
     try {
       if (editMode) {
         const { data } = await api.put(`/recipes/${id}`, payload);
-        if (fellBack) setMsg(t('form.incompletePublish'));
+        if (fellBack) setMsg(fellBack);
         else if (status === 'PUBLISHED' && data.status === 'PUBLISHED') setMsg(t('form.published'));
         else setMsg(t('form.updated'));
       } else {
         const { data } = await api.post('/recipes', payload);
-        if (fellBack) setMsg(t('form.incompletePublish'));
+        if (fellBack) setMsg(fellBack);
         else setMsg(data.status === 'DRAFT' ? t('form.sentForReview') : t('form.published'));
         if (!fellBack) setTimeout(() => nav('/admin'), 1200);
       }

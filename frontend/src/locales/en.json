@@ -353,9 +353,15 @@
     "removeCover": "Remove image",
     "saveAsDraft": "Save as draft",
     "publish": "Publish",
-    "incompletePublish": "Recipe is incomplete for publishing (title, steps, ingredient, age, category, photo) — saved as draft.",
+    "incompletePublish": "Recipe is incomplete for publishing — missing: {{items}}. It was saved as draft.",
     "rejectedNotice": "Recipe was rejected — fix it per the reason, then save again.",
-    "rejectedReason": "Reason"
+    "rejectedReason": "Reason",
+    "reqTitle": "title",
+    "reqSteps": "preparation steps",
+    "reqIngredient": "ingredient",
+    "reqAge": "age",
+    "reqCategory": "category",
+    "reqCover": "cover photo"
   },
   "support": {
     "title": "Support the project 🎁",
