@@ -361,7 +361,8 @@
     "reqIngredient": "ingredientul",
     "reqAge": "vârsta",
     "reqCategory": "categoria",
-    "reqCover": "poza de copertă"
+    "reqCover": "poza de copertă",
+    "notifyPub": "🔔 Publică + Notificare (Telegram + Push)"
   },
   "support": {
     "title": "Susține proiectul 🎁",

@@ -44,6 +44,8 @@ export default function RecipeForm() {
   const [imageUrl, setImageUrl] = useState('');
   const [msg, setMsg] = useState('');
   const [rejections, setRejections] = useState<any[]>([]);
+  // notificare Telegram + Push la publicare (default pornit)
+  const [notifyPub, setNotifyPub] = useState(true);
 
   useEffect(() => {
     api.get('/taxonomies/ages').then(r => setAges(r.data)).catch(() => {});
@@ -147,7 +149,8 @@ export default function RecipeForm() {
       categoryIds: catIds, restrictionIds: restrIds, characteristicIds: charIds,
       prepMinutes: Number(prep) || 10, cookMinutes: Number(cook) || 15, servings: Number(servings) || 2,
       imageUrl: imageUrl ? imageUrl : null,
-      ...(status ? { status } : {})
+      ...(status ? { status } : {}),
+      ...(status === 'PUBLISHED' ? { notify: notifyPub } : {})
     };
     try {
       if (editMode) {
@@ -333,10 +336,16 @@ export default function RecipeForm() {
         </div>
 
         {msg && <p className="notice" style={{ marginTop: 16 }}>{msg}</p>}
-        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <button className="btn secondary">{editMode ? t('form.saveChanges') : t('form.saveAsDraft')}</button>
           {(!editMode || user?.role === 'ADMIN') && (
             <button type="button" className="btn" onClick={(e) => submit(e, true)}>{t('form.publish')}</button>
+          )}
+          {(!editMode || user?.role === 'ADMIN') && (
+            <label className="fcheck">
+              <input type="checkbox" checked={notifyPub} onChange={e => setNotifyPub(e.target.checked)} />
+              <span>{t('form.notifyPub')}</span>
+            </label>
           )}
         </div>
       </form>

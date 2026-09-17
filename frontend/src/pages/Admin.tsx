@@ -33,6 +33,8 @@ export default function Admin() {
   const [rPage, setRPage] = useState(1);
   const [rStatus, setRStatus] = useState('all');
   const [importMsg, setImportMsg] = useState('');
+  // notificare Telegram + Push la aprobare (checkbox langa Aprobă, default pornit)
+  const [approveNotify, setApproveNotify] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -69,7 +71,7 @@ export default function Admin() {
   };
 
   const approve = async (id: number) => {
-    await api.patch(`/recipes/${id}/status`, { status: 'PUBLISHED' });
+    await api.patch(`/recipes/${id}/status`, { status: 'PUBLISHED', notify: approveNotify });
     setRecipes(recipes.map(r => (r.id === id ? { ...r, status: 'PUBLISHED' } : r)));
     api.get('/users/stats/overview').then(r => setStats(r.data)).catch(() => {});
   };
@@ -207,6 +209,12 @@ export default function Admin() {
             ))}
           </div>
           <Pager page={rPage} total={rTotal} onPage={p => loadRecipes(p)} />
+          {user.role === 'ADMIN' && (
+            <label className="fcheck" style={{ margin: '4px 0 0' }}>
+              <input type="checkbox" checked={approveNotify} onChange={e => setApproveNotify(e.target.checked)} />
+              <span>🔔 Publică + Notificare (Telegram + Push la aprobare)</span>
+            </label>
+          )}
           {user.role === 'ADMIN' && (
             <>
               <div className="row-btns" style={{ margin: '12px 0' }}>

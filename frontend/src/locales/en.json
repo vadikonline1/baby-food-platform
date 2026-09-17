@@ -361,7 +361,8 @@
     "reqIngredient": "ingredient",
     "reqAge": "age",
     "reqCategory": "category",
-    "reqCover": "cover photo"
+    "reqCover": "cover photo",
+    "notifyPub": "🔔 Publish + Notify (Telegram + Push)"
   },
   "support": {
     "title": "Support the project 🎁",

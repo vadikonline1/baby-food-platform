@@ -528,8 +528,11 @@ router.post('/', authRequired, roleRequired('MODERATOR', 'ADMIN'), async (req, r
       if (cover) recipe.imageUrl = cover;
       const defCover = await ensureCover(recipe.id);
       if (defCover) recipe.imageUrl = defCover;
-      postRecipeAsync(recipe);
-      pushNewRecipeAsync(recipe);
+      // notificare Telegram + Push doar daca e ceruta explicit (checkbox Publica + Notificare)
+      if (b.notify !== false && b.notify !== 'false' && b.notify !== 0) {
+        postRecipeAsync(recipe);
+        pushNewRecipeAsync(recipe);
+      }
     } else {
       const author = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
       await notify('recipe_pending', `Rețetă de validat: ${recipe.titleRo}`, `Autor: ${author?.name || ''}`, `/admin/retete/${recipe.id}/editeaza`);
@@ -623,8 +626,11 @@ router.patch('/:id/status', authRequired, roleRequired('ADMIN'), async (req, res
     if (cover) recipe.imageUrl = cover;
     const defCover = await ensureCover(id);
     if (defCover) recipe.imageUrl = defCover;
-    postRecipeAsync(recipe);
-    pushNewRecipeAsync(recipe);
+    // notificare Telegram + Push doar daca e ceruta (checkbox Publica + Notificare)
+    if (req.body?.notify !== false && req.body?.notify !== 'false' && req.body?.notify !== 0) {
+      postRecipeAsync(recipe);
+      pushNewRecipeAsync(recipe);
+    }
     if (recipe.authorId) {
       notifyUser(
         recipe.authorId,

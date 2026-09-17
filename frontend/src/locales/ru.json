@@ -361,7 +361,8 @@
     "reqIngredient": "ингредиент",
     "reqAge": "возраст",
     "reqCategory": "категория",
-    "reqCover": "фото обложки"
+    "reqCover": "фото обложки",
+    "notifyPub": "🔔 Опубликовать + уведомление (Telegram + Push)"
   },
   "support": {
     "title": "Поддержать проект 🎁",
