@@ -370,6 +370,8 @@ pre { font-family: inherit; }
   .btn, .link-more, .hero-side { display: none !important; }
   body { background: #fff; }
   .container { max-width: 100%; padding: 0; }
+  /* la export PDF ramane DOAR divul detail-grid (poza + descriere + ingrediente + pasi) */
+  article.detail > :not(.detail-grid) { display: none !important; }
   .detail-cover { max-height: 260px; }
   .card, .panel, .guide-card, .faq-item { box-shadow: none; break-inside: avoid; }
   /* layout PDF: poza dreapta + descriere stanga; ingrediente alaturi de pasi */
